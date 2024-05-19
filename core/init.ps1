@@ -16,12 +16,12 @@ function invoke-script {
         $console = $host.UI.RawUI
         $console.BackgroundColor = "Black"
         $console.ForegroundColor = "Gray"
-        $console.WindowTitle = "Chaste Scripts"
+        $console.WindowTitle = "CHASED Scripts"
         Clear-Host
         Write-Host
 
         # Display a stylized menu prompt
-        Write-Host " InTech Scripts: Root"
+        Write-Host " CHASED|Scripts: Root"
         Write-Host " Enter `"" -ForegroundColor DarkGray -NoNewLine
         Write-Host "menu" -ForegroundColor Cyan -NoNewLine
         Write-Host "`" if you don't know commands." -ForegroundColor DarkGray
@@ -43,7 +43,7 @@ function get-cscommand {
     )
 
     try {
-        # Right carrot icon, this is a prompt for a command in Chaste Scripts
+        # Right carrot icon, this is a prompt for a command in CHASED Scripts
         Write-Host "  $([char]0x203A) " -NoNewline 
 
         # Get the command from the user
@@ -77,17 +77,17 @@ function get-cscommand {
         $fileFunc = $lowercaseCommand -replace ' ', '-'
 
         # Create the main script file
-        New-Item -Path "$env:TEMP\Chaste-Script.ps1" -ItemType File -Force | Out-Null
+        New-Item -Path "$env:TEMP\CHASED-Script.ps1" -ItemType File -Force | Out-Null
 
         add-script -subPath $subPath -script $fileFunc -ProgressText "Loading script..."
         add-script -subpath "core" -script "framework" -ProgressText "Loading framework..."
 
         # Add a final line that will invoke the desired function
-        Add-Content -Path "$env:TEMP\Chaste-Script.ps1" -Value "invoke-script '$fileFunc'"
+        Add-Content -Path "$env:TEMP\CHASED-Script.ps1" -Value "invoke-script '$fileFunc'"
 
         # Execute the combined script
-        $chasteScript = Get-Content -Path "$env:TEMP\Chaste-Script.ps1" -Raw
-        Invoke-Expression "$chasteScript"
+        $chasedScript = Get-Content -Path "$env:TEMP\CHASED-Script.ps1" -Raw
+        Invoke-Expression "$chasedScript"
     } catch {
         # Error handling: display an error message and prompt for a new command
         Write-Host "    Unknown command: $($_.Exception.Message) | init-$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor Red
@@ -105,7 +105,7 @@ function add-script {
         [string]$progressText
     )
 
-    $url = "https://raw.githubusercontent.com/badsyntaxx/chaste-scripts-intech/main"
+    $url = "https://raw.githubusercontent.com/badsyntaxx/chased-scripts/main"
 
     # Download the script
     $download = get-script -Url "$url/$subPath/$script.ps1" -Target "$env:TEMP\$script.ps1" -progressText $progressText
@@ -113,7 +113,7 @@ function add-script {
 
     # Append the script to the main script
     $rawScript = Get-Content -Path "$env:TEMP\$script.ps1" -Raw -ErrorAction SilentlyContinue
-    Add-Content -Path "$env:TEMP\Chaste-Script.ps1" -Value $rawScript
+    Add-Content -Path "$env:TEMP\CHASED-Script.ps1" -Value $rawScript
 
     # Remove the script file
     Get-Item -ErrorAction SilentlyContinue "$env:TEMP\$script.ps1" | Remove-Item -ErrorAction SilentlyContinue
@@ -190,7 +190,7 @@ function get-script {
             # Resolve full target path if necessary
             if ($Target -and !(Split-Path $Target)) { $Target = Join-Path (Get-Location -PSProvider "FileSystem") $Target }
 
-            # Create target directory if it doesn't exist. Should never have to do this, Chaste scripts always targets %temp%
+            # Create target directory if it doesn't exist. Should never have to do this, CHASED scripts always targets %temp%
             if ($Target) {
                 $fileDirectory = $([System.IO.Path]::GetDirectoryName($Target))
                 if (!(Test-Path($fileDirectory))) { [System.IO.Directory]::CreateDirectory($fileDirectory) | Out-Null }
@@ -250,5 +250,5 @@ function get-script {
     }
 }
 
-# Invoke the root of Chaste scripts
+# Invoke the root of CHASED scripts
 invoke-script -script "get-cscommand"

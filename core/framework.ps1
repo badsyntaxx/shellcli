@@ -16,7 +16,7 @@ function invoke-script {
         $console = $host.UI.RawUI
         $console.BackgroundColor = "Black"
         $console.ForegroundColor = "Gray"
-        $console.WindowTitle = "Chaste Scripts"
+        $console.WindowTitle = "CHASED Scripts"
 
         # Clear the console and execute the provided script
         Clear-Host
@@ -35,7 +35,7 @@ function get-closing {
     $choice = get-option -Options $([ordered]@{
             "Submit" = "Submit and apply your changes." 
             "Rest"   = "Discard changes and start this task over at the beginning."
-            "Exit"   = "Exit this task but remain in the Chaste Scripts CLI." 
+            "Exit"   = "Exit this task but remain in the CHASED Scripts CLI." 
         }) -LineAfter
 
     if ($choice -eq 1) { 
@@ -52,7 +52,7 @@ function get-cscommand {
     )
 
     try {
-        # Right carrot icon, this is a prompt for a command in Chaste Scripts
+        # Right carrot icon, this is a prompt for a command in CHASED Scripts
         Write-Host "  $([char]0x203A) " -NoNewline 
 
         # Get the command from the user
@@ -94,7 +94,7 @@ function get-cscommand {
             get-cscommand # Recursively call itself to prompt for a new command
         } else {
             # Create the main script file
-            New-Item -Path "$env:TEMP\Chaste-Script.ps1" -ItemType File -Force | Out-Null
+            New-Item -Path "$env:TEMP\CHASED-Script.ps1" -ItemType File -Force | Out-Null
 
             # Define download URL and script dependencies
             $subPath = "windows"
@@ -108,11 +108,11 @@ function get-cscommand {
             add-script -subpath "core" -script "framework" -ProgressText "Loading framework..."
 
             # Add a final line that will invoke the desired function
-            Add-Content -Path "$env:TEMP\Chaste-Script.ps1" -Value "invoke-script '$fileFunc'"
+            Add-Content -Path "$env:TEMP\CHASED-Script.ps1" -Value "invoke-script '$fileFunc'"
 
             # Execute the combined script
-            $chasteScript = Get-Content -Path "$env:TEMP\Chaste-Script.ps1" -Raw
-            Invoke-Expression "$chasteScript"
+            $chasedScript = Get-Content -Path "$env:TEMP\CHASED-Script.ps1" -Raw
+            Invoke-Expression "$chasedScript"
         }
     } catch {
         # Error handling: display an error message and prompt for a new command
@@ -237,9 +237,9 @@ function write-welcome {
         [string]$Command
     )
 
-    # Get-Item -ErrorAction SilentlyContinue "$env:TEMP\Chaste-Script.ps1" | Remove-Item -ErrorAction SilentlyContinue
+    # Get-Item -ErrorAction SilentlyContinue "$env:TEMP\CHASED-Script.ps1" | Remove-Item -ErrorAction SilentlyContinue
     Write-Host
-    Write-Host " Chaste Scripts: $Title"
+    Write-Host " CHASED Scripts: $Title"
     Write-Host " Command:"  -ForegroundColor DarkGray -NoNewline
     Write-Host " $Command" -ForegroundColor DarkGreen -NoNewline
     Write-Host " | $Description" -ForegroundColor DarkGray
