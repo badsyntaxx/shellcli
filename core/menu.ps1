@@ -1,7 +1,7 @@
 function menu {
     try {
         clear-host
-        write-welcome -Title "CHASED|Scripts Menu" -Description "Select an action to take." -Command "menu"
+        write-welcome -Title "Menu" -Description "Select an action to take." -Command "menu"
 
         $url = "https://raw.githubusercontent.com/badsyntaxx/chased-scripts/main"
         $subPath = "framework"

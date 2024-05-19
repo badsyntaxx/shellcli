@@ -239,7 +239,7 @@ function write-welcome {
 
     # Get-Item -ErrorAction SilentlyContinue "$env:TEMP\CHASED-Script.ps1" | Remove-Item -ErrorAction SilentlyContinue
     Write-Host
-    Write-Host " CHASED Scripts: $Title"
+    Write-Host " CHASED|Scripts: $Title"
     Write-Host " Command:"  -ForegroundColor DarkGray -NoNewline
     Write-Host " $Command" -ForegroundColor DarkGreen -NoNewline
     Write-Host " | $Description" -ForegroundColor DarkGray
