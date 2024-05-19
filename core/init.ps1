@@ -246,7 +246,6 @@ function get-script {
             $ErrorActionPreference = $storeEAP
             [GC]::Collect()
         } 
-           
     }
 }
 
