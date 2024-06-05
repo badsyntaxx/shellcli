@@ -20,7 +20,7 @@ function add-drive-letter {
         exit-script -Type "success" -Text $message -LineAfter
     } catch {
         # Display error message and end the script
-        exit-script -Type "error" -Text "enable-admin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -LineAfter
+        exit-script -Type "error" -Text "add-drive-letter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -LineAfter
     }
 }
 

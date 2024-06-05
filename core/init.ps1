@@ -109,7 +109,7 @@ function add-script {
 
     # Download the script
     $download = get-script -Url "$url/$subPath/$script.ps1" -Target "$env:TEMP\$script.ps1" -progressText $progressText
-    if (!$download) { throw "Could not acquire dependency." }
+    if (!$download) { throw "Could not acquire dependency. ($url/$subPath/$script.ps1)" }
 
     # Append the script to the main script
     $rawScript = Get-Content -Path "$env:TEMP\$script.ps1" -Raw -ErrorAction SilentlyContinue
