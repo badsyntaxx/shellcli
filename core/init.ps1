@@ -21,7 +21,7 @@ function invoke-script {
         Write-Host
 
         # Display a stylized menu prompt
-        Write-Host " CHASED|Scripts: Root"
+        Write-Host " Chased Scripts: Root"
         Write-Host " Enter `"" -ForegroundColor DarkGray -NoNewLine
         Write-Host "menu" -ForegroundColor Cyan -NoNewLine
         Write-Host "`" if you don't know commands." -ForegroundColor DarkGray

@@ -4,7 +4,7 @@ function add-ad-user {
         exit-script
         write-welcome -Title "Add AD User v0315241122" -Description "Add domain users to the system." -Command "add ad user"
         Get-Item -ErrorAction SilentlyContinue "$path\add-ad-user.ps1" | Remove-Item -ErrorAction SilentlyContinue
-        Write-Host " CHASED|Scripts: Add Domain User v0321240710"
+        Write-Host " Chased Scripts: Add Domain User v0321240710"
         Write-Host "$des" -ForegroundColor DarkGray
 
         write-text -Type "header" -Text "Enter name" -LineBefore -LineAfter
