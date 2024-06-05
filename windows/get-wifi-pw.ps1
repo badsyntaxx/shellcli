@@ -1,20 +1,25 @@
-# Run the netsh command to retrieve SSIDs
-$networks = netsh wlan show networks
+function get-wifi-password {
+    # Run the netsh command to retrieve SSIDs
+    $networks = netsh wlan show networks
 
-# Extract SSIDs using regex (assuming the output format remains consistent)
-$ssids = $networks | Select-String -Pattern 'SSID\s+:\s+(.+)'
+    # Extract SSIDs using regex (assuming the output format remains consistent)
+    $ssids = $networks | Select-String -Pattern 'SSID\s+:\s+(.+)'
 
-# Create an ordered dictionary
-$ssidDictionary = [ordered]@{}
+    # Create an ordered dictionary
+    $ssidDictionary = [ordered]@{}
 
-# Populate the dictionary with SSIDs and empty strings
-foreach ($ssid in $ssids) {
-    $ssidName = $ssid.Matches.Groups[1].Value
-    $ssidDictionary[$ssidName] = ''
+    # Populate the dictionary with SSIDs and empty strings
+    foreach ($ssid in $ssids) {
+        $ssidName = $ssid.Matches.Groups[1].Value
+        $ssidDictionary[$ssidName] = ''
+    }
+
+    # Display the ordered dictionary
+    $ssidDictionary
+
+    $choice = get-option -Options $ssidDictionary -LineAfter -LineBefore
+
+    $choice
+
+    netsh wlan show profile name="Nuvia ISR" key=clear    
 }
-
-# Display the ordered dictionary
-$ssidDictionary
-
-
-netsh wlan show profile name="Nuvia ISR" key=clear
