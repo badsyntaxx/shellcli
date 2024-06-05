@@ -1,13 +1,27 @@
-function get-wifi-password {
-    write-welcome -Title "Get WiFi Password" -Description "View the currently used WiFi password." -Command "get wifi password"
+function get-wifi-creds {
+    Write-Welcome -Title "Get WiFi Credentials" -Description "View the creds for all saved WiFi networks." -Command "get wifi passwords"
 
-    $ssid = (Get-NetConnectionProfile).Name
-    write-text -Type "header" -Text "Viewing the WiFi Password for $ssid" -LineBefore -LineAfter
+    $wifiProfiles = netsh wlan show profiles
+    if ($wifiProfiles -match "There is no wireless interface on the system.") {
+        exit-script $wifiProfiles
+    }
 
-    $profileInfo = netsh wlan show profile name=$ssid key=clear
-    $password = $profileInfo | Select-String -Pattern "Key Content" | ForEach-Object { $_.ToString().Split(":")[1].Trim() }
+    $wifiList = ($wifiProfiles | Select-String -Pattern "\w*All User Profile.*: (.*)" -AllMatches).Matches |
+    ForEach-Object { $_.Groups[1].Value }
 
-    # netsh wlan show profile name="$ssid" key=clear
+    write-text -type 'header' -text "Found $($wifiList.Count) Wi-Fi Connection settings stored on the system:" -LineBefore -LineAfter
 
-    exit-script -Type "success" -Text $password -LineAfter
+    foreach ($ssid in $wifiList) {
+        try {
+            $password = (netsh wlan show profile name="$ssid" key=clear | Select-String -Pattern ".*Key Content.*: (.*)" -AllMatches).Matches | ForEach-Object { $_.Groups[1].Value }
+        } catch {
+            $password = "N/A"
+        }
+        write-text "${ssid}: $password"
+        Write-Host "    ${ssid}:" -NoNewLine
+        Write-Host "$password" -ForegroundColor Magenta 
+    }
+
+   
+    exit-script
 }

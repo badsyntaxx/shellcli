@@ -19,7 +19,7 @@ function invoke-script {
         $console.WindowTitle = "CHASED Scripts"
 
         # Clear the console and execute the provided script
-        Clear-Host
+        # Clear-Host
         Invoke-Expression $script
     } catch {
         exit-script -Type "error" -Text "Initialization Error: $($_.Exception.Message)"
