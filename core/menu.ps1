@@ -14,6 +14,7 @@ function menu {
                 "Edit user"            = "Edit a users."
                 "Edit hostname"        = "Edit this computers name and description."
                 "Edit network adapter" = "Edit a network adapter.(BETA)"
+                "Get WiFi credentials" = "View all saved WiFi credentials on the system."
             }) -LineAfter
 
         if ($choice -eq 0) { $command = "enable admin" }
@@ -22,6 +23,7 @@ function menu {
         if ($choice -eq 3) { $command = "edit user" }
         if ($choice -eq 4) { $command = "edit hostname" }
         if ($choice -eq 5) { $command = "edit net adapter" }
+        if ($choice -eq 6) { $command = "get wifi creds" }
 
         get-cscommand -command $command
     } catch {
