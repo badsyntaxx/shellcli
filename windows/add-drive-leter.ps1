@@ -1,0 +1,26 @@
+function add-drive-letter {
+    try { 
+        
+        $choice = get-option -Options $([ordered]@{
+                "Enable"  = "Enable volume 1"
+                "Disable" = "Disable volume 1"
+            }) -LineAfter -LineBefore
+
+        $volume = Get-Partition -DiskNumber 1
+
+        if ($choice -eq 0) { 
+            Set-Partition -InputObject $volume -NewDriveLetter 'P' 
+        }
+
+        if ($choice -eq 1) { 
+            $volume | Remove-PartitionAccessPath -AccessPath "P:\"
+
+        } 
+
+        exit-script -Type "success" -Text $message -LineAfter
+    } catch {
+        # Display error message and end the script
+        exit-script -Type "error" -Text "enable-admin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -LineAfter
+    }
+}
+
