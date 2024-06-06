@@ -2,7 +2,7 @@ function add-local-user {
     # Begin try/catch block for error handling
     try {
         # Display a welcome message with title, description, and command
-        # write-welcome -Title "Add Local User" -Description "Add a new local user to the system." -Command "add local user"
+        write-welcome -Title "Add Local User" -Description "Add a new local user to the system." -Command "add local user"
 
         # Prompt for user name with validation, and check for existing users
         write-text -Type "header" -Text "Enter name" -LineBefore -LineAfter
