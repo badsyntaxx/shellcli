@@ -10,7 +10,7 @@ function initialize-chasedScripts {
         # Create the main script file
         New-Item -Path "$env:TEMP\CHASED-Script.ps1" -ItemType File -Force | Out-Null
 
-        add-script -subpath "core" -script "framework" -ProgressText "Loading framework..."
+        add-script -subpath "core" -script "framework"
 
         # Add a final line that will invoke the desired function
         Add-Content -Path "$env:TEMP\CHASED-Script.ps1" -Value "invoke-script -script 'get-cscommand' -initialize"
@@ -29,9 +29,7 @@ function add-script {
         [Parameter(Mandatory)]
         [string]$subPath,
         [Parameter(Mandatory)]
-        [string]$script,
-        [Parameter(Mandatory)]
-        [string]$progressText
+        [string]$script
     )
 
     $url = "https://raw.githubusercontent.com/badsyntaxx/chased-scripts/main"
