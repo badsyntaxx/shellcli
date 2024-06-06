@@ -127,7 +127,7 @@ function add-script {
 }
 
 function get-help() {
-    Write-Host
+    write-text -Type 'header' -text 'Commands'
     Write-Host "    enable admin        - Toggle the built-in administrator account."
     Write-Host "    add user            - Add a user to the system."
     Write-Host "    add local user      - Add a local user to the system."
