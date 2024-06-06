@@ -20,10 +20,11 @@ function invoke-script {
         $console.ForegroundColor = "Gray"
         $console.WindowTitle = "Chased Scripts"
         Clear-Host
+        Write-Host
 
         if ($initialize) {
             # Display a stylized menu prompt
-            Write-Host " InTech Scripts: Root"
+            Write-Host " Chased Scripts: Root"
             Write-Host " Enter `"" -ForegroundColor DarkGray -NoNewLine
             Write-Host "menu" -ForegroundColor Cyan -NoNewLine
             Write-Host "`" if you don't know commands." -ForegroundColor DarkGray
