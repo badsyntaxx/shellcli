@@ -1,5 +1,6 @@
 function menu {
     try {
+        Clear-Host
         # Display a welcome message with title, description, and command name
         write-welcome -Title "Menu" -Description "Select an action to take." -Command "menu"
 
