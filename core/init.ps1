@@ -1,4 +1,4 @@
-function invoke-script {
+function invoke-chasedScript {
     param (
         [parameter(Mandatory = $true)]
         [string]$ScriptName
@@ -32,11 +32,11 @@ function invoke-script {
     } catch {
         # Error handling: display error message and give an opportunity to run another command
         Write-Host "Initialization Error: $($_.Exception.Message)" -ForegroundColor Red
-        get-cscommand
+        get-initialCommand
     }
 }
 
-function get-cscommand {
+function get-initialCommand {
     param (
         [Parameter(Mandatory = $false)]
         [string]$command = ""
@@ -57,7 +57,7 @@ function get-cscommand {
             Write-Host
             Invoke-Expression $command
             Write-Host
-            get-cscommand
+            get-initialCommand
         }
 
         # Adjust command and paths
@@ -91,7 +91,7 @@ function get-cscommand {
     } catch {
         # Error handling: display an error message and prompt for a new command
         Write-Host "    Unknown command: $($_.Exception.Message) | init-$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor Red
-        get-cscommand
+        get-initialCommand
     }
 }
 
@@ -250,4 +250,4 @@ function get-script {
 }
 
 # Invoke the root of CHASED scripts
-invoke-script -script "get-cscommand"
+invoke-chasedScript -script "get-initialCommand"
