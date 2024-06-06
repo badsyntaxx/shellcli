@@ -108,7 +108,7 @@ function add-script {
     $url = "https://raw.githubusercontent.com/badsyntaxx/chased-scripts/main"
 
     # Download the script
-    $download = get-script -Url "$url/$subPath/$script.ps1" -Target "$env:TEMP\$script.ps1" -progressText $progressText
+    $download = get-script -Url "$url/$subPath/$script.ps1" -Target "$env:TEMP\$script.ps1"
     if (!$download) { throw "Could not acquire dependency. ($url/$subPath/$script.ps1)" }
 
     # Append the script to the main script
@@ -122,132 +122,50 @@ function add-script {
 function get-script {
     param (
         [Parameter(Mandatory)]
-        [string]$Url,
+        [string] $Url,
         [Parameter(Mandatory)]
-        [string]$Target,
-        [Parameter(Mandatory)]
-        [string]$ProgressText
+        [string] $Target
     )
-
-    # Define a nested function for displaying download progress
-    Begin {
-        function Show-Progress {
-            param (
-                [Parameter(Mandatory)]
-                [Single]$TotalValue,
-                [Parameter(Mandatory)]
-                [Single]$CurrentValue,
-                [Parameter(Mandatory)]
-                [string]$ProgressText,
-                [Parameter()]
-                [int]$BarSize = 40,
-                [Parameter()]
-                [switch]$Complete
-            )
-            
-            # Calculate percentage completion
-            $percent = $CurrentValue / $TotalValue
-            $percentComplete = $percent * 100
   
-            # Calculate progress bar size based on percentage
-            $curBarSize = $BarSize * $percent
-
-            # Build the progress bar using block characters
-            $progbar = ""
-            $progbar = $progbar.PadRight($curBarSize, [char]9608) # dark shade block
-            $progbar = $progbar.PadRight($BarSize, [char]9617) # light shade block
-
-            # Display progress details with optional completion marker
-            if (!$Complete.IsPresent) {
-                Write-Host -NoNewLine "`r    $ProgressText $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%"
-            } else {
-                Write-Host -NoNewLine "`r    $ProgressText $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%"                    
-            }              
-             
-        }
-    }
     Process {
-        $downloadComplete = $true # Flag to track successful download
+        $downloadComplete = $true 
         try {
-            # Temporarily change error action preference to stop on errors
-            $storeEAP = $ErrorActionPreference
-            $ErrorActionPreference = 'Stop'
-
-            # Create a web request object for the specified URL
+            # Create web request and get response
             $request = [System.Net.HttpWebRequest]::Create($Url)
-
-            # Get the response from the web request
             $response = $request.GetResponse()
-
-            # Check for unauthorized or non-existent remote file
+  
+            # Check for unauthorized or non-existent file
             if ($response.StatusCode -eq 401 -or $response.StatusCode -eq 403 -or $response.StatusCode -eq 404) {
-                throw "Remote file either doesn't exist, is unauthorized, or is forbidden for '$Url'."
+                throw "Remote file error: $($response.StatusCode) - '$Url'"
             }
-
-            # Handle relative target path based on current location
-            if ($Target -match '^\.\\') { $Target = Join-Path (Get-Location -PSProvider "FileSystem") ($Target -Split '^\.')[1] }
-
-            # Resolve full target path if necessary
-            if ($Target -and !(Split-Path $Target)) { $Target = Join-Path (Get-Location -PSProvider "FileSystem") $Target }
-
-            # Create target directory if it doesn't exist. Should never have to do this, CHASED scripts always targets %temp%
-            if ($Target) {
-                $fileDirectory = $([System.IO.Path]::GetDirectoryName($Target))
-                if (!(Test-Path($fileDirectory))) { [System.IO.Directory]::CreateDirectory($fileDirectory) | Out-Null }
+  
+            # Handle relative target path
+            if ($Target -match '^\.\\') { 
+                $Target = Join-Path (Get-Location) ($Target -Split '^\.')[1] 
             }
-
-            # Get file size from response
-            [long]$fullSize = $response.ContentLength
-            $fullSizeMB = $fullSize / 1024 / 1024
-
-            # Create a buffer for reading data
-            [byte[]]$buffer = new-object byte[] 1048576
-
-            # Variables to track download progress
-            [long]$total = [long]$count = 0
+  
+            # Open streams for reading and writing
             $reader = $response.GetResponseStream()
-            $writer = new-object System.IO.FileStream $Target, "Create"
-            $finalBarCount = 0 # Flag to show final progress bar only once
-
-            # Read data from the response stream in chunks
+            $writer = New-Object System.IO.FileStream $Target, "Create"
+            $buffer = new-object byte[] 1048576
+  
+            # Read data in chunks and write to target file
             do {
                 $count = $reader.Read($buffer, 0, $buffer.Length)
-        
-                # Write the read data to the target file
                 $writer.Write($buffer, 0, $count)
-            
-                # Update total downloaded bytes and calculate MB
-                $total += $count
-                $totalMB = $total / 1024 / 1024
-        
-                # Display download progress if file size is known
-                if ($fullSize -gt 0) {
-                    Show-Progress -TotalValue $fullSizeMB -CurrentValue $totalMB -ProgressText $ProgressText
-                }
-
-                # Check for completion and display final progress bar (only once)
-                if ($total -eq $fullSize -and $count -eq 0 -and $finalBarCount -eq 0) {
-                    Show-Progress -TotalValue $fullSizeMB -CurrentValue $totalMB -ProgressText $ProgressText -Complete
-                    $finalBarCount++
-                }
-            } while ($count -gt 0) # Continue reading until all data is downloaded
-
-            # Prevent the following output from appearing on the same line as the progress bar
-            Write-Host 
-
-            # Return true if download was successful, false otherwise
+            } while ($count -gt 0)
+  
+            # Close streams silently (assuming success)
             if ($downloadComplete) { return $true } else { return $false }
         } catch {
-            # write-text -Type "fail" -Text "$($_.Exception.Message)"
+            return $false
         } finally {
-            # Close streams and restore error action preference
-            if ($reader) { $reader.Close() }
-            if ($writer) { $writer.Flush(); $writer.Close() }
-            $ErrorActionPreference = $storeEAP
-            [GC]::Collect()
-        } 
+            $reader.Close()
+            $writer.Close()
+        }
     }
 }
+  
 
 # Invoke the root of CHASED scripts
 invoke-script -script "get-cscommand"
