@@ -62,7 +62,7 @@ function get-script {
             # Create web request and get response
             $request = [System.Net.HttpWebRequest]::Create($Url)
             $response = $request.GetResponse()
-  
+            
             # Check for unauthorized or non-existent file
             if ($response.StatusCode -eq 401 -or $response.StatusCode -eq 403 -or $response.StatusCode -eq 404) {
                 throw "Remote file error: $($response.StatusCode) - '$Url'"
