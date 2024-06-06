@@ -17,7 +17,7 @@ function initialize-chasedScripts {
 
         # Execute the combined script
         $chasedScript = Get-Content -Path "$env:TEMP\CHASED-Script.ps1" -Raw
-        Invoke-Expression "$chasedScript"
+        Invoke-Expression $chasedScript
     } catch {
         # Error handling: display an error message and prompt for a new command
         Write-Host "    Connection Error: $($_.Exception.Message) | init-$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor Red
