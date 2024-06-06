@@ -17,7 +17,7 @@ function invoke-script {
         # Customize console appearance
         $console = $host.UI.RawUI
         $console.BackgroundColor = "Black"
-        $console.ForegroundColor = "DarkGray"
+        $console.ForegroundColor = "Gray"
         $console.WindowTitle = "Chased Scripts"
 
         if ($initialize) {
@@ -25,9 +25,9 @@ function invoke-script {
             Clear-Host
             Write-Host
             Write-Host " Welcome to Chased Scripts"
-            Write-Host " Enter `"" -ForegroundColor DarkGray -NoNewLine
+            Write-Host " Enter `"" -ForegroundColor Gray -NoNewLine
             Write-Host "menu" -ForegroundColor Cyan -NoNewLine
-            Write-Host "`" if you don't know commands." -ForegroundColor DarkGray
+            Write-Host "`" if you don't know commands." -ForegroundColor Gray
             Write-Host
         }
 
@@ -259,9 +259,9 @@ function write-welcome {
 
     # Get-Item -ErrorAction SilentlyContinue "$env:TEMP\CHASED-Script.ps1" | Remove-Item -ErrorAction SilentlyContinue
     Write-Host
-    Write-Host " :: Executing command:"  -ForegroundColor Gray -NoNewline
+    Write-Host " :: Executing command:"  -ForegroundColor Cyan -NoNewline
     Write-Host " $Command" -ForegroundColor DarkGreen -NoNewline
-    Write-Host " | $Description" -ForegroundColor Gray
+    Write-Host " | $Description" -ForegroundColor Cyan
 }
 
 function get-download {
@@ -521,7 +521,7 @@ function get-option {
                 $key = $orderedKeys[$i]
                 $padding = " " * ($longestKeyLength - $key.Length)
                 if ($i -eq $pos) { Write-Host "  $([char]0x203A) $key $padding - $($Options[$key])" -ForegroundColor "Yellow" } 
-                else { Write-Host "    $key $padding - $($Options[$key])" -ForegroundColor "DarkGray" }
+                else { Write-Host "    $key $padding - $($Options[$key])" -ForegroundColor "Gray" }
             }
         }
 
@@ -549,7 +549,7 @@ function get-option {
             
                 # Re-draw the previously selected and newly selected options
                 $host.UI.RawUI.CursorPosition = $menuOldPos
-                Write-Host "    $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $($Options[$orderedKeys[$oldPos]])" -ForegroundColor "DarkGray"
+                Write-Host "    $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $($Options[$orderedKeys[$oldPos]])" -ForegroundColor "Gray"
                 $host.UI.RawUI.CursorPosition = $menuNewPos
                 Write-Host "  $([char]0x203A) $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($Options[$orderedKeys[$pos]])" -ForegroundColor "Yellow"
                 $host.UI.RawUI.CursorPosition = $currPos
@@ -677,4 +677,3 @@ function select-user {
         write-text -Type "error" -Text "Select user error: $($_.Exception.Message)"
     }
 }
-

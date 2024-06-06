@@ -1,50 +1,37 @@
-function add-local-user {
-    # Begin try/catch block for error handling
+function menu {
     try {
-        # Display a welcome message with title, description, and command
-        write-welcome -Title "Add Local User" -Description "Add a new local user to the system." -Command "add local user"
+        # Define the URL where submenus might be located
+        $url = "https://raw.githubusercontent.com/badsyntaxx/chased-scripts/main"
+        $subPath = "framework"
 
-        # Prompt for user name with validation, and check for existing users
-        write-text -Type "header" -Text "Enter name" -LineBefore -LineAfter
-        $name = get-input -Validate "^([a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser
+        # Display a label for the menu options
+        write-text -Type "header" -Text "Select a sub menu" -LineAfter -LineBefore
 
-        # Prompt for password securely
-        write-text -Type "header" -Text "Enter password" -LineBefore -LineAfter
-        $password = get-input -IsSecure
+        # Create an ordered hashtable containing menu options and descriptions
+        $choice = get-option -Options $([ordered]@{
+                "Enable administrator" = "Toggle the Windows built in administrator account."
+                "Add user"             = "Add a user to the system."
+                "Remove user"          = "Remove a user from the system."
+                "Edit user"            = "Edit a users."
+                "Edit hostname"        = "Edit this computers name and description."
+                "Edit network adapter" = "Edit a network adapter.(BETA)"
+                "Get WiFi credentials" = "View all saved WiFi credentials on the system."
+            })
 
-        # Prompt for group membership with options and return key
-        write-text -Type "header" -Text "Set group membership" -LineBefore -LineAfter
-        $group = get-option -Options $([ordered]@{
-                "Administrators" = "Set this user's group membership to administrators."
-                "Users"          = "Set this user's group membership to standard users."
-            }) -ReturnKey -LineAfter
+        # Map user selection to corresponding commands
+        if ($choice -eq 0) { $command = "enable admin" }
+        if ($choice -eq 1) { $command = "add user" }
+        if ($choice -eq 2) { $command = "remove user" }
+        if ($choice -eq 3) { $command = "edit user" }
+        if ($choice -eq 4) { $command = "edit hostname" }
+        if ($choice -eq 5) { $command = "edit net adapter" }
+        if ($choice -eq 6) { $command = "get wifi creds" }
 
-        # Confirmation prompt with options
-        write-text -Type "header" -Text "YOU'RE ABOUT TO CREATE A NEW LOCAL USER!" -LineAfter
-        
-        get-closing -script "Add-LocalUser"
-
-        # Create the new local user and add to the specified group
-        New-LocalUser $name -Password $password -Description "Local User" -AccountNeverExpires -PasswordNeverExpires -ErrorAction Stop | Out-Null
-        Add-LocalGroupMember -Group $group -Member $name -ErrorAction Stop | Out-Null
-
-        # Retrieve user information and display it in a list
-        $username = Get-LocalUser -Name $name -ErrorAction Stop | Select-Object -ExpandProperty Name
-        $data = get-userdata $username
-        write-text -Type "list" -List $data -LineAfter
-
-        # Confirm success or throw an error if applicable
-        if ($null -ne $username) {
-            exit-script -Type "success" -Text "The user account was created." -LineAfter
-        } else {
-            throw "There was an unknown error while creating the user account."
-        }
+        get-cscommand -command $command
     } catch {
-        # Display error message and end the script
-        exit-script -Type "error" -Text "add-local-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -LineAfter
+        exit-script -Type "error" -Text "Menu error: $($_.Exception.Message) $url/$subPath/$dependency.ps1" 
     }
 }
-
 
 
 function invoke-script {
@@ -66,7 +53,7 @@ function invoke-script {
         # Customize console appearance
         $console = $host.UI.RawUI
         $console.BackgroundColor = "Black"
-        $console.ForegroundColor = "DarkGray"
+        $console.ForegroundColor = "Gray"
         $console.WindowTitle = "Chased Scripts"
 
         if ($initialize) {
@@ -74,9 +61,9 @@ function invoke-script {
             Clear-Host
             Write-Host
             Write-Host " Welcome to Chased Scripts"
-            Write-Host " Enter `"" -ForegroundColor DarkGray -NoNewLine
+            Write-Host " Enter `"" -ForegroundColor Gray -NoNewLine
             Write-Host "menu" -ForegroundColor Cyan -NoNewLine
-            Write-Host "`" if you don't know commands." -ForegroundColor DarkGray
+            Write-Host "`" if you don't know commands." -ForegroundColor Gray
             Write-Host
         }
 
@@ -306,17 +293,11 @@ function write-welcome {
         [string]$Command
     )
 
-    # Customize console appearance
-    $console = $host.UI.RawUI
-    $console.BackgroundColor = "Black"
-    $console.ForegroundColor = "DarkGray"
-    $console.WindowTitle = "Chased Scripts"
-
     # Get-Item -ErrorAction SilentlyContinue "$env:TEMP\CHASED-Script.ps1" | Remove-Item -ErrorAction SilentlyContinue
     Write-Host
-    Write-Host " :: Executing command:"  -ForegroundColor Gray -NoNewline
+    Write-Host " :: Executing command:"  -ForegroundColor Cyan -NoNewline
     Write-Host " $Command" -ForegroundColor DarkGreen -NoNewline
-    Write-Host " | $Description" -ForegroundColor Gray
+    Write-Host " | $Description" -ForegroundColor Cyan
 }
 
 function get-download {
@@ -576,7 +557,7 @@ function get-option {
                 $key = $orderedKeys[$i]
                 $padding = " " * ($longestKeyLength - $key.Length)
                 if ($i -eq $pos) { Write-Host "  $([char]0x203A) $key $padding - $($Options[$key])" -ForegroundColor "Yellow" } 
-                else { Write-Host "    $key $padding - $($Options[$key])" -ForegroundColor "White" }
+                else { Write-Host "    $key $padding - $($Options[$key])" -ForegroundColor "Gray" }
             }
         }
 
@@ -604,7 +585,7 @@ function get-option {
             
                 # Re-draw the previously selected and newly selected options
                 $host.UI.RawUI.CursorPosition = $menuOldPos
-                Write-Host "    $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $($Options[$orderedKeys[$oldPos]])" -ForegroundColor "White"
+                Write-Host "    $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $($Options[$orderedKeys[$oldPos]])" -ForegroundColor "Gray"
                 $host.UI.RawUI.CursorPosition = $menuNewPos
                 Write-Host "  $([char]0x203A) $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($Options[$orderedKeys[$pos]])" -ForegroundColor "Yellow"
                 $host.UI.RawUI.CursorPosition = $currPos
@@ -734,8 +715,4 @@ function select-user {
 }
 
 
-
-
-
-
-invoke-script 'add-local-user'
+invoke-script 'menu'
