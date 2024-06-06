@@ -26,7 +26,7 @@ function invoke-script {
             Write-Host
             Write-Host " Welcome to Chased Scripts"
             Write-Host " Enter `"" -ForegroundColor DarkGray -NoNewLine
-            Write-Host "menu" -ForegroundColor DarkGreen -NoNewLine
+            Write-Host "menu" -ForegroundColor Cyan -NoNewLine
             Write-Host "`" if you don't know commands." -ForegroundColor DarkGray
             Write-Host
         }
@@ -261,7 +261,7 @@ function write-welcome {
     Write-Host
     Write-Host " ::"  -ForegroundColor Magenta -NoNewline
     Write-Host " Executing command:"
-    Write-Host " $Command" -ForegroundColor DarkGreen -NoNewline
+    Write-Host " $Command" -ForegroundColor Cyan -NoNewline
     Write-Host " | $Description" -ForegroundColor Gray
 }
 
