@@ -260,7 +260,7 @@ function write-welcome {
     # Get-Item -ErrorAction SilentlyContinue "$env:TEMP\CHASED-Script.ps1" | Remove-Item -ErrorAction SilentlyContinue
     Write-Host
     Write-Host " ::"  -ForegroundColor Magenta -NoNewline
-    Write-Host " Executing command:"
+    Write-Host " Executing command:" -NoNewline
     Write-Host " $Command" -ForegroundColor Cyan -NoNewline
     Write-Host " | $Description" -ForegroundColor Gray
 }
