@@ -17,7 +17,7 @@ function invoke-script {
         # Customize console appearance
         $console = $host.UI.RawUI
         $console.BackgroundColor = "Black"
-        $console.ForegroundColor = "Gray"
+        $console.ForegroundColor = "DarkGray"
         $console.WindowTitle = "Chased Scripts"
 
         if ($initialize) {
@@ -259,9 +259,9 @@ function write-welcome {
 
     # Get-Item -ErrorAction SilentlyContinue "$env:TEMP\CHASED-Script.ps1" | Remove-Item -ErrorAction SilentlyContinue
     Write-Host
-    Write-Host " :: Executing command:"  -ForegroundColor DarkGray -NoNewline
+    Write-Host " :: Executing command:"  -ForegroundColor Gray -NoNewline
     Write-Host " $Command" -ForegroundColor DarkGreen -NoNewline
-    Write-Host " | $Description" -ForegroundColor DarkGray
+    Write-Host " | $Description" -ForegroundColor Gray
 }
 
 function get-download {
