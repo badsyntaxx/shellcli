@@ -276,7 +276,9 @@ function get-download {
         [parameter(Mandatory = $false)]
         [int]$MaxRetries = 3,
         [parameter(Mandatory = $false)]
-        [int]$Interval = 3
+        [int]$Interval = 3,
+        [parameter(Mandatory = $false)]
+        [switch]$visible = $false
     )
     Begin {
         function Show-Progress {
@@ -367,13 +369,15 @@ function get-download {
                     $total += $count
                     $totalMB = $total / 1024 / 1024
           
-                    if ($fullSize -gt 0) {
-                        Show-Progress -TotalValue $fullSizeMB -CurrentValue $totalMB -ProgressText $ProgressText -ValueSuffix "MB"
-                    }
+                    if ($visible) {
+                        if ($fullSize -gt 0) {
+                            Show-Progress -TotalValue $fullSizeMB -CurrentValue $totalMB -ProgressText $ProgressText -ValueSuffix "MB"
+                        }
 
-                    if ($total -eq $fullSize -and $count -eq 0 -and $finalBarCount -eq 0) {
-                        Show-Progress -TotalValue $fullSizeMB -CurrentValue $totalMB -ProgressText $ProgressText -ValueSuffix "MB" -Complete
-                        $finalBarCount++
+                        if ($total -eq $fullSize -and $count -eq 0 -and $finalBarCount -eq 0) {
+                            Show-Progress -TotalValue $fullSizeMB -CurrentValue $totalMB -ProgressText $ProgressText -ValueSuffix "MB" -Complete
+                            $finalBarCount++
+                        }
                     }
                 } while ($count -gt 0)
 
