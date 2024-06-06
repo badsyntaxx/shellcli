@@ -85,8 +85,8 @@ function get-cscommand {
         # Create the main script file
         New-Item -Path "$env:TEMP\CHASED-Script.ps1" -ItemType File -Force | Out-Null
 
-        add-script -subPath $subPath -script $fileFunc -ProgressText "Loading script..."
-        add-script -subpath "core" -script "framework" -ProgressText "Loading framework..."
+        add-script -subPath $subPath -script $fileFunc
+        add-script -subpath "core" -script "framework"
 
         # Add a final line that will invoke the desired function
         Add-Content -Path "$env:TEMP\CHASED-Script.ps1" -Value "invoke-script '$fileFunc'"
@@ -99,6 +99,30 @@ function get-cscommand {
         Write-Host "    Unknown command: $($_.Exception.Message) | init-$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor Red
         get-cscommand
     }
+}
+
+function add-script {
+    param (
+        [Parameter(Mandatory)]
+        [string]$subPath,
+        [Parameter(Mandatory)]
+        [string]$script,
+        [Parameter(Mandatory = $false)]
+        [string]$progressText
+    )
+
+    $url = "https://raw.githubusercontent.com/badsyntaxx/chased-scripts/main"
+
+    # Download the script
+    $download = get-download -Url "$url/$subPath/$script.ps1" -Target "$env:TEMP\$script.ps1"
+    if (!$download) { throw "Could not acquire dependency. ($url/$subPath/$script.ps1)" }
+
+    # Append the script to the main script
+    $rawScript = Get-Content -Path "$env:TEMP\$script.ps1" -Raw -ErrorAction SilentlyContinue
+    Add-Content -Path "$env:TEMP\CHASED-Script.ps1" -Value $rawScript
+
+    # Remove the script file
+    Get-Item -ErrorAction SilentlyContinue "$env:TEMP\$script.ps1" | Remove-Item -ErrorAction SilentlyContinue
 }
 
 function get-help() {
@@ -115,6 +139,8 @@ function get-help() {
     Write-Host
     get-cscommand # Recursively call itself to prompt for a new command
 }
+
+
 
 function write-text {
     param (
@@ -246,7 +272,7 @@ function get-download {
         [Parameter(Mandatory)]
         [string]$Target,
         [Parameter(Mandatory = $false)]
-        [string]$ProgressText = 'Downloading',
+        [string]$ProgressText = 'Loading',
         [parameter(Mandatory = $false)]
         [int]$MaxRetries = 3,
         [parameter(Mandatory = $false)]
@@ -646,4 +672,3 @@ function select-user {
         write-text -Type "error" -Text "Select user error: $($_.Exception.Message)"
     }
 }
-
