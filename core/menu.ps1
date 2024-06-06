@@ -1,12 +1,16 @@
 function menu {
     try {
-        clear-host
+        # Display a welcome message with title, description, and command name
         write-welcome -Title "Menu" -Description "Select an action to take." -Command "menu"
 
+        # Define the URL where submenus might be located
         $url = "https://raw.githubusercontent.com/badsyntaxx/chased-scripts/main"
         $subPath = "framework"
 
+        # Display a label for the menu options
         write-text -Type "header" -Text "Select a sub menu" -LineAfter -LineBefore
+
+        # Create an ordered hashtable containing menu options and descriptions
         $choice = get-option -Options $([ordered]@{
                 "Enable administrator" = "Toggle the Windows built in administrator account."
                 "Add user"             = "Add a user to the system."
@@ -17,6 +21,7 @@ function menu {
                 "Get WiFi credentials" = "View all saved WiFi credentials on the system."
             }) -LineAfter
 
+        # Map user selection to corresponding commands
         if ($choice -eq 0) { $command = "enable admin" }
         if ($choice -eq 1) { $command = "add user" }
         if ($choice -eq 2) { $command = "remove user" }
