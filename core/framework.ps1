@@ -17,6 +17,8 @@ function invoke-script {
         $console.BackgroundColor = "Black"
         $console.ForegroundColor = "Gray"
         $console.WindowTitle = "CHASED Scripts"
+        Clear-Host
+        Write-Host
 
         # Display a stylized menu prompt
         Write-Host " CHASED|Scripts: Root"
@@ -26,7 +28,6 @@ function invoke-script {
         Write-Host
 
         # Clear the console and execute the provided script
-        Clear-Host
         Invoke-Expression $script
     } catch {
         exit-script -Type "error" -Text "Initialization Error: $($_.Exception.Message)"
