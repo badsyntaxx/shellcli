@@ -22,7 +22,7 @@ function add-local-user {
         # Confirmation prompt with options
         write-text -Type "header" -Text "YOU'RE ABOUT TO CREATE A NEW LOCAL USER!" -LineAfter
         
-        get-closing -script "Add-LocalUser"
+        get-closing -script "add-local-user"
 
         # Create the new local user and add to the specified group
         New-LocalUser $name -Password $password -Description "Local User" -AccountNeverExpires -PasswordNeverExpires -ErrorAction Stop | Out-Null
