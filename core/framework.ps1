@@ -92,7 +92,6 @@ function get-cscommand {
     }
 }
 
-<<<<<<< HEAD
 function get-help() {
     Write-Host
     Write-Host "    enable admin        - Toggle the built-in administrator account."
@@ -106,30 +105,6 @@ function get-help() {
     Write-Host "    edit net adapter    - Add a domain user to the system."
     Write-Host
     get-cscommand # Recursively call itself to prompt for a new command
-=======
-function add-script {
-    param (
-        [Parameter(Mandatory)]
-        [string]$subPath,
-        [Parameter(Mandatory)]
-        [string]$script,
-        [Parameter(Mandatory)]
-        [string]$progressText
-    )
-
-    $url = "https://raw.githubusercontent.com/badsyntaxx/chased-scripts/main"
-
-    # Download the script
-    $download = get-script -Url "$url/$subPath/$script.ps1" -Target "$env:TEMP\$script.ps1" -progressText $progressText
-    if (!$download) { throw "Could not acquire dependency. ($url/$subPath/$script.ps1)" }
-
-    # Append the script to the main script
-    $rawScript = Get-Content -Path "$env:TEMP\$script.ps1" -Raw -ErrorAction SilentlyContinue
-    Add-Content -Path "$env:TEMP\CHASED-Script.ps1" -Value $rawScript
-
-    # Remove the script file
-    Get-Item -ErrorAction SilentlyContinue "$env:TEMP\$script.ps1" | Remove-Item -ErrorAction SilentlyContinue
->>>>>>> 4037059d0a08a29ceab227fd5f522c9a2e2f7d03
 }
 
 function write-text {
