@@ -168,6 +168,7 @@ function write-text {
 
     # Format output based on the specified Type
     if ($Type -eq "header") { Write-Host " ## $Text" -ForegroundColor "DarkCyan" }
+    if ($Type -eq "label") { Write-Host " :: $Text" -ForegroundColor "Cyan" }
     if ($Type -eq 'success') { Write-Host "  $([char]0x2713) $Text" -ForegroundColor "Green" }
     if ($Type -eq 'error') { Write-Host "  X $Text" -ForegroundColor "Red" }
     if ($Type -eq 'notice') { Write-Host " !! $Text" -ForegroundColor "Yellow" }
