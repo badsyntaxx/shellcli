@@ -18,6 +18,13 @@ function invoke-script {
         $console.ForegroundColor = "Gray"
         $console.WindowTitle = "CHASED Scripts"
 
+        # Display a stylized menu prompt
+        Write-Host " CHASED|Scripts: Root"
+        Write-Host " Enter `"" -ForegroundColor DarkGray -NoNewLine
+        Write-Host "menu" -ForegroundColor Cyan -NoNewLine
+        Write-Host "`" if you don't know commands." -ForegroundColor DarkGray
+        Write-Host
+
         # Clear the console and execute the provided script
         Clear-Host
         Invoke-Expression $script
@@ -85,6 +92,21 @@ function get-cscommand {
     }
 }
 
+<<<<<<< HEAD
+function get-help() {
+    Write-Host
+    Write-Host "    enable admin        - Toggle the built-in administrator account."
+    Write-Host "    add user            - Add a user to the system."
+    Write-Host "    add local user      - Add a local user to the system."
+    Write-Host "    add ad user         - Add a domain user to the system."
+    Write-Host "    edit user           - Add a domain user to the system."
+    Write-Host "    edit user name      - Add a domain user to the system."
+    Write-Host "    edit user password  - Add a domain user to the system."
+    Write-Host "    edit user group     - Add a domain user to the system."
+    Write-Host "    edit net adapter    - Add a domain user to the system."
+    Write-Host
+    get-cscommand # Recursively call itself to prompt for a new command
+=======
 function add-script {
     param (
         [Parameter(Mandatory)]
@@ -107,6 +129,7 @@ function add-script {
 
     # Remove the script file
     Get-Item -ErrorAction SilentlyContinue "$env:TEMP\$script.ps1" | Remove-Item -ErrorAction SilentlyContinue
+>>>>>>> 4037059d0a08a29ceab227fd5f522c9a2e2f7d03
 }
 
 function write-text {

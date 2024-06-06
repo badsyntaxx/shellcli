@@ -1,15 +1,12 @@
-function invoke-script {
-    param (
-        [parameter(Mandatory = $true)]
-        [string]$ScriptName
-    ) 
-
+function init {
     try {
         # Check if user has administrator privileges
         if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]"Administrator")) {
             # If not, elevate privileges and restart function with current arguments
             Start-Process powershell.exe "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`" $PSCommandArgs" -WorkingDirectory $pwd -Verb RunAs
             Exit
+<<<<<<< HEAD
+=======
         } 
 
         # Customize console appearance
@@ -58,40 +55,24 @@ function get-cscommand {
             Invoke-Expression $command
             Write-Host
             get-cscommand
+>>>>>>> 4037059d0a08a29ceab227fd5f522c9a2e2f7d03
         }
-
-        # Adjust command and paths
-        $subCommands = @("windows", "plugins", "nuvia");
-        $subPath = "windows"
-        foreach ($sub in $subCommands) {
-            if ($firstWord -eq $sub -and $firstWord -ne 'menu') { 
-                $command = $command -replace "^$firstWord \s*", "" 
-                $subPath = $sub
-            } elseif ($firstWord -eq 'menu') {
-                $subPath = "core"
-            }
-        }
-
-        # Convert command to title case and replace the first spaces with a dash and the second space with no space
-        $lowercaseCommand = $command.ToLower()
-        $fileFunc = $lowercaseCommand -replace ' ', '-'
-
+        
         # Create the main script file
         New-Item -Path "$env:TEMP\CHASED-Script.ps1" -ItemType File -Force | Out-Null
 
-        add-script -subPath $subPath -script $fileFunc -ProgressText "Loading script..."
+        # add-script -subPath $subPath -script $fileFunc -ProgressText "Loading script..."
         add-script -subpath "core" -script "framework" -ProgressText "Loading framework..."
 
         # Add a final line that will invoke the desired function
-        Add-Content -Path "$env:TEMP\CHASED-Script.ps1" -Value "invoke-script '$fileFunc'"
+        Add-Content -Path "$env:TEMP\CHASED-Script.ps1" -Value "invoke-script 'get-cscommand'"
 
         # Execute the combined script
         $chasedScript = Get-Content -Path "$env:TEMP\CHASED-Script.ps1" -Raw
         Invoke-Expression "$chasedScript"
     } catch {
         # Error handling: display an error message and prompt for a new command
-        Write-Host "    Unknown command: $($_.Exception.Message) | init-$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor Red
-        get-cscommand
+        Write-Host "    Could not initialize: $($_.Exception.Message) | init-$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor Red
     }
 }
 
@@ -168,4 +149,4 @@ function get-script {
   
 
 # Invoke the root of CHASED scripts
-invoke-script -script "get-cscommand"
+init
