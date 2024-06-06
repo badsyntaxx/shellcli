@@ -382,7 +382,9 @@ function get-download {
                 } while ($count -gt 0)
 
                 # Prevent the following output from appearing on the same line as the progress bar
-                Write-Host 
+                if ($visible) {
+                    Write-Host 
+                }
                 
                 if ($downloadComplete) { return $true } else { return $false }
             } catch {
