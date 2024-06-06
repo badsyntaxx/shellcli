@@ -26,25 +26,6 @@ function invoke-script {
     }
 }
 
-function get-closing {
-    param (
-        [parameter(Mandatory = $false)]
-        [string]$script = ""
-    ) 
-
-    $choice = get-option -Options $([ordered]@{
-            "Submit" = "Submit and apply your changes." 
-            "Rest"   = "Discard changes and start this task over at the beginning."
-            "Exit"   = "Exit this task but remain in the CHASED Scripts CLI." 
-        }) -LineAfter
-
-    if ($choice -eq 1) { 
-        if ($script -ne "") { invoke-script $script } 
-        else { get-cscommand }
-    }
-    if ($choice -eq 2) { exit-script }
-}
-
 function get-cscommand {
     param (
         [Parameter(Mandatory = $false)]
@@ -69,56 +50,63 @@ function get-cscommand {
             get-cscommand
         }
 
-        # Optionally remove prefixes "intech" or "nuvia". This is important for later.
-        if ($firstWord -eq 'windows') { $command = $command -replace "^$firstWord \s*", "" }
-        if ($firstWord -eq 'plugins') { $command = $command -replace "^$firstWord \s*", "" }
-        if ($firstWord -eq 'nuvia') { $command = $command -replace "^$firstWord \s*", "" }
+        # Adjust command and paths
+        $subCommands = @("windows", "plugins", "nuvia");
+        $subPath = "windows"
+        foreach ($sub in $subCommands) {
+            if ($firstWord -eq $sub -and $firstWord -ne 'menu') { 
+                $command = $command -replace "^$firstWord \s*", "" 
+                $subPath = $sub
+            } elseif ($firstWord -eq 'menu') {
+                $subPath = "core"
+            }
+        }
 
         # Convert command to title case and replace the first spaces with a dash and the second space with no space
         $lowercaseCommand = $command.ToLower()
         $fileFunc = $lowercaseCommand -replace ' ', '-'
 
-        # If the command is "help", display SOME available commands
-        if ($command -eq 'help') {
-            Write-Host
-            Write-Host "    enable admin        - Toggle the built-in administrator account."
-            Write-Host "    add user            - Add a user to the system."
-            Write-Host "    add local user      - Add a local user to the system."
-            Write-Host "    add ad user         - Add a domain user to the system."
-            Write-Host "    edit user           - Add a domain user to the system."
-            Write-Host "    edit user name      - Add a domain user to the system."
-            Write-Host "    edit user password  - Add a domain user to the system."
-            Write-Host "    edit user group     - Add a domain user to the system."
-            Write-Host "    edit net adapter    - Add a domain user to the system."
-            Write-Host
-            get-cscommand # Recursively call itself to prompt for a new command
-        } else {
-            # Create the main script file
-            New-Item -Path "$env:TEMP\CHASED-Script.ps1" -ItemType File -Force | Out-Null
+        # Create the main script file
+        New-Item -Path "$env:TEMP\CHASED-Script.ps1" -ItemType File -Force | Out-Null
 
-            # Define download URL and script dependencies
-            $subPath = "windows"
+        add-script -subPath $subPath -script $fileFunc -ProgressText "Loading script..."
+        add-script -subpath "core" -script "framework" -ProgressText "Loading framework..."
 
-            # Adjust subpath based on dependency type and potential prefixes
-            if ($firstWord -eq 'menu') { $subPath = "core" }
-            if ($firstWord -eq 'plugins') { $subPath = "plugins" }
-            if ($firstWord -eq 'nuvia') { $subPath = "nuvia" }
+        # Add a final line that will invoke the desired function
+        Add-Content -Path "$env:TEMP\CHASED-Script.ps1" -Value "invoke-script '$fileFunc'"
 
-            add-script -subPath $subPath -script $fileFunc -ProgressText "Loading script..."
-            add-script -subpath "core" -script "framework" -ProgressText "Loading framework..."
-
-            # Add a final line that will invoke the desired function
-            Add-Content -Path "$env:TEMP\CHASED-Script.ps1" -Value "invoke-script '$fileFunc'"
-
-            # Execute the combined script
-            $chasedScript = Get-Content -Path "$env:TEMP\CHASED-Script.ps1" -Raw
-            Invoke-Expression "$chasedScript"
-        }
+        # Execute the combined script
+        $chasedScript = Get-Content -Path "$env:TEMP\CHASED-Script.ps1" -Raw
+        Invoke-Expression "$chasedScript"
     } catch {
         # Error handling: display an error message and prompt for a new command
         Write-Host "    Unknown command: $($_.Exception.Message) | init-$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor Red
         get-cscommand
     }
+}
+
+function add-script {
+    param (
+        [Parameter(Mandatory)]
+        [string]$subPath,
+        [Parameter(Mandatory)]
+        [string]$script,
+        [Parameter(Mandatory)]
+        [string]$progressText
+    )
+
+    $url = "https://raw.githubusercontent.com/badsyntaxx/chased-scripts/main"
+
+    # Download the script
+    $download = get-script -Url "$url/$subPath/$script.ps1" -Target "$env:TEMP\$script.ps1" -progressText $progressText
+    if (!$download) { throw "Could not acquire dependency. ($url/$subPath/$script.ps1)" }
+
+    # Append the script to the main script
+    $rawScript = Get-Content -Path "$env:TEMP\$script.ps1" -Raw -ErrorAction SilentlyContinue
+    Add-Content -Path "$env:TEMP\CHASED-Script.ps1" -Value $rawScript
+
+    # Remove the script file
+    Get-Item -ErrorAction SilentlyContinue "$env:TEMP\$script.ps1" | Remove-Item -ErrorAction SilentlyContinue
 }
 
 function write-text {
@@ -542,6 +530,25 @@ function get-option {
         # Display error message and end the script
         write-text -Type "error" -Text "Error | get-option-$($_.InvocationInfo.ScriptLineNumber)"
     }
+}
+
+function get-closing {
+    param (
+        [parameter(Mandatory = $false)]
+        [string]$script = ""
+    ) 
+
+    $choice = get-option -Options $([ordered]@{
+            "Submit" = "Submit and apply your changes." 
+            "Rest"   = "Discard changes and start this task over at the beginning."
+            "Exit"   = "Exit this task but remain in the CHASED Scripts CLI." 
+        }) -LineAfter
+
+    if ($choice -eq 1) { 
+        if ($script -ne "") { invoke-script $script } 
+        else { get-cscommand }
+    }
+    if ($choice -eq 2) { exit-script }
 }
 
 function get-userdata {

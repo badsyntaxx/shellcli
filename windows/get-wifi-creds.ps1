@@ -1,5 +1,5 @@
 function get-wifi-creds {
-    Write-Welcome -Title "Get WiFi Credentials" -Description "View the creds for all saved WiFi networks." -Command "get wifi creds"
+    Write-Welcome -Title "Get WiFi Credentials" -Description "View the creds for all saved WiFi networks." -Command "get wifi passwords"
 
     $wifiProfiles = netsh wlan show profiles
     if ($wifiProfiles -match "There is no wireless interface on the system.") {
