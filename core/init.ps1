@@ -95,7 +95,6 @@ function get-script {
         }
     }
 }
-  
 
 # Invoke the root of CHASED scripts
 initialize-chasedScripts
