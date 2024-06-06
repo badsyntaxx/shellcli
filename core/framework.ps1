@@ -25,9 +25,11 @@ function invoke-script {
             Clear-Host
             Write-Host
             Write-Host " Welcome to Chased Scripts"
-            Write-Host " Enter `"" -ForegroundColor DarkGray -NoNewLine
-            Write-Host "menu" -ForegroundColor Cyan -NoNewLine
-            Write-Host "`" if you don't know commands." -ForegroundColor DarkGray
+            Write-Host " Enter" -ForegroundColor DarkGray -NoNewLine
+            Write-Host " menu" -ForegroundColor Cyan -NoNewLine
+            Write-Host " or" -ForegroundColor DarkGray -NoNewLine
+            Write-Host " help" -ForegroundColor Cyan -NoNewLine
+            Write-Host " if you don't know commands." -ForegroundColor DarkGray
             Write-Host
         }
 

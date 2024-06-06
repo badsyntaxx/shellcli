@@ -20,7 +20,7 @@ function add-local-user {
             }) -ReturnKey
 
         # Confirmation prompt with options
-        write-text -Type "header" -Text "YOU'RE ABOUT TO CREATE A NEW LOCAL USER!" -LineAfter
+        write-text -Type "header" -Text "YOU'RE ABOUT TO CREATE A NEW LOCAL USER!" -LineBefore -LineAfter
         
         get-closing -script "add-local-user"
 
