@@ -1,7 +1,9 @@
 function invoke-script {
     param (
+        [parameter(Mandatory = $true)]
+        [string]$script,
         [parameter(Mandatory = $false)]
-        [string]$script
+        [switch]$initialize = $false
     ) 
 
     try {
@@ -10,27 +12,31 @@ function invoke-script {
             # If not, elevate privileges and restart function with current arguments
             Start-Process powershell.exe "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`" $PSCommandArgs" -WorkingDirectory $pwd -Verb RunAs
             Exit
-        }
+        } 
 
         # Customize console appearance
         $console = $host.UI.RawUI
         $console.BackgroundColor = "Black"
         $console.ForegroundColor = "Gray"
-        $console.WindowTitle = "CHASED Scripts"
+        $console.WindowTitle = "Chased Scripts"
         Clear-Host
         Write-Host
 
-        # Display a stylized menu prompt
-        Write-Host " CHASED|Scripts: Root"
-        Write-Host " Enter `"" -ForegroundColor DarkGray -NoNewLine
-        Write-Host "menu" -ForegroundColor Cyan -NoNewLine
-        Write-Host "`" if you don't know commands." -ForegroundColor DarkGray
-        Write-Host
+        if ($initialize) {
+            # Display a stylized menu prompt
+            Write-Host " InTech Scripts: Root"
+            Write-Host " Enter `"" -ForegroundColor DarkGray -NoNewLine
+            Write-Host "menu" -ForegroundColor Cyan -NoNewLine
+            Write-Host "`" if you don't know commands." -ForegroundColor DarkGray
+            Write-Host
+        }
 
-        # Clear the console and execute the provided script
+        # Call the script specified by the parameter
         Invoke-Expression $script
     } catch {
-        exit-script -Type "error" -Text "Initialization Error: $($_.Exception.Message)"
+        # Error handling: display error message and give an opportunity to run another command
+        Write-Host "Initialization Error: $($_.Exception.Message)" -ForegroundColor Red
+        get-cscommand
     }
 }
 

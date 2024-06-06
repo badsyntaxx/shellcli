@@ -14,14 +14,14 @@ function initialize-chasedScripts {
         add-script -subpath "core" -script "framework" -ProgressText "Loading framework..."
 
         # Add a final line that will invoke the desired function
-        Add-Content -Path "$env:TEMP\CHASED-Script.ps1" -Value "invoke-script 'get-cscommand'"
+        Add-Content -Path "$env:TEMP\CHASED-Script.ps1" -Value "invoke-script -script 'get-cscommand' -initialize"
 
         # Execute the combined script
         $chasedScript = Get-Content -Path "$env:TEMP\CHASED-Script.ps1" -Raw
         Invoke-Expression "$chasedScript"
     } catch {
         # Error handling: display an error message and prompt for a new command
-        Write-Host "    Could not initialize: $($_.Exception.Message) | init-$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor Red
+        Write-Host "    Connection Error: $($_.Exception.Message) | init-$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor Red
     }
 }
 
