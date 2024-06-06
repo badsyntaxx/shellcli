@@ -43,7 +43,9 @@ function invoke-script {
 function get-cscommand {
     param (
         [Parameter(Mandatory = $false)]
-        [string]$command = ""
+        [string]$command = "",
+        [Parameter(Mandatory = $false)]
+        [switch]$skip = $false
     )
 
     try {
@@ -51,6 +53,7 @@ function get-cscommand {
         Write-Host "  $([char]0x203A) " -NoNewline 
 
         # Get the command from the user
+        Write-Host 1
         if ($command -eq "") { $command = Read-Host }
         $command = $command.ToLower()
          
@@ -232,7 +235,7 @@ function write-welcome {
 
     # Get-Item -ErrorAction SilentlyContinue "$env:TEMP\CHASED-Script.ps1" | Remove-Item -ErrorAction SilentlyContinue
     Write-Host
-    Write-Host " Chased Scripts: $Title"
+    Write-Host " :: $Title"
     Write-Host " Command:"  -ForegroundColor DarkGray -NoNewline
     Write-Host " $Command" -ForegroundColor DarkGreen -NoNewline
     Write-Host " | $Description" -ForegroundColor DarkGray
@@ -523,7 +526,7 @@ function get-option {
                 $host.UI.RawUI.CursorPosition = $currPos
             }
         }
-
+        Write-Host 2
         # Add a line break after the menu if LineAfter is specified
         if ($LineAfter) { Write-Host }
 
