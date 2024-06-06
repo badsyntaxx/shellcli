@@ -521,7 +521,7 @@ function get-option {
                 $key = $orderedKeys[$i]
                 $padding = " " * ($longestKeyLength - $key.Length)
                 if ($i -eq $pos) { Write-Host "  $([char]0x203A) $key $padding - $($Options[$key])" -ForegroundColor "Yellow" } 
-                else { Write-Host "    $key $padding - $($Options[$key])" -ForegroundColor "White" }
+                else { Write-Host "    $key $padding - $($Options[$key])" -ForegroundColor "DarkGray" }
             }
         }
 
@@ -549,7 +549,7 @@ function get-option {
             
                 # Re-draw the previously selected and newly selected options
                 $host.UI.RawUI.CursorPosition = $menuOldPos
-                Write-Host "    $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $($Options[$orderedKeys[$oldPos]])" -ForegroundColor "White"
+                Write-Host "    $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $($Options[$orderedKeys[$oldPos]])" -ForegroundColor "DarkGray"
                 $host.UI.RawUI.CursorPosition = $menuNewPos
                 Write-Host "  $([char]0x203A) $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($Options[$orderedKeys[$pos]])" -ForegroundColor "Yellow"
                 $host.UI.RawUI.CursorPosition = $currPos
