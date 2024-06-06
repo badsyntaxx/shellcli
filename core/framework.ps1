@@ -35,7 +35,7 @@ function invoke-script {
         Invoke-Expression $script
     } catch {
         # Error handling: display error message and give an opportunity to run another command
-        Write-Host "Initialization Error: $($_.Exception.Message)" -ForegroundColor Red
+        exit-script -Type "error" -Text "Initialization Error: $($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -LineAfter
         get-cscommand
     }
 }
