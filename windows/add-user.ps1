@@ -2,7 +2,7 @@ function add-user {
     # Begin try/catch block for error handling
     try {
         # Display a welcome message with title, description, and command
-        write-welcome -Title "Add User" -Description "Add new user accounts to the system." -Command "add user"
+        # write-welcome -Title "Add User" -Description "Add new user accounts to the system." -Command "add user"
 
         # Prompt user to choose between local or domain user
         write-text -Type "header" -Text "Local or domain user?" -LineAfter -LineBefore
