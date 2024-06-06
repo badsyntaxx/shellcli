@@ -9,7 +9,7 @@ function add-user {
         $choice = get-option -Options $([ordered]@{
                 "Add local user"  = "Add a local user to the system."
                 "Add domain user" = "Add a domain user to the system."
-            }) -LineAfter
+            })
 
         # Determine function name based on user choice
         if ($choice -eq 0) { $command = "add local user" }

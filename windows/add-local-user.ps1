@@ -17,7 +17,7 @@ function add-local-user {
         $group = get-option -Options $([ordered]@{
                 "Administrators" = "Set this user's group membership to administrators."
                 "Users"          = "Set this user's group membership to standard users."
-            }) -ReturnKey -LineAfter
+            }) -ReturnKey
 
         # Confirmation prompt with options
         write-text -Type "header" -Text "YOU'RE ABOUT TO CREATE A NEW LOCAL USER!" -LineAfter
