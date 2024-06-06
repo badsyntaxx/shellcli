@@ -94,7 +94,7 @@ function get-cscommand {
 
         # Execute the combined script
         $chasedScript = Get-Content -Path "$env:TEMP\CHASED-Script.ps1" -Raw
-        Invoke-Expression "$chasedScript"
+        Invoke-Expression $chasedScript
     } catch {
         # Error handling: display an error message and prompt for a new command
         Write-Host "    Unknown command: $($_.Exception.Message) | init-$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor Red
@@ -235,8 +235,7 @@ function write-welcome {
 
     # Get-Item -ErrorAction SilentlyContinue "$env:TEMP\CHASED-Script.ps1" | Remove-Item -ErrorAction SilentlyContinue
     Write-Host
-    Write-Host " :: $Title"
-    Write-Host " Command:"  -ForegroundColor DarkGray -NoNewline
+    Write-Host " :: Executing command: "  -ForegroundColor DarkGray -NoNewline
     Write-Host " $Command" -ForegroundColor DarkGreen -NoNewline
     Write-Host " | $Description" -ForegroundColor DarkGray
 }
@@ -526,7 +525,7 @@ function get-option {
                 $host.UI.RawUI.CursorPosition = $currPos
             }
         }
-        Write-Host 2
+
         # Add a line break after the menu if LineAfter is specified
         if ($LineAfter) { Write-Host }
 
