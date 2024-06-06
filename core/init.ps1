@@ -10,7 +10,6 @@ function initialize-chasedScripts {
         # Create the main script file
         New-Item -Path "$env:TEMP\CHASED-Script.ps1" -ItemType File -Force | Out-Null
 
-        # add-script -subPath $subPath -script $fileFunc -ProgressText "Loading script..."
         add-script -subpath "core" -script "framework" -ProgressText "Loading framework..."
 
         # Add a final line that will invoke the desired function
