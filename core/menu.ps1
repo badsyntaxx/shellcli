@@ -5,7 +5,7 @@ function menu {
         $subPath = "framework"
 
         # Display a label for the menu options
-        write-text -Type "header" -Text "Select a sub menu" -LineAfter -LineBefore
+        write-text -Type "header" -Text "Select a sub menu" -LineBefore
 
         # Create an ordered hashtable containing menu options and descriptions
         $choice = get-option -Options $([ordered]@{
