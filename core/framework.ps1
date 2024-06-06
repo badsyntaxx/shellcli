@@ -53,7 +53,6 @@ function get-cscommand {
         Write-Host "  $([char]0x203A) " -NoNewline 
 
         # Get the command from the user
-        Write-Host 1
         if ($command -eq "") { $command = Read-Host }
         $command = $command.ToLower()
          
