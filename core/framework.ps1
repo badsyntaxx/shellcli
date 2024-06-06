@@ -259,7 +259,8 @@ function write-welcome {
 
     # Get-Item -ErrorAction SilentlyContinue "$env:TEMP\CHASED-Script.ps1" | Remove-Item -ErrorAction SilentlyContinue
     Write-Host
-    Write-Host " :: Executing command:"  -ForegroundColor Gray -NoNewline
+    Write-Host " ::"  -ForegroundColor Magenta -NoNewline
+    Write-Host " Executing command:"
     Write-Host " $Command" -ForegroundColor DarkGreen -NoNewline
     Write-Host " | $Description" -ForegroundColor Gray
 }
@@ -579,7 +580,7 @@ function get-closing {
             "Submit" = "Submit and apply your changes." 
             "Rest"   = "Discard changes and start this task over at the beginning."
             "Exit"   = "Exit this task but remain in the CHASED Scripts CLI." 
-        }) -LineAfter
+        })
 
     if ($choice -eq 1) { 
         if ($script -ne "") { invoke-script $script } 
