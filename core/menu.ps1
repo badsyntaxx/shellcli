@@ -1,8 +1,5 @@
 function menu {
     try {
-        # Display a welcome message with title, description, and command name
-        write-welcome -Title "Menu" -Description "Select an action to take." -Command "menu"
-
         # Define the URL where submenus might be located
         $url = "https://raw.githubusercontent.com/badsyntaxx/chased-scripts/main"
         $subPath = "framework"
