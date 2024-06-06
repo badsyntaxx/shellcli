@@ -22,6 +22,7 @@ function invoke-script {
 
         if ($initialize) {
             # Display a stylized menu prompt
+            Clear-Host
             Write-Host
             Write-Host " Chased Scripts: Root"
             Write-Host " Enter `"" -ForegroundColor DarkGray -NoNewLine
