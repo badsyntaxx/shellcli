@@ -440,8 +440,8 @@ function get-input {
 
         # Display prompt with a diamond symbol (optional secure input for passwords)
         Write-Host "  $([char]0x203A) $prompt" -NoNewline 
-        if ($IsSecure) { $userInput = Read-Host -AsSecureString -NoNewline } 
-        else { $userInput = Read-Host -NoNewline }
+        if ($IsSecure) { $userInput = Read-Host -AsSecureString } 
+        else { $userInput = Read-Host }
 
         # Check for existing user if requested
         if ($CheckExistingUser) {
