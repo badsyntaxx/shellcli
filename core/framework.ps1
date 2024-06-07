@@ -563,7 +563,7 @@ function get-option {
 
         $host.UI.RawUI.CursorPosition = $menuNewPos
         Write-Host "  $([char]0x203A)" -ForegroundColor "Green" -NoNewline
-        Write-Host " $($orderedKeys[$pos]) goodjob" -ForegroundColor "White"
+        Write-Host " $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($Options[$orderedKeys[$pos]])" -ForegroundColor "Cyan"
         $host.UI.RawUI.CursorPosition = $currPos
 
         # Add a line break after the menu if LineAfter is specified
