@@ -1,4 +1,4 @@
-function enable-admin {
+function toggle-admin {
     try { 
         $admin = Get-LocalUser -Name "Administrator"
         Write-Host
