@@ -17,13 +17,13 @@ function add-local-user {
 
         # Create the new local user and add to the specified group
         New-LocalUser $name -Password $password -Description "Local User" -AccountNeverExpires -PasswordNeverExpires -ErrorAction Stop | Out-Null
-        if ($LASTEXITCODE -eq 0) {
-            # User creation successful, proceed to group membership check
-            write-text -type 'success' -text "User $name created successfully."
-        } else {
+        $newUser = Get-LocalUser -Name $name
+        if ($null -eq $newUser) {
             # User creation failed, exit with error
             exit-script -type 'error' -text "Failed to create user $name. Please check the logs for details."
         }
+
+        write-text -type 'success' -text "User $name created successfully."
           
         Add-LocalGroupMember -Group $group -Member $name -ErrorAction Stop | Out-Null
         if ((Get-LocalGroupMember -Group $group -Member $name).Count -gt 0) {

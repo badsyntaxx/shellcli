@@ -3,7 +3,7 @@ function invoke-script {
         [parameter(Mandatory = $true)]
         [string]$script,
         [parameter(Mandatory = $false)]
-        [switch]$initialize = $false
+        [boolean]$initialize = $false
     ) 
 
     try {
