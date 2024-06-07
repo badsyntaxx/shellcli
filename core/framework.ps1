@@ -274,9 +274,9 @@ function get-download {
         [Parameter(Mandatory = $false)]
         [string]$ProgressText = 'Loading',
         [parameter(Mandatory = $false)]
-        [int]$MaxRetries = 3,
+        [int]$MaxRetries = 2,
         [parameter(Mandatory = $false)]
-        [int]$Interval = 3,
+        [int]$Interval = 1,
         [parameter(Mandatory = $false)]
         [switch]$visible = $false
     )
