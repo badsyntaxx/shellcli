@@ -30,7 +30,6 @@ function invoke-script {
             Write-Host " or" -ForegroundColor DarkGray -NoNewLine
             Write-Host " help" -ForegroundColor DarkCyan -NoNewLine
             Write-Host " if you don't know commands." -ForegroundColor DarkGray
-            write-box -Text "Official docs: https://chased.dev/chased-scripts"
             Write-Host
         }
 
