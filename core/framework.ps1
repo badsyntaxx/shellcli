@@ -114,7 +114,7 @@ function add-script {
 
     # Download the script
     $download = get-download -Url "$url/$subPath/$script.ps1" -Target "$env:TEMP\$script.ps1" -failText "Could not acquire components..."
-    if (!$download) { throw "Could not acquire dependency." }
+    if (!$download) { get-cscommand }
 
     # Append the script to the main script
     $rawScript = Get-Content -Path "$env:TEMP\$script.ps1" -Raw -ErrorAction SilentlyContinue
