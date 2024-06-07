@@ -141,8 +141,6 @@ function get-help() {
     get-cscommand # Recursively call itself to prompt for a new command
 }
 
-
-
 function write-text {
     param (
         [parameter(Mandatory = $false)]
