@@ -562,7 +562,7 @@ function get-option {
         }
 
         $host.UI.RawUI.CursorPosition = $menuNewPos
-        Write-Host "  $([char]0x203A)" -ForegroundColor "Green" -NoNewline
+        Write-Host "  $([char]0x2713)" -ForegroundColor "Green" -NoNewline
         Write-Host " $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($Options[$orderedKeys[$pos]])" -ForegroundColor "Cyan"
         $host.UI.RawUI.CursorPosition = $currPos
 
