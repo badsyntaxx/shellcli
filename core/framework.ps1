@@ -186,7 +186,7 @@ function write-text {
                 for ($i = 0; $i -lt $orderedKeys.Count; $i++) {
                     $key = $orderedKeys[$i]
                     $padding = " " * ($longestKeyLength - $key.Length)
-                    Write-Host " $($key): $padding $($List[$key])" -ForegroundColor "Dark Gray"
+                    Write-Host " $($key): $padding $($List[$key])" -ForegroundColor "DarkGray"
                 }
             }
         }
