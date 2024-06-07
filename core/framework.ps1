@@ -165,8 +165,8 @@ function write-text {
     if ($LineBefore) { Write-Host }
 
     # Format output based on the specified Type
-    if ($Type -eq "header") { Write-Host " ## $Text" -ForegroundColor "DarkCyan" }
-    if ($Type -eq "label") { Write-Host " :: $Text" -ForegroundColor "Gray" }
+    # if ($Type -eq "header") { Write-Host " ## $Text" -ForegroundColor "DarkCyan" }
+    if ($Type -eq "label") { Write-Host " :: $Text" -ForegroundColor "DarkCyan" }
     if ($Type -eq 'success') { Write-Host "  $([char]0x2713) $Text" -ForegroundColor "Green" }
     if ($Type -eq 'error') { Write-Host "  X $Text" -ForegroundColor "Red" }
     if ($Type -eq 'notice') { Write-Host " !! $Text" -ForegroundColor "Yellow" }
@@ -196,26 +196,6 @@ function write-text {
 
     # Add a new line after output if specified
     if ($LineAfter) { Write-Host }
-}
-
-function exit-script {
-    param (
-        [parameter(Mandatory = $false)]
-        [string]$Text = "",
-        [parameter(Mandatory = $false)]
-        [string]$Type = "plain",
-        [parameter(Mandatory = $false)]
-        [switch]$LineBefore = $false, # Add a new line before output if specified
-        [parameter(Mandatory = $false)]
-        [switch]$LineAfter = $false # Add a new line after output if specified
-    )
-
-    # Add a new line before output if specified
-    if ($LineBefore) { Write-Host }
-    write-text -Type $Type -Text $Text
-    # Add a new line after output if specified
-    if ($LineAfter) { Write-Host }
-    get-cscommand 
 }
 
 function Write-Box {
@@ -264,6 +244,26 @@ function write-welcome {
     Write-Host " Executing command:" -NoNewline
     Write-Host " $Command" -ForegroundColor Cyan -NoNewline
     Write-Host " | $Description" -ForegroundColor Gray
+}
+
+function exit-script {
+    param (
+        [parameter(Mandatory = $false)]
+        [string]$Text = "",
+        [parameter(Mandatory = $false)]
+        [string]$Type = "plain",
+        [parameter(Mandatory = $false)]
+        [switch]$LineBefore = $false, # Add a new line before output if specified
+        [parameter(Mandatory = $false)]
+        [switch]$LineAfter = $false # Add a new line after output if specified
+    )
+
+    # Add a new line before output if specified
+    if ($LineBefore) { Write-Host }
+    write-text -Type $Type -Text $Text
+    # Add a new line after output if specified
+    if ($LineAfter) { Write-Host }
+    get-cscommand 
 }
 
 function get-download {
