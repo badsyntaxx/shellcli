@@ -167,12 +167,12 @@ function write-text {
         if ($LineBefore) { Write-Host }
 
         # Format output based on the specified Type
-        if ($Type -eq "label") { Write-Host "    $text" -ForegroundColor "Yellow" }
-        if ($Type -eq 'success') { Write-Host "   $text"  -ForegroundColor "Green" }
-        if ($Type -eq 'error') { Write-Host "  X $text" -ForegroundColor "Red" }
-        if ($Type -eq 'notice') { Write-Host "    $text" -ForegroundColor "Yellow" }
-        if ($Type -eq 'plain') { Write-Host "    $text" -ForegroundColor $Color }
-        if ($Type -eq 'list') { 
+        if ($type -eq "label") { Write-Host "    $text" -ForegroundColor "Yellow" }
+        if ($type -eq 'success') { Write-Host "   $text"  -ForegroundColor "Green" }
+        if ($type -eq 'error') { Write-Host "    $text" -ForegroundColor "Red" }
+        if ($type -eq 'notice') { Write-Host "    $text" -ForegroundColor "Yellow" }
+        if ($type -eq 'plain') { Write-Host "    $text" -ForegroundColor $Color }
+        if ($type -eq 'list') { 
             # Get a list of keys from the Options dictionary
             $orderedKeys = $List.Keys | ForEach-Object { $_ }
 
@@ -192,13 +192,13 @@ function write-text {
             }
         }
 
-        if ($Type -eq 'fail') { 
+        if ($type -eq 'fail') { 
             Write-Host "  X " -ForegroundColor "Red" -NoNewline
             Write-Host "$text" 
         }
 
         # Format output for data comparison
-        if ($Type -eq 'compare') { 
+        if ($type -eq 'compare') { 
             foreach ($data in $OldData.Keys) {
                 if ($OldData["$data"] -ne $NewData["$data"]) {
                     Write-Host "    $($OldData["$data"])" -ForegroundColor "Gray" -NoNewline
@@ -267,9 +267,9 @@ function write-welcome {
 function exit-script {
     param (
         [parameter(Mandatory = $false)]
-        [string]$Text = "",
+        [string]$text = "",
         [parameter(Mandatory = $false)]
-        [string]$Type = "plain",
+        [string]$type = "plain",
         [parameter(Mandatory = $false)]
         [switch]$lineBefore = $false, # Add a new line before output if specified
         [parameter(Mandatory = $false)]

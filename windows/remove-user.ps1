@@ -20,14 +20,14 @@ function remove-user {
             if ($null -ne $dir -And (Test-Path -Path $dir)) { Remove-Item -Path $dir -Recurse -Force }
         }
 
-        if ($null -eq $dir) { write-text -Type "done" -Text "User data deleted." }
+        if ($null -eq $dir) { write-text -type 'success' -Text "User data deleted." }
 
         Remove-LocalUser -Name $user["Name"] | Out-Null
 
         if (Get-LocalUser -Name $user["Name"] -ErrorAction SilentlyContinue | Out-Null) {
-            write-text -Type "fail" -Text "Could not remove user."
+            write-text -Type "error" -Text "Could not remove user."
         } else {
-            write-text -Type "done" -Text "User removed."
+            write-text -type 'success' -Text "User removed."
         }
 
         exit-script

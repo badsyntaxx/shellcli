@@ -229,21 +229,21 @@ function confirm-edits {
             write-text "Enabling DHCP for IPv4." -lineBefore
             Set-NetIPInterface -InterfaceIndex $adapterIndex -Dhcp Enabled  | Out-Null
             netsh interface ipv4 set address name = "$($adapter["name"])" source = dhcp | Out-Null
-            write-text -Type "done" -Text "The network adapters IP settings were set to dynamic"
+            write-text -type 'success' -Text "The network adapters IP settings were set to dynamic"
         } else {
             write-text "Disabling DHCP and applying static addresses." -lineBefore
             netsh interface ipv4 set address name = "$($adapter["name"])" static $Adapter["ip"] $Adapter["subnet"] $Adapter["gateway"] | Out-Null
-            write-text -Type "done" -Text "The network adapters IP, subnet, and gateway were set to static and your addresses were applied."
+            write-text -type 'success' -Text "The network adapters IP, subnet, and gateway were set to static and your addresses were applied."
         }
 
         if ($Adapter["DNSDHCP"]) {
             write-text "Enabling DHCP for DNS."
             Set-DnsClientServerAddress -InterfaceAlias $Adapter["name"] -ResetServerAddresses | Out-Null
-            write-text -Type "done" -Text "The network adapters DNS settings were set to dynamic"
+            write-text -type 'success' -Text "The network adapters DNS settings were set to dynamic"
         } else {
             write-text "Disabling DHCP and applying static addresses."
             Set-DnsClientServerAddress -InterfaceAlias $Adapter["name"] -ServerAddresses $dnsString
-            write-text -Type "done" -Text "The network adapters DNS was set to static and your addresses were applied."
+            write-text -type 'success' -Text "The network adapters DNS was set to static and your addresses were applied."
         }
 
         Disable-NetAdapter -Name $Adapter["name"] -Confirm:$false
