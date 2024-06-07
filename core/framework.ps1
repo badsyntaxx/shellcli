@@ -115,7 +115,7 @@ function add-script {
     $url = "https://raw.githubusercontent.com/badsyntaxx/chased-scripts/main"
 
     # Download the script
-    $download = get-download -Url "$url/$subPath/$script.ps1" -Target "$env:TEMP\$script.ps1"
+    $download = get-download -Url "$url/$subPath/$script.ps1" -Target "$env:TEMP\$script.ps1" -failText "Could not acquire components..."
     if (!$download) { throw "Could not acquire dependency. ($url/$subPath/$script.ps1)" }
 
     # Append the script to the main script
@@ -273,6 +273,8 @@ function get-download {
         [string]$Target,
         [Parameter(Mandatory = $false)]
         [string]$ProgressText = 'Loading',
+        [Parameter(Mandatory = $false)]
+        [string]$failText = 'Download failed...',
         [parameter(Mandatory = $false)]
         [int]$MaxRetries = 2,
         [parameter(Mandatory = $false)]
@@ -397,7 +399,7 @@ function get-download {
                     write-text "Retrying..."
                     Start-Sleep -Seconds $Interval
                 } else {
-                    write-text -Type "error" -Text "Maximum retries reached. Download failed." -LineBefore
+                    write-text -Type "error" -Text "Maximum retries reached." -LineBefore
                 }
             } finally {
                 # cleanup
