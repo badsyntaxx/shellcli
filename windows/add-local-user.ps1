@@ -35,8 +35,8 @@ function add-local-user {
         # Retrieve user information and display it in a list
         $username = Get-LocalUser -Name $name -ErrorAction Stop | Select-Object -ExpandProperty Name
         $data = get-userdata $username
-        write-text -Type "list" -List $data -lineAfter 
-        
+        write-text -Type "list" -List $data
+
         exit-script 
     } catch {
         # Display error message and end the script
