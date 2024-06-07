@@ -2,7 +2,7 @@ function add-user {
     # Begin try/catch block for error handling
     try {
         # Prompt user to choose between local or domain user
-        write-text -Type "label" -Text "Local or domain user?" -LineBefore
+        write-text -type "label" -text "Local or domain user?" -LineBefore
         $choice = get-option -Options $([ordered]@{
                 "Add local user"  = "Add a local user to the system."
                 "Add domain user" = "Add a domain user to the system."

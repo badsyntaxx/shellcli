@@ -7,7 +7,7 @@ function add-user {
         write-text -type "label" -text "ADD USER" -LineAfter -LineBefore
 
         # Prompt user to choose between local or domain user
-        write-text -Type "label" -Text "Local or domain user?" -LineAfter -LineBefore
+        write-text -type "label" -text "Local or domain user?" -LineAfter -LineBefore
         $choice = get-option -Options $([ordered]@{
                 "Add local user"  = "Add a local user to the system."
                 "Add domain user" = "Add a domain user to the system."
