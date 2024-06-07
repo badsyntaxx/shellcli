@@ -15,20 +15,18 @@ function enable-admin {
 
         if ($choice -eq 0) { 
             Get-LocalUser -Name "Administrator" | Enable-LocalUser 
-            $message = "Administrator account enabled."
         } 
 
         if ($choice -eq 1) { 
             Get-LocalUser -Name "Administrator" | Disable-LocalUser 
-            $message = "Administrator account disabled."
         }
 
         $admin = Get-LocalUser -Name "Administrator"
-        Write-Host "    Administrator:" -NoNewLine
-        if ($admin.Enabled) { Write-Host "Enabled" -ForegroundColor Magenta } 
-        else { Write-Host "Disabled" -ForegroundColor Magenta }
+        Write-Host "    Administrator account is now: " -NoNewLine
+        if ($admin.Enabled) { Write-Host "enabled" -ForegroundColor Magenta } 
+        else { Write-Host "disabled" -ForegroundColor Magenta }
 
-        exit-script -Type "success" -Text $message -LineAfter
+        exit-script
     } catch {
         # Display error message and end the script
         exit-script -Type "error" -Text "enable-admin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -LineAfter
