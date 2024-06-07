@@ -2,7 +2,7 @@ function edit-user {
     try {
         # write-welcome -Title "Edit User" -Description "Edit an existing users data." -Command "edit user"
 
-        write-text -type "label" -text "Local or domain user?" -lineBefore
+        write-text -type "label" -text "Local or domain user?" 
         $choice = get-option -Options $([ordered]@{
                 "Edit user name"     = "Edit an existing users name."
                 "Edit user password" = "Edit an existing users password."

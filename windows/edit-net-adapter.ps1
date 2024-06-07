@@ -2,7 +2,7 @@ function edit-net-adapter {
     try {
         write-welcome -Title "Edit Network Adapter" -Description "Edit the network adapters on this PC." -Command "edit net adapter"
 
-        write-text -type "label" -text "Edit a network adapter" -lineBefore -lineAfter
+        write-text -type "label" -text "Edit a network adapter"  -lineAfter
         $choice = get-option -Options $([ordered]@{
                 "Display adapters"       = "Display all non hidden network adapters."
                 "Select network adapter" = "Select the network adapter you want to edit."
@@ -158,7 +158,7 @@ function confirm-edits {
     )
 
     try {
-        write-text -type "label" -text "Confirm your changes" -lineBefore -lineAfter
+        write-text -type "label" -text "Confirm your changes"  -lineAfter
 
         $status = Get-NetAdapter -Name $Adapter["name"] | Select-Object -ExpandProperty Status
         if ($status -eq "Up") {
@@ -210,7 +210,7 @@ function confirm-edits {
                 "Submit & apply" = "Submit your changes and apply them to the system." 
                 "Start over"     = "Start this function over at the beginning."
                 "Other options"  = "Discard changes and do something else."
-            }) -lineBefore -lineAfter
+            })  -lineAfter
 
         if ($choice -ne 0 -and $choice -ne 2) { invoke-script -script "Edit-NetAdapter" }
         if ($choice -eq 2) { write-text }
@@ -226,12 +226,12 @@ function confirm-edits {
         Remove-NetRoute -InterfaceAlias $adapter["name"] -DestinationPrefix 0.0.0.0 / 0 -Confirm:$false -ErrorAction SilentlyContinue
 
         if ($Adapter["IPDHCP"]) {
-            write-text "Enabling DHCP for IPv4." -lineBefore
+            write-text "Enabling DHCP for IPv4." 
             Set-NetIPInterface -InterfaceIndex $adapterIndex -Dhcp Enabled  | Out-Null
             netsh interface ipv4 set address name = "$($adapter["name"])" source = dhcp | Out-Null
             write-text -type 'success' -Text "The network adapters IP settings were set to dynamic"
         } else {
-            write-text "Disabling DHCP and applying static addresses." -lineBefore
+            write-text "Disabling DHCP and applying static addresses." 
             netsh interface ipv4 set address name = "$($adapter["name"])" static $Adapter["ip"] $Adapter["subnet"] $Adapter["gateway"] | Out-Null
             write-text -type 'success' -Text "The network adapters IP, subnet, and gateway were set to static and your addresses were applied."
         }

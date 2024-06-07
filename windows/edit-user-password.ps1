@@ -24,7 +24,7 @@ function Edit-LocalUserPassword {
         if ($password.Length -eq 0) { $alert = "YOU'RE ABOUT TO REMOVE THIS USERS PASSWORD!" } 
         else { $alert = "YOU'RE ABOUT TO CHANGE THIS USERS PASSWORD" }
 
-        write-text -type "label" -text $alert -lineBefore -lineAfter
+        write-text -type "label" -text $alert  -lineAfter
         get-closing -Script "edit-user-password"
 
         Get-LocalUser -Name $Username | Set-LocalUser -Password $password

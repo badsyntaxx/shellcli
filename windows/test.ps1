@@ -4,10 +4,10 @@ function add-user {
         # Display a welcome message with title, description, and command
         # write-welcome -Title "Add User" -Description "Add new user accounts to the system." -Command "add user"
 
-        write-text -type "label" -text "ADD USER" -lineAfter -lineBefore
+        write-text -type "label" -text "ADD USER" -lineAfter 
 
         # Prompt user to choose between local or domain user
-        write-text -type "label" -text "Local or domain user?" -lineAfter -lineBefore
+        write-text -type "label" -text "Local or domain user?" -lineAfter 
         $choice = get-option -Options $([ordered]@{
                 "Add local user"  = "Add a local user to the system."
                 "Add domain user" = "Add a domain user to the system."
@@ -427,7 +427,7 @@ function get-download {
                     write-text "Retrying..."
                     Start-Sleep -Seconds $Interval
                 } else {
-                    write-text -Type "error" -Text "Maximum retries reached. Download failed." -lineBefore
+                    write-text -Type "error" -Text "Maximum retries reached. Download failed." 
                 }
             } finally {
                 # cleanup
@@ -654,7 +654,7 @@ function select-user {
     )
 
     try {
-        write-text -type "label" -text $CustomHeader -lineBefore -lineAfter
+        write-text -type "label" -text $CustomHeader  -lineAfter
 
         # Initialize empty array to store user names
         $userNames = @()

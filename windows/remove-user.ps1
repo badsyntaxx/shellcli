@@ -10,8 +10,8 @@ function remove-user {
         if ($choice -eq 0) { $deleteData = $true }
         if ($choice -eq 1) { $deleteData = $false }
 
-        if ($deleteData) { write-text -type "label" -text "Delete this account and its data?" -lineBefore -lineAfter } 
-        else { write-text -type "label" -text "Delete this account?" -lineBefore -lineAfter }
+        if ($deleteData) { write-text -type "label" -text "Delete this account and its data?"  -lineAfter } 
+        else { write-text -type "label" -text "Delete this account?"  -lineAfter }
         
         get-closing -Script "remove-user"
 
@@ -30,7 +30,7 @@ function remove-user {
         if (Get-LocalUser -Name $user["Name"] -ErrorAction SilentlyContinue | Out-Null) {
             exit-script -type "error" -text "Could not remove user."
         } 
-        
+
         exit-script -type 'success' -text "User removed."
     } catch {
         # Display error message and end the script

@@ -21,7 +21,7 @@ function Edit-LocalUserName {
         write-text -type "label" -text "Enter username" -lineAfter
         $newName = get-input -Validate "^(\s*|[a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser
 
-        write-text -type "label" -text "YOU'RE ABOUT TO CHANGE THIS USERS NAME." -lineBefore -lineAfter
+        write-text -type "label" -text "YOU'RE ABOUT TO CHANGE THIS USERS NAME."  -lineAfter
         get-closing -Script "edit-user-name"
     
         Rename-LocalUser -Name $User["Name"] -NewName $newName

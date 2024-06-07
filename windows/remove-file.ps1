@@ -3,7 +3,7 @@ function remove-file {
         Write-Welcome -Title "Force Delete File" -Description "Forcefully delete a file." -Command "remove file"
 
         do {
-            Write-Text -Type 'header' -Text 'Enter or paste the path and file' -lineBefore -lineAfter
+            Write-Text -Type 'header' -Text 'Enter or paste the path and file'  -lineAfter
             $filepath = Get-Input -lineAfter
 
             $file = Get-Item $filepath -ErrorAction SilentlyContinue

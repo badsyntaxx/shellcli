@@ -418,7 +418,7 @@ function get-download {
                     write-text "Retrying..."
                     Start-Sleep -Seconds $Interval
                 } else {
-                    write-text -Type "error" -Text "Maximum retries reached." -lineBefore
+                    write-text -Type "error" -Text "Maximum retries reached." 
                 }
             } finally {
                 # cleanup
@@ -514,7 +514,7 @@ function get-option {
         [parameter(Mandatory = $false)]
         [switch]$ReturnValue = $false,
         [parameter(Mandatory = $false)]
-        [switch]$lineBefore = $false,
+        [boolean]$lineBefore = $true,
         [parameter(Mandatory = $false)]
         [switch]$lineAfter = $false
     )

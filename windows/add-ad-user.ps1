@@ -7,22 +7,22 @@ function add-ad-user {
         Write-Host " Chased Scripts: Add Domain User v0321240710"
         Write-Host "$des" -ForegroundColor DarkGray
 
-        write-text -type "label" -text "Enter name" -lineBefore -lineAfter
+        write-text -type "label" -text "Enter name"  -lineAfter
         $name = get-input -Prompt "" -Validate "^([a-zA-Z0-9 _\-]{1,64})$"  -CheckExistingUser
 
-        write-text -type "label" -text "Enter sam name" -lineBefore -lineAfter
+        write-text -type "label" -text "Enter sam name"  -lineAfter
         $samAccountName = get-input -Prompt "" -Validate "^([a-zA-Z0-9 _\-]{1,20})$"  -CheckExistingUser
 
-        write-text -type "label" -text "Enter password" -lineBefore -lineAfter
+        write-text -type "label" -text "Enter password"  -lineAfter
         $password = get-input -Prompt "" -IsSecure
         
-        write-text -type "label" -text "Set group membership" -lineBefore -lineAfter
+        write-text -type "label" -text "Set group membership"  -lineAfter
         $choice = get-option -Options @("Administrator", "Standard user")
         
         if ($choice -eq 0) { $group = 'Administrators' } else { $group = "Users" }
         if ($group -eq 'Administrators') { $groupDisplay = 'Administrator' } else { $groupDisplay = 'Standard user' }
 
-        write-text -type "label" -text "YOU'RE ABOUT TO CREATE A NEW AD USER!" -lineBefore -lineAfter
+        write-text -type "label" -text "YOU'RE ABOUT TO CREATE A NEW AD USER!"  -lineAfter
 
         $choice = get-option -Options @(
             "Submit  - Confirm and apply." 

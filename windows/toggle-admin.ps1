@@ -9,7 +9,7 @@ function toggle-admin {
         $choice = get-option -Options $([ordered]@{
                 "Enable"  = "Enable the Windows built in administrator account."
                 "Disable" = "Disable the built in administrator account."
-            }) -lineAfter -lineBefore
+            }) -lineAfter 
 
         if ($choice -ne 0 -and $choice -ne 1) { enable-admin }
 

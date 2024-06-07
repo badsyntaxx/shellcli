@@ -4,7 +4,7 @@ function add-drive-letter {
         $choice = get-option -Options $([ordered]@{
                 "Enable"  = "Enable volume 1"
                 "Disable" = "Disable volume 1"
-            }) -lineAfter -lineBefore
+            }) -lineAfter 
 
         $volume = Get-Partition -DiskNumber 1
 

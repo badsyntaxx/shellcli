@@ -11,7 +11,7 @@ function add-local-user {
             }) -ReturnKey
 
         # Confirmation prompt with options
-        write-text -Type "notice" -Text "Are you sure?" -lineBefore -lineAfter
+        write-text -Type "notice" -Text "Are you sure?"  -lineAfter
         
         get-closing -script "add-local-user"
 
@@ -35,7 +35,7 @@ function add-local-user {
         # Retrieve user information and display it in a list
         $username = Get-LocalUser -Name $name -ErrorAction Stop | Select-Object -ExpandProperty Name
         $data = get-userdata $username
-        write-text -Type "list" -List $data -lineAfter -lineBefore
+        write-text -Type "list" -List $data -lineAfter 
         exit-script
     } catch {
         # Display error message and end the script
