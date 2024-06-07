@@ -165,10 +165,10 @@ function write-text {
     if ($LineBefore) { Write-Host }
 
     # Format output based on the specified Type
-    if ($Type -eq "label") { Write-Host " ## $text" -ForegroundColor "Yellow" }
+    if ($Type -eq "label") { Write-Host "    $text" -ForegroundColor "Yellow" }
     if ($Type -eq 'success') { Write-Host "  $([char]0x2713) $text" -ForegroundColor "Green" }
     if ($Type -eq 'error') { Write-Host "  X $text" -ForegroundColor "Red" }
-    if ($Type -eq 'notice') { Write-Host " !! $text" -ForegroundColor "Yellow" }
+    if ($Type -eq 'notice') { Write-Host "    $text" -ForegroundColor "Yellow" }
     if ($Type -eq 'plain') { Write-Host "    $text" -ForegroundColor $Color }
     if ($Type -eq 'list') { foreach ($item in $List.Keys) { Write-Host "    $item`: $($List[$item])" -ForegroundColor "DarkGray" } }
     if ($Type -eq 'done') { 
