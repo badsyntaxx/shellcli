@@ -416,7 +416,7 @@ function get-input {
         [parameter(Mandatory = $false)]
         [string]$Value = "", # A pre-fill value so the user can hit enter without typing command and get the current value if there is one
         [parameter(Mandatory = $false)]
-        [string]$Prompt, # Provide a specific prompt in necessary
+        [string]$prompt, # Provide a specific prompt in necessary
         [parameter(Mandatory = $false)]
         [regex]$Validate = $null,
         [parameter(Mandatory = $false)]
@@ -439,7 +439,7 @@ function get-input {
         $currPos = $host.UI.RawUI.CursorPosition
 
         # Display prompt with a diamond symbol (optional secure input for passwords)
-        Write-Host "  $([char]0x203A) $($Prompt):" -NoNewline 
+        Write-Host "  $([char]0x203A) $prompt" -NoNewline 
         if ($IsSecure) { $userInput = Read-Host -AsSecureString -NoNewline } 
         else { $userInput = Read-Host -NoNewline }
 
@@ -456,10 +456,10 @@ function get-input {
         if ($ErrorMessage -ne "") {
             write-text -Type "error" -Text $ErrorMessage
             # Recursively call get-input if user exists
-            if ($CheckExistingUser) { return get-input -Prompt $Prompt -Validate $Validate -CheckExistingUser } 
+            if ($CheckExistingUser) { return get-input -Prompt $prompt -Validate $Validate -CheckExistingUser } 
 
             # Otherwise, simply call again without CheckExistingUser
-            else { return get-input -Prompt $Prompt -Validate $Validate }
+            else { return get-input -Prompt $prompt -Validate $Validate }
         }
 
         # Use provided default value if user enters nothing for a non-secure input
@@ -470,7 +470,7 @@ function get-input {
         
         # Display checkmark symbol and user input (masked for secure input)
         Write-Host "  $([char]0x2713) " -ForegroundColor "Green" -NoNewline
-        if ($IsSecure -and ($userInput.Length -eq 0)) { Write-Host "$Prompt                                                       " } 
+        if ($IsSecure -and ($userInput.Length -eq 0)) { Write-Host "$prompt                                                       " } 
         else { Write-Host "$Prompt$userInput                                             " }
 
         # Add a new line after prompt if specified

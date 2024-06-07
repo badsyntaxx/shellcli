@@ -6,7 +6,7 @@ function add-local-user {
 
         # Prompt for user name with validation, and check for existing users
         write-text -Type "label" -Text "Enter name" -LineBefore
-        $name = get-input -Validate "^([a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser
+        $name = get-input -prompt "Enter name:" -Validate "^([a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser
 
         # Prompt for password securely
         write-text -Type "label" -Text "Enter password" -LineBefore
