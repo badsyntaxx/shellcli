@@ -2,10 +2,10 @@ function add-local-user {
     # Begin try/catch block for error handling
     try {
         # Prompt for user name with validation, and check for existing users
-        $name = get-input -prompt "Enter name:" -Validate "^([a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser
+        $name = get-input -prompt "Enter name:" -Validate "^([a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser -LineBefore
 
         # Prompt for password securely
-        $password = get-input -prompt "Enter password:" -IsSecure
+        $password = get-input -prompt "Enter password:" -IsSecure -LineBefore
 
         # Prompt for group membership with options and return key
         write-text -type "label" -text "Set group membership" -LineBefore
