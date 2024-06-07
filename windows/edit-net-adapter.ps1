@@ -2,11 +2,11 @@ function edit-net-adapter {
     try {
         write-welcome -Title "Edit Network Adapter" -Description "Edit the network adapters on this PC." -Command "edit net adapter"
 
-        write-text -type "label" -text "Edit a network adapter" -LineBefore -LineAfter
+        write-text -type "label" -text "Edit a network adapter" -lineBefore -lineAfter
         $choice = get-option -Options $([ordered]@{
                 "Display adapters"       = "Display all non hidden network adapters."
                 "Select network adapter" = "Select the network adapter you want to edit."
-            }) -LineAfter
+            }) -lineAfter
 
         if (0 -eq $choice) { show-adapters }
         if (1 -eq $choice) { select-adapter }
@@ -19,12 +19,12 @@ function edit-net-adapter {
 
 function select-adapter {
     try {
-        write-text -type "label" -text "Select an adapter" -LineAfter
+        write-text -type "label" -text "Select an adapter" -lineAfter
         $adapters = [ordered]@{}
         Get-NetAdapter | ForEach-Object { $adapters[$_.Name] = $_.MediaConnectionState }
         $adapterList = [ordered]@{}
         foreach ($al in $adapters) { $adapterList = $al }
-        $choice = get-option -Options $adapterList -LineAfter -ReturnKey
+        $choice = get-option -Options $adapterList -lineAfter -ReturnKey
         $netAdapter = Get-NetAdapter -Name $choice
         $adapterIndex = $netAdapter.InterfaceIndex
         $ipData = Get-NetIPAddress -InterfaceIndex $adapterIndex -AddressFamily IPv4 | Where-Object { $_.PrefixOrigin -ne "WellKnown" -and $_.SuffixOrigin -ne "Link" -and ($_.AddressState -eq "Preferred" -or $_.AddressState -eq "Tentative") } | Select-Object -First 1
@@ -82,20 +82,20 @@ function get-ipsettings {
     )
 
     try {
-        write-text -type "label" -text "Enter adapter settings" -LineAfter
+        write-text -type "label" -text "Enter adapter settings" -lineAfter
 
         $choice = get-option -Options $([ordered]@{
                 "Static IP addressing" = "Set this adapter to static and enter IP data manually."
                 "DHCP IP addressing"   = "Set this adapter to DHCP."
                 "Back"                 = "Go back to network adapter selection."
-            }) -LineAfter
+            }) -lineAfter
 
         $desiredSettings = $Adapter
 
         if ($choice -eq 0) { 
             $ip = get-input -Prompt "IPv4:" -Validate $ipv4Regex -Value $Adapter["ip"]
             $subnet = get-input -Prompt "Subnet mask:" -Validate $ipv4Regex -Value $Adapter["subnet"]  
-            $gateway = get-input -Prompt "Gateway:" -Validate $ipv4Regex -Value $Adapter["gateway"] -LineAfter
+            $gateway = get-input -Prompt "Gateway:" -Validate $ipv4Regex -Value $Adapter["gateway"] -lineAfter
         
             if ($ip -eq "") { $ip = $Adapter["ip"] }
             if ($subnet -eq "") { $subnet = $Adapter["subnet"] }
@@ -127,7 +127,7 @@ function get-dnssettings {
                 "Static DNS addressing" = "Set this adapter to static and enter DNS data manually."
                 "DHCP DNS addressing"   = "Set this adapter to DHCP."
                 "Back"                  = "Go back to network adapter selection."
-            }) -LineAfter
+            }) -lineAfter
 
         $dns = @()
 
@@ -158,7 +158,7 @@ function confirm-edits {
     )
 
     try {
-        write-text -type "label" -text "Confirm your changes" -LineBefore -LineAfter
+        write-text -type "label" -text "Confirm your changes" -lineBefore -lineAfter
 
         $status = Get-NetAdapter -Name $Adapter["name"] | Select-Object -ExpandProperty Status
         if ($status -eq "Up") {
@@ -210,7 +210,7 @@ function confirm-edits {
                 "Submit & apply" = "Submit your changes and apply them to the system." 
                 "Start over"     = "Start this function over at the beginning."
                 "Other options"  = "Discard changes and do something else."
-            }) -LineBefore -LineAfter
+            }) -lineBefore -lineAfter
 
         if ($choice -ne 0 -and $choice -ne 2) { invoke-script -script "Edit-NetAdapter" }
         if ($choice -eq 2) { write-text }
@@ -226,12 +226,12 @@ function confirm-edits {
         Remove-NetRoute -InterfaceAlias $adapter["name"] -DestinationPrefix 0.0.0.0 / 0 -Confirm:$false -ErrorAction SilentlyContinue
 
         if ($Adapter["IPDHCP"]) {
-            write-text "Enabling DHCP for IPv4." -LineBefore
+            write-text "Enabling DHCP for IPv4." -lineBefore
             Set-NetIPInterface -InterfaceIndex $adapterIndex -Dhcp Enabled  | Out-Null
             netsh interface ipv4 set address name = "$($adapter["name"])" source = dhcp | Out-Null
             write-text -Type "done" -Text "The network adapters IP settings were set to dynamic"
         } else {
-            write-text "Disabling DHCP and applying static addresses." -LineBefore
+            write-text "Disabling DHCP and applying static addresses." -lineBefore
             netsh interface ipv4 set address name = "$($adapter["name"])" static $Adapter["ip"] $Adapter["subnet"] $Adapter["gateway"] | Out-Null
             write-text -Type "done" -Text "The network adapters IP, subnet, and gateway were set to static and your addresses were applied."
         }

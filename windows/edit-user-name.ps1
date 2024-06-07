@@ -7,7 +7,7 @@ function edit-user-name {
         if ($user["Source"] -eq "Local") { Edit-LocalUserName -User $user } else { Edit-ADUserName }
     } catch {
         # Display error message and end the script
-        exit-script -Type "error" -Text "edit-user-name-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -LineAfter
+        exit-script -Type "error" -Text "edit-user-name-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 
@@ -18,10 +18,10 @@ function Edit-LocalUserName {
     )
 
     try {
-        write-text -type "label" -text "Enter username" -LineAfter
+        write-text -type "label" -text "Enter username" -lineAfter
         $newName = get-input -Validate "^(\s*|[a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser
 
-        write-text -type "label" -text "YOU'RE ABOUT TO CHANGE THIS USERS NAME." -LineBefore -LineAfter
+        write-text -type "label" -text "YOU'RE ABOUT TO CHANGE THIS USERS NAME." -lineBefore -lineAfter
         get-closing -Script "edit-user-name"
     
         Rename-LocalUser -Name $User["Name"] -NewName $newName
@@ -30,14 +30,14 @@ function Edit-LocalUserName {
 
         if ($null -ne $newUser) { 
             $newData = get-userdata -Username $newUser
-            write-text -Type "compare" -OldData $User -NewData $newData -LineAfter
-            exit-script -Type "success" -Text "The name for this account has been changed." -LineAfter
+            write-text -Type "compare" -OldData $User -NewData $newData -lineAfter
+            exit-script -Type "success" -Text "The name for this account has been changed." -lineAfter
         } else {
-            exit-script -Type "error" -Text "There was an unknown error when trying to rename this user." -LineAfter
+            exit-script -Type "error" -Text "There was an unknown error when trying to rename this user." -lineAfter
         }
     } catch {
         # Display error message and end the script
-        exit-script -Type "error" -Text "Edit-LocalUserName-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -LineAfter -LineAfter
+        exit-script -Type "error" -Text "Edit-LocalUserName-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter -lineAfter
     }
 }
 

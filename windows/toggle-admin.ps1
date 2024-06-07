@@ -9,7 +9,7 @@ function toggle-admin {
         $choice = get-option -Options $([ordered]@{
                 "Enable"  = "Enable the Windows built in administrator account."
                 "Disable" = "Disable the built in administrator account."
-            }) -LineAfter -LineBefore
+            }) -lineAfter -lineBefore
 
         if ($choice -ne 0 -and $choice -ne 1) { enable-admin }
 
@@ -29,7 +29,7 @@ function toggle-admin {
         exit-script
     } catch {
         # Display error message and end the script
-        exit-script -Type "error" -Text "enable-admin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -LineAfter
+        exit-script -Type "error" -Text "enable-admin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 

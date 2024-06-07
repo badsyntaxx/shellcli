@@ -1,9 +1,9 @@
 function add-local-user {
     try {
         # Prompt for user name with validation, and check for existing users
-        $name = get-input -prompt "Enter name:" -Validate "^([a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser -LineBefore
+        $name = get-input -prompt "Enter name:" -Validate "^([a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser -lineBefore
         # Prompt for password securely
-        $password = get-input -prompt "Enter password:" -IsSecure -LineAfter
+        $password = get-input -prompt "Enter password:" -IsSecure -lineAfter
 
         $group = get-option -Options $([ordered]@{
                 "Administrators" = "Set this user's group membership to administrators."
@@ -11,7 +11,7 @@ function add-local-user {
             }) -ReturnKey
 
         # Confirmation prompt with options
-        write-text -Type "notice" -Text "Are you sure?" -LineBefore -LineAfter
+        write-text -Type "notice" -Text "Are you sure?" -lineBefore -lineAfter
         
         get-closing -script "add-local-user"
 
@@ -22,17 +22,17 @@ function add-local-user {
         # Retrieve user information and display it in a list
         $username = Get-LocalUser -Name $name -ErrorAction Stop | Select-Object -ExpandProperty Name
         $data = get-userdata $username
-        write-text -Type "list" -List $data -LineAfter
+        write-text -Type "list" -List $data -lineAfter -lineBefore
 
         # Confirm success or throw an error if applicable
         if ($null -ne $username) {
-            exit-script -Type "success" -Text "The user account was created." -LineAfter
+            exit-script -Type "success" -Text "The user account was created." -lineAfter
         } else {
             throw "There was an unknown error while creating the user account."
         }
     } catch {
         # Display error message and end the script
-        exit-script -Type "error" -Text "add-local-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -LineAfter
+        exit-script -Type "error" -Text "add-local-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 

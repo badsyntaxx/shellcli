@@ -37,7 +37,7 @@ function invoke-script {
         Invoke-Expression $script
     } catch {
         # Error handling: display error message and give an opportunity to run another command
-        exit-script -Type "error" -Text "Initialization Error: $($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -LineAfter
+        exit-script -Type "error" -Text "Initialization Error: $($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
         get-cscommand
     }
 }
@@ -161,40 +161,65 @@ function write-text {
         [System.Collections.Specialized.OrderedDictionary]$NewData
     )
 
-    # Add a new line before output if specified
-    if ($LineBefore) { Write-Host }
+    try {
+        # Add a new line before output if specified
+        if ($LineBefore) { Write-Host }
 
-    # Format output based on the specified Type
-    if ($Type -eq "label") { Write-Host "    $text" -ForegroundColor "Yellow" }
-    if ($Type -eq 'success') { Write-Host "  $([char]0x2713) $text" -ForegroundColor "Green" }
-    if ($Type -eq 'error') { Write-Host "  X $text" -ForegroundColor "Red" }
-    if ($Type -eq 'notice') { Write-Host "    $text" -ForegroundColor "Yellow" }
-    if ($Type -eq 'plain') { Write-Host "    $text" -ForegroundColor $Color }
-    if ($Type -eq 'list') { foreach ($item in $List.Keys) { Write-Host "    $item`: $($List[$item])" -ForegroundColor "DarkGray" } }
-    if ($Type -eq 'done') { 
-        Write-Host "  $([char]0x2713)" -ForegroundColor "Green" -NoNewline
-        Write-Host " $text" 
-    }
-    if ($Type -eq 'fail') { 
-        Write-Host "  X " -ForegroundColor "Red" -NoNewline
-        Write-Host "$text" 
-    }
+        # Format output based on the specified Type
+        if ($Type -eq "label") { Write-Host "    $text" -ForegroundColor "Yellow" }
+        if ($Type -eq 'success') { Write-Host "  $([char]0x2713) $text" -ForegroundColor "Green" }
+        if ($Type -eq 'error') { Write-Host "  X $text" -ForegroundColor "Red" }
+        if ($Type -eq 'notice') { Write-Host "    $text" -ForegroundColor "Yellow" }
+        if ($Type -eq 'plain') { Write-Host "    $text" -ForegroundColor $Color }
+        if ($Type -eq 'list') { 
+            # Get a list of keys from the Options dictionary
+            $orderedKeys = $List.Keys | ForEach-Object { $_ }
 
-    # Format output for data comparison
-    if ($Type -eq 'compare') { 
-        foreach ($data in $OldData.Keys) {
-            if ($OldData["$data"] -ne $NewData["$data"]) {
-                Write-Host "    $($OldData["$data"])" -ForegroundColor "Gray" -NoNewline
-                Write-Host " $([char]0x2192) " -ForegroundColor "Magenta" -NoNewline
-                Write-Host "$($NewData["$data"])" -ForegroundColor "White"
+            # Find the length of the longest key for padding
+            $longestKeyLength = ($orderedKeys | Measure-Object -Property Length -Maximum).Maximum
+
+            # Display single option if only one exists
+            if ($orderedKeys.Count -eq 1) {
+                Write-Host " $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($List[$orderedKeys])"
             } else {
-                Write-Host "    $($OldData["$data"])"
+                # Loop through each option and display with padding and color
+                for ($i = 0; $i -lt $orderedKeys.Count; $i++) {
+                    $key = $orderedKeys[$i]
+                    $padding = " " * ($longestKeyLength - $key.Length)
+                    Write-Host " $($key): $padding $($List[$key])" -ForegroundColor "Dark Gray"
+                }
             }
         }
-    }
 
-    # Add a new line after output if specified
-    if ($LineAfter) { Write-Host }
+        if ($Type -eq 'done') { 
+            Write-Host "  $([char]0x2713)" -ForegroundColor "Green" -NoNewline
+            Write-Host " $text" 
+        }
+
+        if ($Type -eq 'fail') { 
+            Write-Host "  X " -ForegroundColor "Red" -NoNewline
+            Write-Host "$text" 
+        }
+
+        # Format output for data comparison
+        if ($Type -eq 'compare') { 
+            foreach ($data in $OldData.Keys) {
+                if ($OldData["$data"] -ne $NewData["$data"]) {
+                    Write-Host "    $($OldData["$data"])" -ForegroundColor "Gray" -NoNewline
+                    Write-Host " $([char]0x2192) " -ForegroundColor "Magenta" -NoNewline
+                    Write-Host "$($NewData["$data"])" -ForegroundColor "White"
+                } else {
+                    Write-Host "    $($OldData["$data"])"
+                }
+            }
+        }
+
+        # Add a new line after output if specified
+        if ($LineAfter) { Write-Host }
+    } catch {
+        # Display error message and end the script
+        exit-script -Type "error" -Text "write-text-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+    }
 }
 
 function Write-Box {
@@ -252,16 +277,16 @@ function exit-script {
         [parameter(Mandatory = $false)]
         [string]$Type = "plain",
         [parameter(Mandatory = $false)]
-        [switch]$LineBefore = $false, # Add a new line before output if specified
+        [switch]$lineBefore = $false, # Add a new line before output if specified
         [parameter(Mandatory = $false)]
-        [switch]$LineAfter = $false # Add a new line after output if specified
+        [switch]$lineAfter = $false # Add a new line after output if specified
     )
 
     # Add a new line before output if specified
-    if ($LineBefore) { Write-Host }
+    if ($lineBefore) { Write-Host }
     write-text -Type $Type -Text $Text
     # Add a new line after output if specified
-    if ($LineAfter) { Write-Host }
+    if ($lineAfter) { Write-Host }
     get-cscommand 
 }
 
@@ -399,7 +424,7 @@ function get-download {
                     write-text "Retrying..."
                     Start-Sleep -Seconds $Interval
                 } else {
-                    write-text -Type "error" -Text "Maximum retries reached." -LineBefore
+                    write-text -Type "error" -Text "Maximum retries reached." -lineBefore
                 }
             } finally {
                 # cleanup
@@ -428,14 +453,14 @@ function get-input {
         [parameter(Mandatory = $false)]
         [switch]$CheckExistingUser = $false,
         [parameter(Mandatory = $false)]
-        [switch]$LineBefore = $false, # Add a new line before prompt if specified
+        [switch]$lineBefore = $false, # Add a new line before prompt if specified
         [parameter(Mandatory = $false)]
-        [switch]$LineAfter = $false # Add a new line after prompt if specified
+        [switch]$lineAfter = $false # Add a new line after prompt if specified
     )
 
     try {
         # Add a new line before prompt if specified
-        if ($LineBefore) { Write-Host }
+        if ($lineBefore) { Write-Host }
 
         # Get current cursor position
         $currPos = $host.UI.RawUI.CursorPosition
@@ -476,7 +501,7 @@ function get-input {
         else { Write-Host "$Prompt$userInput                                             " }
 
         # Add a new line after prompt if specified
-        if ($LineAfter) { Write-Host }
+        if ($lineAfter) { Write-Host }
     
         # Return the validated user input
         return $userInput
@@ -495,14 +520,14 @@ function get-option {
         [parameter(Mandatory = $false)]
         [switch]$ReturnValue = $false,
         [parameter(Mandatory = $false)]
-        [switch]$LineBefore = $false,
+        [switch]$lineBefore = $false,
         [parameter(Mandatory = $false)]
-        [switch]$LineAfter = $false
+        [switch]$lineAfter = $false
     )
 
     try {
-        # Add a line break before the menu if LineBefore is specified
-        if ($LineBefore) { Write-Host }
+        # Add a line break before the menu if lineBefore is specified
+        if ($lineBefore) { Write-Host }
 
         # Initialize variables for user input handling
         $vkeycode = 0
@@ -568,8 +593,8 @@ function get-option {
         Write-Host " $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($Options[$orderedKeys[$pos]])" -ForegroundColor "Cyan"
         $host.UI.RawUI.CursorPosition = $currPos
 
-        # Add a line break after the menu if LineAfter is specified
-        if ($LineAfter) { Write-Host }
+        # Add a line break after the menu if lineAfter is specified
+        if ($lineAfter) { Write-Host }
 
         # Handle function return values (key, value, menu position) based on parameters
         if ($ReturnKey) { if ($orderedKeys.Count -eq 1) { return $orderedKeys } else { return $orderedKeys[$pos] } } 
@@ -672,13 +697,13 @@ function select-user {
         }
 
         # Prompt user to select a user from the list and return the key (username)
-        $choice = get-option -Options $accounts -ReturnKey -LineAfter
+        $choice = get-option -Options $accounts -ReturnKey -lineAfter
 
         # Get user data using the selected username
         $data = get-userdata -Username $choice
 
         # Display user data as a list
-        write-text -Type "list" -List $data -LineAfter
+        write-text -Type "list" -List $data -lineAfter
 
         # Return the user data dictionary
         return $data

@@ -9,7 +9,7 @@ function get-wifi-creds {
     $wifiList = ($wifiProfiles | Select-String -Pattern "\w*All User Profile.*: (.*)" -AllMatches).Matches |
     ForEach-Object { $_.Groups[1].Value }
 
-    write-text -type 'header' -text "Found $($wifiList.Count) Wi-Fi Connection settings stored on the system:" -LineBefore -LineAfter
+    write-text -type 'header' -text "Found $($wifiList.Count) Wi-Fi Connection settings stored on the system:" -lineBefore -lineAfter
 
     foreach ($ssid in $wifiList) {
         try {

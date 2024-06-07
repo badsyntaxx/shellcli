@@ -4,7 +4,7 @@ function add-drive-letter {
         $choice = get-option -Options $([ordered]@{
                 "Enable"  = "Enable volume 1"
                 "Disable" = "Disable volume 1"
-            }) -LineAfter -LineBefore
+            }) -lineAfter -lineBefore
 
         $volume = Get-Partition -DiskNumber 1
 
@@ -17,10 +17,10 @@ function add-drive-letter {
 
         } 
 
-        exit-script -Type "success" -Text $message -LineAfter
+        exit-script -Type "success" -Text $message -lineAfter
     } catch {
         # Display error message and end the script
-        exit-script -Type "error" -Text "add-drive-letter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -LineAfter
+        exit-script -Type "error" -Text "add-drive-letter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 

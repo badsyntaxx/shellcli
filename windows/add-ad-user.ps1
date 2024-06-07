@@ -7,28 +7,28 @@ function add-ad-user {
         Write-Host " Chased Scripts: Add Domain User v0321240710"
         Write-Host "$des" -ForegroundColor DarkGray
 
-        write-text -type "label" -text "Enter name" -LineBefore -LineAfter
+        write-text -type "label" -text "Enter name" -lineBefore -lineAfter
         $name = get-input -Prompt "" -Validate "^([a-zA-Z0-9 _\-]{1,64})$"  -CheckExistingUser
 
-        write-text -type "label" -text "Enter sam name" -LineBefore -LineAfter
+        write-text -type "label" -text "Enter sam name" -lineBefore -lineAfter
         $samAccountName = get-input -Prompt "" -Validate "^([a-zA-Z0-9 _\-]{1,20})$"  -CheckExistingUser
 
-        write-text -type "label" -text "Enter password" -LineBefore -LineAfter
+        write-text -type "label" -text "Enter password" -lineBefore -lineAfter
         $password = get-input -Prompt "" -IsSecure
         
-        write-text -type "label" -text "Set group membership" -LineBefore -LineAfter
+        write-text -type "label" -text "Set group membership" -lineBefore -lineAfter
         $choice = get-option -Options @("Administrator", "Standard user")
         
         if ($choice -eq 0) { $group = 'Administrators' } else { $group = "Users" }
         if ($group -eq 'Administrators') { $groupDisplay = 'Administrator' } else { $groupDisplay = 'Standard user' }
 
-        write-text -type "label" -text "YOU'RE ABOUT TO CREATE A NEW AD USER!" -LineBefore -LineAfter
+        write-text -type "label" -text "YOU'RE ABOUT TO CREATE A NEW AD USER!" -lineBefore -lineAfter
 
         $choice = get-option -Options @(
             "Submit  - Confirm and apply." 
             "Reset   - Start over at the beginning."
             "Exit    - Run a different command."
-        ) -LineAfter
+        ) -lineAfter
 
         if ($choice -ne 0 -and $choice -ne 2) { invoke-script -script "add-ad-user" }
         if ($choice -eq 2) { throw "This function is under construction." }
@@ -45,7 +45,7 @@ function add-ad-user {
 
         $data = get-userdata -Username $name
 
-        write-text -Type "list" -List $data -LineAfter
+        write-text -Type "list" -List $data -lineAfter
 
         exit-script -Type "success" -Text "The user account was created."
     } catch {

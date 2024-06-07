@@ -3,8 +3,8 @@ function remove-file {
         Write-Welcome -Title "Force Delete File" -Description "Forcefully delete a file." -Command "remove file"
 
         do {
-            Write-Text -Type 'header' -Text 'Enter or paste the path and file' -LineBefore -LineAfter
-            $filepath = Get-Input -LineAfter
+            Write-Text -Type 'header' -Text 'Enter or paste the path and file' -lineBefore -lineAfter
+            $filepath = Get-Input -lineAfter
 
             $file = Get-Item $filepath -ErrorAction SilentlyContinue
 
@@ -16,10 +16,10 @@ function remove-file {
         } while (!$file)
 
         $file = Get-Item $filepath -ErrorAction SilentlyContinue
-        if (!$file) { exit-script -Type "success" -Text "File successfully deleted." -LineAfter }
+        if (!$file) { exit-script -Type "success" -Text "File successfully deleted." -lineAfter }
     } catch {
         # Display error message and end the script
-        exit-script -Type "error" -Text "remove-file-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -LineAfter
+        exit-script -Type "error" -Text "remove-file-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 

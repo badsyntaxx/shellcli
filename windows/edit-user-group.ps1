@@ -18,13 +18,13 @@ function Edit-LocalUserGroup {
     )
 
     try {
-        write-text -type "label" -text "Add or Remove user from groups" -LineAfter
+        write-text -type "label" -text "Add or Remove user from groups" -lineAfter
         $addOrRemove = get-option -Options $([ordered]@{
                 "Add"    = "Add this user to more groups"
                 "Remove" = "Remove this user from certain groups"
             }) -ReturnKey
 
-        write-text -type "label" -text "Select user group" -LineBefore -LineAfter
+        write-text -type "label" -text "Select user group" -lineBefore -lineAfter
         $groups = Get-LocalGroup | ForEach-Object {
             $description = $_.Description
             if ($description.Length -gt 72) { $description = $description.Substring(0, 72) + "..." }
@@ -67,11 +67,11 @@ function Edit-LocalUserGroup {
 
         while ($selectedGroups -notcontains 'Done') {
             $previewString = $selectedGroups -join ","
-            write-text -type "label" -text "$previewString" -LineBefore -LineAfter
+            write-text -type "label" -text "$previewString" -lineBefore -lineAfter
             $selectedGroups += get-option -Options $moreGroupsDone -ReturnKey 
         }
 
-        write-text -type "label" -text "YOU'RE ABOUT TO CHANGE THIS USERS GROUP MEMBERSHIP." -LineBefore -LineAfter
+        write-text -type "label" -text "YOU'RE ABOUT TO CHANGE THIS USERS GROUP MEMBERSHIP." -lineBefore -lineAfter
         get-closing -Script "Edit-LocalUserGroup"
 
         foreach ($group in $selectedGroups) {
@@ -82,11 +82,11 @@ function Edit-LocalUserGroup {
             }
         }
 
-        write-text -Type "list" -List $User -LineAfter
-        exit-script -Type "success" -Text "The group membership for $($User["Name"]) has been changed to $group." -LineAfter
+        write-text -Type "list" -List $User -lineAfter
+        exit-script -Type "success" -Text "The group membership for $($User["Name"]) has been changed to $group." -lineAfter
     } catch {
         # Display error message and end the script
-        exit-script -Type "error" -Text "edit-user-group-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -LineAfter
+        exit-script -Type "error" -Text "edit-user-group-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 

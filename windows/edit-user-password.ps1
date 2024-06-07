@@ -7,7 +7,7 @@ function edit-user-password {
         if ($user["Source"] -eq "Local") { Edit-LocalUserPassword -Username $user["Name"] } else { Edit-ADUserPassword }
     } catch {
         # Display error message and end the script
-        exit-script -Type "error" -Text "edit-user-password-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -LineAfter
+        exit-script -Type "error" -Text "edit-user-password-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 
@@ -18,21 +18,21 @@ function Edit-LocalUserPassword {
     )
 
     try {
-        write-text -type "label" -text "Enter password or leave blank" -LineAfter
+        write-text -type "label" -text "Enter password or leave blank" -lineAfter
         $password = get-input -Prompt "" -IsSecure $true
 
         if ($password.Length -eq 0) { $alert = "YOU'RE ABOUT TO REMOVE THIS USERS PASSWORD!" } 
         else { $alert = "YOU'RE ABOUT TO CHANGE THIS USERS PASSWORD" }
 
-        write-text -type "label" -text $alert -LineBefore -LineAfter
+        write-text -type "label" -text $alert -lineBefore -lineAfter
         get-closing -Script "edit-user-password"
 
         Get-LocalUser -Name $Username | Set-LocalUser -Password $password
 
-        exit-script -Type "success" -Text "The password for this account has been changed." -LineAfter
+        exit-script -Type "success" -Text "The password for this account has been changed." -lineAfter
     } catch {
         # Display error message and end the script
-        exit-script -Type "error" -Text "Edit-LocalUserPassword-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -LineAfter
+        exit-script -Type "error" -Text "Edit-LocalUserPassword-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 
