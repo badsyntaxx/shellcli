@@ -26,7 +26,7 @@ function add-local-user {
 
         # Confirm success or throw an error if applicable
         if ($null -ne $username) {
-            exit-script -Type "success" -Text "The user account was created." -lineAfter
+            exit-script 
         } else {
             throw "There was an unknown error while creating the user account."
         }

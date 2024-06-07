@@ -168,7 +168,7 @@ function write-text {
 
         # Format output based on the specified Type
         if ($Type -eq "label") { Write-Host "    $text" -ForegroundColor "Yellow" }
-        if ($Type -eq 'success') { Write-Host "  $([char]0x2713) $text" -ForegroundColor "Green" }
+        if ($Type -eq 'success') { Write-Host "   $text"  -ForegroundColor "Green" }
         if ($Type -eq 'error') { Write-Host "  X $text" -ForegroundColor "Red" }
         if ($Type -eq 'notice') { Write-Host "    $text" -ForegroundColor "Yellow" }
         if ($Type -eq 'plain') { Write-Host "    $text" -ForegroundColor $Color }
@@ -190,11 +190,6 @@ function write-text {
                     Write-Host "    $($key): $padding $($List[$key])" -ForegroundColor "DarkGray"
                 }
             }
-        }
-
-        if ($Type -eq 'done') { 
-            Write-Host "  $([char]0x2713)" -ForegroundColor "Green" -NoNewline
-            Write-Host " $text" 
         }
 
         if ($Type -eq 'fail') { 
