@@ -237,11 +237,9 @@ function write-box {
 
     foreach ($line in $Text) {
         Write-Host " $verticalLine" -ForegroundColor Cyan -NoNewline
-        if ($line.Contains("http")) {
-            Write-Host " $($line.PadRight($count))" -ForegroundColor DarkCyan -NoNewline
-        } else {
-            Write-Host " $($line.PadRight($count))" -ForegroundColor White -NoNewline
-        }
+        
+        Write-Host " $($line.PadRight($count))" -ForegroundColor White -NoNewline
+        
         Write-Host " $verticalLine" -ForegroundColor Cyan
     }
 
