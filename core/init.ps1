@@ -49,31 +49,31 @@ function add-script {
 function get-script {
     param (
         [Parameter(Mandatory)]
-        [string] $Url,
+        [string]$url,
         [Parameter(Mandatory)]
-        [string] $Target
+        [string]$target
     )
   
     Process {
         $downloadComplete = $true 
         try {
             # Create web request and get response
-            $request = [System.Net.HttpWebRequest]::Create($Url)
+            $request = [System.Net.HttpWebRequest]::Create($url)
             $response = $request.GetResponse()
             
             # Check for unauthorized or non-existent file
             if ($response.StatusCode -eq 401 -or $response.StatusCode -eq 403 -or $response.StatusCode -eq 404) {
-                throw "Remote file error: $($response.StatusCode) - '$Url'"
+                throw "Remote file error: $($response.StatusCode) - '$url'"
             }
   
             # Handle relative target path
-            if ($Target -match '^\.\\') { 
-                $Target = Join-Path (Get-Location) ($Target -Split '^\.')[1] 
+            if ($target -match '^\.\\') { 
+                $target = Join-Path (Get-Location) ($target -Split '^\.')[1] 
             }
   
             # Open streams for reading and writing
             $reader = $response.GetResponseStream()
-            $writer = New-Object System.IO.FileStream $Target, "Create"
+            $writer = New-Object System.IO.FileStream $target, "Create"
             $buffer = new-object byte[] 1048576
   
             # Read data in chunks and write to target file
