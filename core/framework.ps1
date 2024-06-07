@@ -62,9 +62,7 @@ function get-cscommand {
         if ($command -ne "" -and $command -match "^(?-i)(\w+(-\w+)*)") { $firstWord = $matches[1] }
         Write-Host 3
         if (Get-Command $firstWord -ErrorAction SilentlyContinue) {
-            Write-Host
             Invoke-Expression $command
-            Write-Host
             get-cscommand
         }
         Write-Host 4
