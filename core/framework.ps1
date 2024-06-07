@@ -97,7 +97,7 @@ function get-cscommand {
         Invoke-Expression $chasedScript
     } catch {
         # Error handling: display an error message and prompt for a new command
-        Write-Host "    Unknown command: $($_.Exception.Message) | init-$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor Red
+        Write-Host "    $($_.Exception.Message) | init-$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor Red
         get-cscommand
     }
 }
@@ -116,7 +116,7 @@ function add-script {
 
     # Download the script
     $download = get-download -Url "$url/$subPath/$script.ps1" -Target "$env:TEMP\$script.ps1" -failText "Could not acquire components..."
-    if (!$download) { throw "Could not acquire dependency. ($url/$subPath/$script.ps1)" }
+    if (!$download) { throw "Could not acquire dependency." }
 
     # Append the script to the main script
     $rawScript = Get-Content -Path "$env:TEMP\$script.ps1" -Raw -ErrorAction SilentlyContinue
