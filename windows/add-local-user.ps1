@@ -1,11 +1,9 @@
 function add-local-user {
-    # Begin try/catch block for error handling
     try {
         # Prompt for user name with validation, and check for existing users
         $name = get-input -prompt "Enter name:" -Validate "^([a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser -LineBefore
-
         # Prompt for password securely
-        $password = get-input -prompt "Enter password:" -IsSecure -LineBefore
+        $password = get-input -prompt "Enter password:" -IsSecure -LineAfter
 
         $group = get-option -Options $([ordered]@{
                 "Administrators" = "Set this user's group membership to administrators."
@@ -13,7 +11,7 @@ function add-local-user {
             }) -ReturnKey
 
         # Confirmation prompt with options
-        write-text -Type "notice" -Text "Are you sure?" -LineBefore
+        write-text -Type "notice" -Text "Are you sure?" -LineBefore -LineAfter
         
         get-closing -script "add-local-user"
 
