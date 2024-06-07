@@ -168,7 +168,7 @@ function write-text {
     if ($Type -eq "label") { Write-Host " ## $Text" -ForegroundColor "DarkCyan" }
     if ($Type -eq 'success') { Write-Host "  $([char]0x2713) $Text" -ForegroundColor "Green" }
     if ($Type -eq 'error') { Write-Host "  X $Text" -ForegroundColor "Red" }
-    if ($Type -eq 'notice') { Write-Host " !! $Text" -ForegroundColor "Magenta" }
+    if ($Type -eq 'notice') { Write-Host " !! $Text" -ForegroundColor "Yellow" }
     if ($Type -eq 'plain') { Write-Host "    $Text" -ForegroundColor $Color }
     if ($Type -eq 'list') { foreach ($item in $List.Keys) { Write-Host "    $item`: $($List[$item])" -ForegroundColor "DarkGray" } }
     if ($Type -eq 'done') { 
@@ -515,13 +515,13 @@ function get-option {
 
         # Display single option if only one exists
         if ($orderedKeys.Count -eq 1) {
-            Write-Host "  $([char]0x203A) $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($Options[$orderedKeys])" -ForegroundColor "Yellow"
+            Write-Host "  $([char]0x203A) $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($Options[$orderedKeys])" -ForegroundColor "DarkGray"
         } else {
             # Loop through each option and display with padding and color
             for ($i = 0; $i -lt $orderedKeys.Count; $i++) {
                 $key = $orderedKeys[$i]
                 $padding = " " * ($longestKeyLength - $key.Length)
-                if ($i -eq $pos) { Write-Host "  $([char]0x203A) $key $padding - $($Options[$key])" -ForegroundColor "Yellow" } 
+                if ($i -eq $pos) { Write-Host "  $([char]0x203A) $key $padding - $($Options[$key])" -ForegroundColor "DarkGray" } 
                 else { Write-Host "    $key $padding - $($Options[$key])" -ForegroundColor "Gray" }
             }
         }
@@ -552,7 +552,7 @@ function get-option {
                 $host.UI.RawUI.CursorPosition = $menuOldPos
                 Write-Host "    $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $($Options[$orderedKeys[$oldPos]])" -ForegroundColor "Gray"
                 $host.UI.RawUI.CursorPosition = $menuNewPos
-                Write-Host "  $([char]0x203A) $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($Options[$orderedKeys[$pos]])" -ForegroundColor "Yellow"
+                Write-Host "  $([char]0x203A) $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($Options[$orderedKeys[$pos]])" -ForegroundColor "DarkGray"
                 $host.UI.RawUI.CursorPosition = $currPos
             }
         }
