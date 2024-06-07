@@ -2,10 +2,12 @@ function add-user {
     # Begin try/catch block for error handling
     try {
         # Display a welcome message with title, description, and command
-        write-welcome -Title "Add User" -Description "Add new user accounts to the system." -Command "add user"
+        # write-welcome -Title "Add User" -Description "Add new user accounts to the system." -Command "add user"
+
+        write-text -Type "header" -Text "ADD USER" -LineAfter -LineBefore
 
         # Prompt user to choose between local or domain user
-        write-text -Type "header" -Text "Local or domain user?" -LineAfter -LineBefore
+        write-text -Type "label" -Text "Local or domain user?" -LineAfter -LineBefore
         $choice = get-option -Options $([ordered]@{
                 "Add local user"  = "Add a local user to the system."
                 "Add domain user" = "Add a domain user to the system."
