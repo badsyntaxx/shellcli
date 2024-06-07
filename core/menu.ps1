@@ -4,8 +4,6 @@ function menu {
         $url = "https://raw.githubusercontent.com/badsyntaxx/chased-scripts/main"
         $subPath = "framework"
 
-        # Display a label for the menu options
-        write-text -type "label" -text "Select a function" -LineBefore
         # Create an ordered hashtable containing menu options and descriptions
         $choice = get-option -Options $([ordered]@{
                 "Enable administrator" = "Toggle the Windows built in administrator account."
