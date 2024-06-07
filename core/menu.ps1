@@ -1,6 +1,5 @@
 function menu {
     try {
-        Write-Host 11
         # Define the URL where submenus might be located
         $url = "https://raw.githubusercontent.com/badsyntaxx/chased-scripts/main"
         $subPath = "framework"
