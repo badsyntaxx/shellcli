@@ -1,12 +1,9 @@
 function enable-admin {
     try { 
-        write-welcome -Title "Toggle Administrator" -Description "Toggle the built-in administrator account." -Command "enable admin"
-
-        write-text -type "label" -text "Toggle admin account" -LineBefore -LineAfter
         $admin = Get-LocalUser -Name "Administrator"
-        Write-Host "    Administrator:" -NoNewLine
-        if ($admin.Enabled) { Write-Host "Enabled" -ForegroundColor Magenta } 
-        else { Write-Host "Disabled" -ForegroundColor Magenta }
+        Write-Host "    Administrator account is currently: " -NoNewLine
+        if ($admin.Enabled) { Write-Host "enabled" -ForegroundColor Magenta } 
+        else { Write-Host "disabled" -ForegroundColor Magenta }
         
         $choice = get-option -Options $([ordered]@{
                 "Enable"  = "Enable the Windows built in administrator account."
@@ -22,7 +19,7 @@ function enable-admin {
 
         if ($choice -eq 1) { 
             Get-LocalUser -Name "Administrator" | Disable-LocalUser 
-            $message = "Administrator account Disabled."
+            $message = "Administrator account disabled."
         }
 
         $admin = Get-LocalUser -Name "Administrator"
