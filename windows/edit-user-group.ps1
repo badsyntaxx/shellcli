@@ -18,13 +18,13 @@ function Edit-LocalUserGroup {
     )
 
     try {
-        write-text -Type "header" -Text "Add or Remove user from groups" -LineAfter
+        write-text -type "label" -text "Add or Remove user from groups" -LineAfter
         $addOrRemove = get-option -Options $([ordered]@{
                 "Add"    = "Add this user to more groups"
                 "Remove" = "Remove this user from certain groups"
             }) -ReturnKey
 
-        write-text -Type "header" -Text "Select user group" -LineBefore -LineAfter
+        write-text -type "label" -text "Select user group" -LineBefore -LineAfter
         $groups = Get-LocalGroup | ForEach-Object {
             $description = $_.Description
             if ($description.Length -gt 72) { $description = $description.Substring(0, 72) + "..." }
@@ -67,11 +67,11 @@ function Edit-LocalUserGroup {
 
         while ($selectedGroups -notcontains 'Done') {
             $previewString = $selectedGroups -join ","
-            write-text -Type "header" -Text "$previewString" -LineBefore -LineAfter
+            write-text -type "label" -text "$previewString" -LineBefore -LineAfter
             $selectedGroups += get-option -Options $moreGroupsDone -ReturnKey 
         }
 
-        write-text -Type "header" -Text "YOU'RE ABOUT TO CHANGE THIS USERS GROUP MEMBERSHIP." -LineBefore -LineAfter
+        write-text -type "label" -text "YOU'RE ABOUT TO CHANGE THIS USERS GROUP MEMBERSHIP." -LineBefore -LineAfter
         get-closing -Script "Edit-LocalUserGroup"
 
         foreach ($group in $selectedGroups) {

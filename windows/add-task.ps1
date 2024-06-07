@@ -5,7 +5,7 @@ function add-task {
         write-welcome -Title "New Scheduled Task" -Description "Add a new local user to the system." -Command "new task"
 
         # Prompt for group membership with options and return key
-        write-text -Type "header" -Text "Pick a time" -LineBefore -LineAfter
+        write-text -type "label" -text "Pick a time" -LineBefore -LineAfter
         $time = get-input -Validate "^(0[0-9]|1[0-2]):[0-5][0-9]\s?(?i)(am|pm)$"
 
         $trigger = New-ScheduledTaskTrigger -At $time -Daily

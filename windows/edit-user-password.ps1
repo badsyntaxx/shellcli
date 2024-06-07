@@ -18,13 +18,13 @@ function Edit-LocalUserPassword {
     )
 
     try {
-        write-text -Type "header" -Text "Enter password or leave blank" -LineAfter
+        write-text -type "label" -text "Enter password or leave blank" -LineAfter
         $password = get-input -Prompt "" -IsSecure $true
 
         if ($password.Length -eq 0) { $alert = "YOU'RE ABOUT TO REMOVE THIS USERS PASSWORD!" } 
         else { $alert = "YOU'RE ABOUT TO CHANGE THIS USERS PASSWORD" }
 
-        write-text -Type "header" -Text $alert -LineBefore -LineAfter
+        write-text -type "label" -text $alert -LineBefore -LineAfter
         get-closing -Script "edit-user-password"
 
         Get-LocalUser -Name $Username | Set-LocalUser -Password $password

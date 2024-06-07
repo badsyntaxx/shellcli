@@ -2,7 +2,7 @@ function reclaim {
     # Display a welcome message with title, description, and command
     write-welcome -Title "Reclaim" -Description "Disabled Windows 11 bloat and attempt to make it usable." -Command "plugins reclaim"
 
-    write-text -Type "header" -Text "Making Windows 11 less sucky" -LineBefore -LineAfter
+    write-text -type "label" -text "Making Windows 11 less sucky" -LineBefore -LineAfter
 
     $tweaks = @(    
         ### Privacy Settings ###

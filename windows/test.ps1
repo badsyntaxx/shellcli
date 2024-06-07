@@ -4,7 +4,7 @@ function add-user {
         # Display a welcome message with title, description, and command
         # write-welcome -Title "Add User" -Description "Add new user accounts to the system." -Command "add user"
 
-        write-text -Type "header" -Text "ADD USER" -LineAfter -LineBefore
+        write-text -type "label" -text "ADD USER" -LineAfter -LineBefore
 
         # Prompt user to choose between local or domain user
         write-text -Type "label" -Text "Local or domain user?" -LineAfter -LineBefore
@@ -654,7 +654,7 @@ function select-user {
     )
 
     try {
-        write-text -Type "header" -Text $CustomHeader -LineBefore -LineAfter
+        write-text -type "label" -text $CustomHeader -LineBefore -LineAfter
 
         # Initialize empty array to store user names
         $userNames = @()

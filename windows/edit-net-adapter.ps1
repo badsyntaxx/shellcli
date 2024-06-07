@@ -2,7 +2,7 @@ function edit-net-adapter {
     try {
         write-welcome -Title "Edit Network Adapter" -Description "Edit the network adapters on this PC." -Command "edit net adapter"
 
-        write-text -Type "header" -Text "Edit a network adapter" -LineBefore -LineAfter
+        write-text -type "label" -text "Edit a network adapter" -LineBefore -LineAfter
         $choice = get-option -Options $([ordered]@{
                 "Display adapters"       = "Display all non hidden network adapters."
                 "Select network adapter" = "Select the network adapter you want to edit."
@@ -19,7 +19,7 @@ function edit-net-adapter {
 
 function select-adapter {
     try {
-        write-text -Type "header" -Text "Select an adapter" -LineAfter
+        write-text -type "label" -text "Select an adapter" -LineAfter
         $adapters = [ordered]@{}
         Get-NetAdapter | ForEach-Object { $adapters[$_.Name] = $_.MediaConnectionState }
         $adapterList = [ordered]@{}
@@ -82,7 +82,7 @@ function get-ipsettings {
     )
 
     try {
-        write-text -Type "header" -Text "Enter adapter settings" -LineAfter
+        write-text -type "label" -text "Enter adapter settings" -LineAfter
 
         $choice = get-option -Options $([ordered]@{
                 "Static IP addressing" = "Set this adapter to static and enter IP data manually."
@@ -158,7 +158,7 @@ function confirm-edits {
     )
 
     try {
-        write-text -Type "header" -Text "Confirm your changes" -LineBefore -LineAfter
+        write-text -type "label" -text "Confirm your changes" -LineBefore -LineAfter
 
         $status = Get-NetAdapter -Name $Adapter["name"] | Select-Object -ExpandProperty Status
         if ($status -eq "Up") {

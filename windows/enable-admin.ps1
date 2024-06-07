@@ -2,7 +2,7 @@ function enable-admin {
     try { 
         write-welcome -Title "Toggle Administrator" -Description "Toggle the built-in administrator account." -Command "enable admin"
 
-        write-text -Type "header" -Text "Toggle admin account" -LineBefore -LineAfter
+        write-text -type "label" -text "Toggle admin account" -LineBefore -LineAfter
         $admin = Get-LocalUser -Name "Administrator"
         Write-Host "    Administrator:" -NoNewLine
         if ($admin.Enabled) { Write-Host "Enabled" -ForegroundColor Magenta } 

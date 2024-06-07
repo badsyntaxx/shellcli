@@ -144,9 +144,9 @@ function get-help() {
 function write-text {
     param (
         [parameter(Mandatory = $false)]
-        [string]$Text = "",
+        [string]$text = "",
         [parameter(Mandatory = $false)]
-        [string]$Type = "plain",
+        [string]$type = "plain",
         [parameter(Mandatory = $false)]
         [string]$Color = "Gray",
         [parameter(Mandatory = $false)]
@@ -165,11 +165,10 @@ function write-text {
     if ($LineBefore) { Write-Host }
 
     # Format output based on the specified Type
-    if ($Type -eq "header") { Write-Host " ## $Text" -ForegroundColor "DarkCyan" }
-    if ($Type -eq "label") { Write-Host " :: $Text" -ForegroundColor "DarkCyan" }
+    if ($Type -eq "label") { Write-Host " ## $Text" -ForegroundColor "DarkCyan" }
     if ($Type -eq 'success') { Write-Host "  $([char]0x2713) $Text" -ForegroundColor "Green" }
     if ($Type -eq 'error') { Write-Host "  X $Text" -ForegroundColor "Red" }
-    if ($Type -eq 'notice') { Write-Host " !! $Text" -ForegroundColor "Yellow" }
+    if ($Type -eq 'notice') { Write-Host " !! $Text" -ForegroundColor "Magenta" }
     if ($Type -eq 'plain') { Write-Host "    $Text" -ForegroundColor $Color }
     if ($Type -eq 'list') { foreach ($item in $List.Keys) { Write-Host "    $item`: $($List[$item])" -ForegroundColor "DarkGray" } }
     if ($Type -eq 'done') { 
@@ -516,13 +515,13 @@ function get-option {
 
         # Display single option if only one exists
         if ($orderedKeys.Count -eq 1) {
-            Write-Host "  $([char]0x203A) $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($Options[$orderedKeys])" -ForegroundColor "Magenta"
+            Write-Host "  $([char]0x203A) $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($Options[$orderedKeys])" -ForegroundColor "Yellow"
         } else {
             # Loop through each option and display with padding and color
             for ($i = 0; $i -lt $orderedKeys.Count; $i++) {
                 $key = $orderedKeys[$i]
                 $padding = " " * ($longestKeyLength - $key.Length)
-                if ($i -eq $pos) { Write-Host "  $([char]0x203A) $key $padding - $($Options[$key])" -ForegroundColor "Magenta" } 
+                if ($i -eq $pos) { Write-Host "  $([char]0x203A) $key $padding - $($Options[$key])" -ForegroundColor "Yellow" } 
                 else { Write-Host "    $key $padding - $($Options[$key])" -ForegroundColor "Gray" }
             }
         }
@@ -553,7 +552,7 @@ function get-option {
                 $host.UI.RawUI.CursorPosition = $menuOldPos
                 Write-Host "    $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $($Options[$orderedKeys[$oldPos]])" -ForegroundColor "Gray"
                 $host.UI.RawUI.CursorPosition = $menuNewPos
-                Write-Host "  $([char]0x203A) $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($Options[$orderedKeys[$pos]])" -ForegroundColor "Magenta"
+                Write-Host "  $([char]0x203A) $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($Options[$orderedKeys[$pos]])" -ForegroundColor "Yellow"
                 $host.UI.RawUI.CursorPosition = $currPos
             }
         }
@@ -625,7 +624,7 @@ function select-user {
     )
 
     try {
-        write-text -Type "header" -Text $CustomHeader -LineBefore -LineAfter
+        write-text -type "label" -text $CustomHeader -LineBefore -LineAfter
 
         # Initialize empty array to store user names
         $userNames = @()

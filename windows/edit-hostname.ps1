@@ -5,16 +5,16 @@ function edit-hostname {
         $currentHostname = $env:COMPUTERNAME
         $currentDescription = (Get-WmiObject -Class Win32_OperatingSystem).Description
 
-        write-text -Type "header" -Text "Enter hostname" -LineBefore -LineAfter
+        write-text -type "label" -text "Enter hostname" -LineBefore -LineAfter
         $hostname = get-input -Validate "^(\s*|[a-zA-Z0-9 _\-]{1,15})$" -Value $currentHostname
 
-        write-text -Type "header" -Text "Enter description" -LineBefore -LineAfter
+        write-text -type "label" -text "Enter description" -LineBefore -LineAfter
         $description = get-input -Validate "^(\s*|[a-zA-Z0-9 |_\-]{1,64})$" -Value $currentDescription
 
         if ($hostname -eq "") { $hostname = $currentHostname } 
         if ($description -eq "") { $description = $currentDescription } 
 
-        write-text -Type "header" -Text "YOU'RE ABOUT TO CHANGE THE COMPUTER NAME AND DESCRIPTION" -LineBefore -LineAfter
+        write-text -type "label" -text "YOU'RE ABOUT TO CHANGE THE COMPUTER NAME AND DESCRIPTION" -LineBefore -LineAfter
         
         get-closing -Script "edit-hostname"
 
