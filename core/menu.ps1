@@ -4,8 +4,6 @@ function menu {
         $url = "https://raw.githubusercontent.com/badsyntaxx/chased-scripts/main"
         $subPath = "framework"
 
-        write-text -Type "header" -Text "MENU" -LineBefore
-
         # Display a label for the menu options
         write-text -Type "label" -Text "Select a function" -LineBefore
         # Create an ordered hashtable containing menu options and descriptions
