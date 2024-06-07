@@ -13,7 +13,7 @@ function menu {
                 "Edit hostname"        = "Edit this computers name and description."
                 "Edit network adapter" = "Edit a network adapter.(BETA)"
                 "Get WiFi credentials" = "View all saved WiFi credentials on the system."
-            }) -lineBefore
+            }) -lineBefore -lineAfter
 
         # Map user selection to corresponding commands
         if ($choice -eq 0) { $command = "toggle admin" }

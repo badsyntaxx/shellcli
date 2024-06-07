@@ -30,6 +30,7 @@ function invoke-script {
             Write-Host " or" -ForegroundColor DarkGray -NoNewLine
             Write-Host " help" -ForegroundColor DarkCyan -NoNewLine
             Write-Host " if you don't know commands." -ForegroundColor DarkGray
+            write-box -Text "Official docs: https://chased.dev/chased-scripts"
             Write-Host
         }
 
@@ -186,7 +187,7 @@ function write-text {
                 for ($i = 0; $i -lt $orderedKeys.Count; $i++) {
                     $key = $orderedKeys[$i]
                     $padding = " " * ($longestKeyLength - $key.Length)
-                    Write-Host " $($key): $padding $($List[$key])" -ForegroundColor "DarkGray"
+                    Write-Host "    $($key): $padding $($List[$key])" -ForegroundColor "DarkGray"
                 }
             }
         }
@@ -222,7 +223,7 @@ function write-text {
     }
 }
 
-function Write-Box {
+function write-box {
     param (
         [parameter(Mandatory = $false)]
         [array]$Text
