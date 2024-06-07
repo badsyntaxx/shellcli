@@ -6,7 +6,7 @@ function menu {
 
         # Create an ordered hashtable containing menu options and descriptions
         $choice = get-option -Options $([ordered]@{
-                "Enable administrator" = "Toggle the Windows built in administrator account."
+                "Toggle administrator" = "Toggle the Windows built in administrator account."
                 "Add user"             = "Add a user to the system."
                 "Remove user"          = "Remove a user from the system."
                 "Edit user"            = "Edit a users."
@@ -16,7 +16,7 @@ function menu {
             }) -LineBefore
 
         # Map user selection to corresponding commands
-        if ($choice -eq 0) { $command = "enable admin" }
+        if ($choice -eq 0) { $command = "toggle admin" }
         if ($choice -eq 1) { $command = "add user" }
         if ($choice -eq 2) { $command = "remove user" }
         if ($choice -eq 3) { $command = "edit user" }
