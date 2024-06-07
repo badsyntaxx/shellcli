@@ -5,22 +5,22 @@ function add-local-user {
         # write-welcome -Title "Add Local User" -Description "Add a new local user to the system." -Command "add local user"
 
         # Prompt for user name with validation, and check for existing users
-        write-text -Type "header" -Text "Enter name" -LineBefore -LineAfter
+        write-text -Type "label" -Text "Enter name" -LineBefore
         $name = get-input -Validate "^([a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser
 
         # Prompt for password securely
-        write-text -Type "header" -Text "Enter password" -LineBefore -LineAfter
+        write-text -Type "label" -Text "Enter password" -LineBefore
         $password = get-input -IsSecure
 
         # Prompt for group membership with options and return key
-        write-text -Type "header" -Text "Set group membership" -LineBefore -LineAfter
+        write-text -Type "label" -Text "Set group membership" -LineBefore
         $group = get-option -Options $([ordered]@{
                 "Administrators" = "Set this user's group membership to administrators."
                 "Users"          = "Set this user's group membership to standard users."
             }) -ReturnKey
 
         # Confirmation prompt with options
-        write-text -Type "header" -Text "YOU'RE ABOUT TO CREATE A NEW LOCAL USER!" -LineBefore -LineAfter
+        write-text -Type "notice" -Text "YOU'RE ABOUT TO CREATE A NEW LOCAL USER!" -LineBefore
         
         get-closing -script "add-local-user"
 

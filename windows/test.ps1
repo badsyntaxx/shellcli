@@ -1,35 +1,26 @@
-function menu {
+function add-user {
+    # Begin try/catch block for error handling
     try {
-        # Define the URL where submenus might be located
-        $url = "https://raw.githubusercontent.com/badsyntaxx/chased-scripts/main"
-        $subPath = "framework"
+        # Display a welcome message with title, description, and command
+        # write-welcome -Title "Add User" -Description "Add new user accounts to the system." -Command "add user"
 
-        # Display a label for the menu options
-        write-text -Type "header" -Text "Select a sub menu" -LineAfter -LineBefore
+        write-text -Type "header" -Text "ADD USER" -LineAfter -LineBefore
 
-        # Create an ordered hashtable containing menu options and descriptions
+        # Prompt user to choose between local or domain user
+        write-text -Type "label" -Text "Local or domain user?" -LineAfter -LineBefore
         $choice = get-option -Options $([ordered]@{
-                "Enable administrator" = "Toggle the Windows built in administrator account."
-                "Add user"             = "Add a user to the system."
-                "Remove user"          = "Remove a user from the system."
-                "Edit user"            = "Edit a users."
-                "Edit hostname"        = "Edit this computers name and description."
-                "Edit network adapter" = "Edit a network adapter.(BETA)"
-                "Get WiFi credentials" = "View all saved WiFi credentials on the system."
+                "Add local user"  = "Add a local user to the system."
+                "Add domain user" = "Add a domain user to the system."
             })
 
-        # Map user selection to corresponding commands
-        if ($choice -eq 0) { $command = "enable admin" }
-        if ($choice -eq 1) { $command = "add user" }
-        if ($choice -eq 2) { $command = "remove user" }
-        if ($choice -eq 3) { $command = "edit user" }
-        if ($choice -eq 4) { $command = "edit hostname" }
-        if ($choice -eq 5) { $command = "edit net adapter" }
-        if ($choice -eq 6) { $command = "get wifi creds" }
+        # Determine function name based on user choice
+        if ($choice -eq 0) { $command = "add local user" }
+        if ($choice -eq 1) { $command = "add ad user" }
 
         get-cscommand -command $command
     } catch {
-        exit-script -Type "error" -Text "Menu error: $($_.Exception.Message) $url/$subPath/$dependency.ps1" 
+        # Display error message and end the script
+        exit-script -Type "error" -Text "add-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -LineAfter
     }
 }
 
@@ -61,9 +52,11 @@ function invoke-script {
             Clear-Host
             Write-Host
             Write-Host " Welcome to Chased Scripts"
-            Write-Host " Enter `"" -ForegroundColor Gray -NoNewLine
-            Write-Host "menu" -ForegroundColor Cyan -NoNewLine
-            Write-Host "`" if you don't know commands." -ForegroundColor Gray
+            Write-Host " Enter" -ForegroundColor DarkGray -NoNewLine
+            Write-Host " menu" -ForegroundColor Cyan -NoNewLine
+            Write-Host " or" -ForegroundColor DarkGray -NoNewLine
+            Write-Host " help" -ForegroundColor Cyan -NoNewLine
+            Write-Host " if you don't know commands." -ForegroundColor DarkGray
             Write-Host
         }
 
@@ -71,7 +64,7 @@ function invoke-script {
         Invoke-Expression $script
     } catch {
         # Error handling: display error message and give an opportunity to run another command
-        Write-Host "Initialization Error: $($_.Exception.Message)" -ForegroundColor Red
+        exit-script -Type "error" -Text "Initialization Error: $($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -LineAfter
         get-cscommand
     }
 }
@@ -161,7 +154,7 @@ function add-script {
 }
 
 function get-help() {
-    Write-Host
+    write-text -Type 'header' -text 'Commands'
     Write-Host "    enable admin        - Toggle the built-in administrator account."
     Write-Host "    add user            - Add a user to the system."
     Write-Host "    add local user      - Add a local user to the system."
@@ -202,6 +195,7 @@ function write-text {
 
     # Format output based on the specified Type
     if ($Type -eq "header") { Write-Host " ## $Text" -ForegroundColor "DarkCyan" }
+    if ($Type -eq "label") { Write-Host " :: $Text" -ForegroundColor "Cyan" }
     if ($Type -eq 'success') { Write-Host "  $([char]0x2713) $Text" -ForegroundColor "Green" }
     if ($Type -eq 'error') { Write-Host "  X $Text" -ForegroundColor "Red" }
     if ($Type -eq 'notice') { Write-Host " !! $Text" -ForegroundColor "Yellow" }
@@ -295,9 +289,10 @@ function write-welcome {
 
     # Get-Item -ErrorAction SilentlyContinue "$env:TEMP\CHASED-Script.ps1" | Remove-Item -ErrorAction SilentlyContinue
     Write-Host
-    Write-Host " :: Executing command:"  -ForegroundColor Cyan -NoNewline
-    Write-Host " $Command" -ForegroundColor DarkGreen -NoNewline
-    Write-Host " | $Description" -ForegroundColor Cyan
+    Write-Host " ::"  -ForegroundColor Magenta -NoNewline
+    Write-Host " Executing command:" -NoNewline
+    Write-Host " $Command" -ForegroundColor Cyan -NoNewline
+    Write-Host " | $Description" -ForegroundColor Gray
 }
 
 function get-download {
@@ -615,7 +610,7 @@ function get-closing {
             "Submit" = "Submit and apply your changes." 
             "Rest"   = "Discard changes and start this task over at the beginning."
             "Exit"   = "Exit this task but remain in the CHASED Scripts CLI." 
-        }) -LineAfter
+        })
 
     if ($choice -eq 1) { 
         if ($script -ne "") { invoke-script $script } 
@@ -713,6 +708,4 @@ function select-user {
         write-text -Type "error" -Text "Select user error: $($_.Exception.Message)"
     }
 }
-
-
-invoke-script 'menu'
+invoke-script 'add-user'
