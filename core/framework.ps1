@@ -26,9 +26,9 @@ function invoke-script {
             Write-Host
             Write-Host "  Welcome to Chased Scripts"
             Write-Host "  Enter" -ForegroundColor DarkGray -NoNewLine
-            Write-Host " menu" -ForegroundColor Cyan -NoNewLine
+            Write-Host " menu" -ForegroundColor DarkCyan -NoNewLine
             Write-Host " or" -ForegroundColor DarkGray -NoNewLine
-            Write-Host " help" -ForegroundColor Cyan -NoNewLine
+            Write-Host " help" -ForegroundColor DarkCyan -NoNewLine
             Write-Host " if you don't know commands." -ForegroundColor DarkGray
             Write-Host
         }
@@ -560,6 +560,9 @@ function get-option {
                 $host.UI.RawUI.CursorPosition = $currPos
             }
         }
+
+        Write-Host "  $([char]0x203A)" -ForegroundColor "Green" -NoNewline
+        Write-Host " $($orderedKeys[$pos]) goodjob" -ForegroundColor "Green"
 
         # Add a line break after the menu if LineAfter is specified
         if ($LineAfter) { Write-Host }
