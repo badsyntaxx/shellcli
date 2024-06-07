@@ -7,15 +7,13 @@ function add-local-user {
         # Prompt for password securely
         $password = get-input -prompt "Enter password:" -IsSecure -LineBefore
 
-        # Prompt for group membership with options and return key
-        write-text -type "label" -text "Set group membership" -LineBefore
         $group = get-option -Options $([ordered]@{
                 "Administrators" = "Set this user's group membership to administrators."
                 "Users"          = "Set this user's group membership to standard users."
             }) -ReturnKey
 
         # Confirmation prompt with options
-        write-text -Type "notice" -Text "YOU'RE ABOUT TO CREATE A NEW LOCAL USER!" -LineBefore
+        write-text -Type "notice" -Text "Are you sure?" -LineBefore
         
         get-closing -script "add-local-user"
 
