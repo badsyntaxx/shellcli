@@ -49,7 +49,6 @@ function get-cscommand {
     )
 
     try {
-        Write-Host 1
         # Get the command from the user
         if ($command -eq "") { 
             # Right carrot icon, this is a prompt for a command in CHASED Scripts
@@ -57,15 +56,15 @@ function get-cscommand {
             $command = Read-Host 
         }
         $command = $command.ToLower()
-        Write-Host 2
+
         # Extract the first word
         if ($command -ne "" -and $command -match "^(?-i)(\w+(-\w+)*)") { $firstWord = $matches[1] }
-        Write-Host 3
+
         if (Get-Command $firstWord -ErrorAction SilentlyContinue) {
             Invoke-Expression $command
             get-cscommand
         }
-        Write-Host 4
+
         # Adjust command and paths
         $subCommands = @("windows", "plugins", "nuvia");
         $subPath = "windows"
@@ -77,20 +76,20 @@ function get-cscommand {
                 $subPath = "core"
             }
         }
-        Write-Host 5
+
         # Convert command to title case and replace the first spaces with a dash and the second space with no space
         $lowercaseCommand = $command.ToLower()
         $fileFunc = $lowercaseCommand -replace ' ', '-'
-        Write-Host 6
+
         # Create the main script file
         New-Item -Path "$env:TEMP\CHASED-Script.ps1" -ItemType File -Force | Out-Null
-        Write-Host 7
+
         add-script -subPath $subPath -script $fileFunc
         add-script -subpath "core" -script "framework"
-        Write-Host 8
+
         # Add a final line that will invoke the desired function
         Add-Content -Path "$env:TEMP\CHASED-Script.ps1" -Value "invoke-script '$fileFunc'"
-        Write-Host 9
+
         # Execute the combined script
         $chasedScript = Get-Content -Path "$env:TEMP\CHASED-Script.ps1" -Raw
         Invoke-Expression $chasedScript
