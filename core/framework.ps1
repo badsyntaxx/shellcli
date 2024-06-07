@@ -635,8 +635,6 @@ function select-user {
     )
 
     try {
-        write-text -type "label" -text $CustomHeader -LineBefore -LineAfter
-
         # Initialize empty array to store user names
         $userNames = @()
 
