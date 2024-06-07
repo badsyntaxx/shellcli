@@ -168,7 +168,7 @@ function write-text {
 
         # Format output based on the specified Type
         if ($type -eq "label") { Write-Host "    $text" -ForegroundColor "Yellow" }
-        if ($type -eq 'success') { Write-Host "   $text"  -ForegroundColor "Green" }
+        if ($type -eq 'success') { Write-Host "    $text"  -ForegroundColor "Green" }
         if ($type -eq 'error') { Write-Host "    $text" -ForegroundColor "Red" }
         if ($type -eq 'notice') { Write-Host "    $text" -ForegroundColor "Yellow" }
         if ($type -eq 'plain') { Write-Host "    $text" -ForegroundColor $Color }
@@ -697,7 +697,7 @@ function select-user {
         $data = get-userdata -Username $choice
 
         # Display user data as a list
-        write-text -Type "list" -List $data -lineAfter
+        write-text -Type "list" -List $data
 
         # Return the user data dictionary
         return $data
