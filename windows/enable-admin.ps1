@@ -1,6 +1,7 @@
 function enable-admin {
     try { 
         $admin = Get-LocalUser -Name "Administrator"
+        Write-Host
         Write-Host "    Administrator account is currently: " -NoNewLine
         if ($admin.Enabled) { Write-Host "enabled" -ForegroundColor Magenta } 
         else { Write-Host "disabled" -ForegroundColor Magenta }
