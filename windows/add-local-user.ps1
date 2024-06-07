@@ -36,6 +36,7 @@ function add-local-user {
         $username = Get-LocalUser -Name $name -ErrorAction Stop | Select-Object -ExpandProperty Name
         $data = get-userdata $username
         write-text -Type "list" -List $data -lineAfter -lineBefore
+        exit-script
     } catch {
         # Display error message and end the script
         exit-script -Type "error" -Text "add-local-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
