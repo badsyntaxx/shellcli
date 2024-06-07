@@ -4,10 +4,13 @@ function get-wifi-creds {
         get-cscommand
     }
 
-    $wifiList = ($wifiProfiles | Select-String -Pattern "\w*All User Profile.*: (.*)" -AllMatches).Matches |
-    ForEach-Object { $_.Groups[1].Value }
+    if ($wifiProfiles.Count -gt 0) {
+        $wifiList = ($wifiProfiles | Select-String -Pattern "\w*All User Profile.*: (.*)" -AllMatches).Matches | ForEach-Object { $_.Groups[1].Value }
+    } else {
+        exit-script -type "error" -text "No WiFi profiles found."
+    }
 
-    write-text -type 'header' -text "Found $($wifiList.Count) Wi-Fi Connection settings stored on the system:"  -lineAfter
+    write-text -type 'label' -text "Found $($wifiList.Count) Wi-Fi Connection settings stored on the system:"  -lineAfter
 
     foreach ($ssid in $wifiList) {
         try {
