@@ -1,10 +1,7 @@
 function remove-user {
     try {
-        write-welcome  -Title "Remove User" -Description "Remove an existing user account from the system." -Command "remove user"
-
         $user = select-user
 
-        write-text -type "label" -text "Delete user data" -LineAfter
         $choice = get-option -Options $([ordered]@{
                 "Delete" = "Also delete the users data."
                 "Keep"   = "Do not delete the users data."
@@ -13,8 +10,8 @@ function remove-user {
         if ($choice -eq 0) { $deleteData = $true }
         if ($choice -eq 1) { $deleteData = $false }
 
-        if ($deleteData) { write-text -type "label" -text "YOU'RE ABOUT TO DELETE THIS ACCOUNT AND ITS DATA!" -LineBefore -LineAfter } 
-        else { write-text -type "label" -text "YOU'RE ABOUT TO DELETE THIS ACCOUNT!" -LineBefore -LineAfter }
+        if ($deleteData) { write-text -type "label" -text "Delete this account and its data?" -LineBefore -LineAfter } 
+        else { write-text -type "label" -text "Delete this account?" -LineBefore -LineAfter }
         
         get-closing -Script "remove-user"
 
