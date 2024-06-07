@@ -24,8 +24,8 @@ function invoke-script {
             # Display a stylized menu prompt
             Clear-Host
             Write-Host
-            Write-Host " Welcome to Chased Scripts"
-            Write-Host " Enter" -ForegroundColor DarkGray -NoNewLine
+            Write-Host "  Welcome to Chased Scripts"
+            Write-Host "  Enter" -ForegroundColor DarkGray -NoNewLine
             Write-Host " menu" -ForegroundColor Cyan -NoNewLine
             Write-Host " or" -ForegroundColor DarkGray -NoNewLine
             Write-Host " help" -ForegroundColor Cyan -NoNewLine
