@@ -16,10 +16,10 @@ function Edit-LocalUserName {
     )
 
     try {
-        write-text -type "label" -text "Enter username" -lineAfter
-        $newName = get-input -Validate "^(\s*|[a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser
 
-        write-text -type "label" -text "YOU'RE ABOUT TO CHANGE THIS USERS NAME."  -lineAfter
+        $newName = get-input -prompt "Enter username:" -Validate "^(\s*|[a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser
+
+        write-text -type "label" -text "Are you sure?"  -lineAfter
         get-closing -Script "edit-user-name"
     
         Rename-LocalUser -Name $User["Name"] -NewName $newName
@@ -29,7 +29,7 @@ function Edit-LocalUserName {
         if ($null -ne $newUser) { 
             $newData = get-userdata -Username $newUser
             write-text -Type "compare" -OldData $User -NewData $newData -lineAfter
-            exit-script -Type "success" -Text "The name for this account has been changed." -lineAfter
+            exit-script -Type "success" -Text "Account name changed." -lineAfter
         } else {
             exit-script -type "error" -text "There was an unknown error when trying to rename this user." -lineAfter
         }
