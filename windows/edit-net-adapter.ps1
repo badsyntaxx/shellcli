@@ -93,9 +93,9 @@ function get-ipsettings {
         $desiredSettings = $Adapter
 
         if ($choice -eq 0) { 
-            $ip = get-input -Prompt "IPv4:" -Validate $ipv4Regex -Value $Adapter["ip"]
-            $subnet = get-input -Prompt "Subnet mask:" -Validate $ipv4Regex -Value $Adapter["subnet"]  
-            $gateway = get-input -Prompt "Gateway:" -Validate $ipv4Regex -Value $Adapter["gateway"] -lineAfter
+            $ip = get-input -prompt "IPv4:" -Validate $ipv4Regex -Value $Adapter["ip"]
+            $subnet = get-input -prompt "Subnet mask:" -Validate $ipv4Regex -Value $Adapter["subnet"]  
+            $gateway = get-input -prompt "Gateway:" -Validate $ipv4Regex -Value $Adapter["gateway"] -lineAfter
         
             if ($ip -eq "") { $ip = $Adapter["ip"] }
             if ($subnet -eq "") { $subnet = $Adapter["subnet"] }
@@ -132,10 +132,10 @@ function get-dnssettings {
         $dns = @()
 
         if ($choice -eq 0) { 
-            $prompt = get-input -Prompt "Enter a DNS (Leave blank to skip)" -Validate $ipv4Regex
+            $prompt = get-input -prompt "Enter a DNS (Leave blank to skip)" -Validate $ipv4Regex
             $dns += $prompt
             while ($prompt.Length -gt 0) {
-                $prompt = get-input -Prompt "Enter another DNS (Leave blank to skip)" -Validate $ipv4Regex
+                $prompt = get-input -prompt "Enter another DNS (Leave blank to skip)" -Validate $ipv4Regex
                 if ($prompt -ne "") { $dns += $prompt }
             }
             $Adapter["dns"] = $dns

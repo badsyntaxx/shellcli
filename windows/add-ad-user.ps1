@@ -8,13 +8,13 @@ function add-ad-user {
         Write-Host "$des" -ForegroundColor DarkGray
 
         write-text -type "label" -text "Enter name"  -lineAfter
-        $name = get-input -Prompt "" -Validate "^([a-zA-Z0-9 _\-]{1,64})$"  -CheckExistingUser
+        $name = get-input -prompt "" -Validate "^([a-zA-Z0-9 _\-]{1,64})$"  -CheckExistingUser
 
         write-text -type "label" -text "Enter sam name"  -lineAfter
-        $samAccountName = get-input -Prompt "" -Validate "^([a-zA-Z0-9 _\-]{1,20})$"  -CheckExistingUser
+        $samAccountName = get-input -prompt "" -Validate "^([a-zA-Z0-9 _\-]{1,20})$"  -CheckExistingUser
 
         write-text -type "label" -text "Enter password"  -lineAfter
-        $password = get-input -Prompt "" -IsSecure
+        $password = get-input -prompt "" -IsSecure
         
         write-text -type "label" -text "Set group membership"  -lineAfter
         $choice = get-option -Options @("Administrator", "Standard user")

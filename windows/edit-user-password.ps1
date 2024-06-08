@@ -1,10 +1,8 @@
 function edit-user-password {
     try {
-        write-welcome -Title "Edit User Password" -Description "Edit an existing users Password." -Command "edit user password"
-
         $user = select-user
 
-        if ($user["Source"] -eq "Local") { Edit-LocalUserPassword -Username $user["Name"] } else { Edit-ADUserPassword }
+        if ($user["Source"] -eq "Local") { Edit-LocalUserPassword -username $user["Name"] } else { Edit-ADUserPassword }
     } catch {
         # Display error message and end the script
         exit-script -type "error" -text "edit-user-password-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
@@ -14,22 +12,21 @@ function edit-user-password {
 function Edit-LocalUserPassword {
     param (
         [Parameter(Mandatory)]
-        [string]$Username
+        [string]$username
     )
 
     try {
-        write-text -type "label" -text "Enter password or leave blank" -lineAfter
-        $password = get-input -Prompt "" -IsSecure $true
+        $password = get-input -prompt "Enter password or leave blank:" -IsSecure $true -lineBefore
 
-        if ($password.Length -eq 0) { $alert = "YOU'RE ABOUT TO REMOVE THIS USERS PASSWORD!" } 
-        else { $alert = "YOU'RE ABOUT TO CHANGE THIS USERS PASSWORD" }
+        if ($password.Length -eq 0) { $alert = "Removing password. Are you sure?" } 
+        else { $alert = "Changing password. Are you sure?" }
+        write-text -type "label" -text $alert -lineBefore
 
-        write-text -type "label" -text $alert  -lineAfter
         get-closing -Script "edit-user-password"
 
-        Get-LocalUser -Name $Username | Set-LocalUser -Password $password
+        Get-LocalUser -Name $username | Set-LocalUser -Password $password
 
-        exit-script -type "success" -Text "The password for this account has been changed." -lineAfter
+        exit-script -Type "success" -Text "Password settings for $username successfully updated." -lineAfter
     } catch {
         # Display error message and end the script
         exit-script -type "error" -text "Edit-LocalUserPassword-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
@@ -37,6 +34,5 @@ function Edit-LocalUserPassword {
 }
 
 function Edit-ADUserPassword {
-    exit-script -type "fail" -Text "Editing domain users doesn't work yet."
+    exit-script -Type "fail" -Text "Editing domain users doesn't work yet."
 }
-

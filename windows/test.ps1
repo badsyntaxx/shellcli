@@ -486,10 +486,10 @@ function get-input {
         if ($ErrorMessage -ne "") {
             write-text -type "error" -text $ErrorMessage
             # Recursively call get-input if user exists
-            if ($CheckExistingUser) { return get-input -Prompt $Prompt -Validate $Validate -CheckExistingUser } 
+            if ($CheckExistingUser) { return get-input -prompt $Prompt -Validate $Validate -CheckExistingUser } 
 
             # Otherwise, simply call again without CheckExistingUser
-            else { return get-input -Prompt $Prompt -Validate $Validate }
+            else { return get-input -prompt $Prompt -Validate $Validate }
         }
 
         # Use provided default value if user enters nothing for a non-secure input
