@@ -534,7 +534,7 @@ function get-option {
         # Display single option if only one exists
         if ($orderedKeys.Count -eq 1) {
             Write-Host "  $([char]0x203A)" -ForegroundColor "Gray" -NoNewline
-            Write-Host " $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($Options[$orderedKeys])" -ForegroundColor "White"
+            Write-Host " $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($Options[$orderedKeys])" -ForegroundColor "Cyan"
         } else {
             # Loop through each option and display with padding and color
             for ($i = 0; $i -lt $orderedKeys.Count; $i++) {
