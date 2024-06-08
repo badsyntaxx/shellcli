@@ -82,8 +82,8 @@ function Edit-LocalUserGroup {
             }
         }
 
-        write-text -Type "list" -List $User -lineAfter
-        exit-script -Type "success" -Text "The group membership for $($User["Name"]) has been changed to $group." -lineAfter
+        write-text -type "list" -List $User -lineAfter
+        exit-script -type "success" -Text "The group membership for $($User["Name"]) has been changed to $group." -lineAfter
     } catch {
         # Display error message and end the script
         exit-script -type "error" -text "edit-user-group-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
@@ -91,6 +91,6 @@ function Edit-LocalUserGroup {
 }
 
 function Edit-ADUserGroup {
-    write-text -Type "fail" -Text "Editing domain users doesn't work yet."
+    write-text -type "fail" -Text "Editing domain users doesn't work yet."
 }
 

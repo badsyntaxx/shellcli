@@ -170,13 +170,13 @@ function confirm-edits {
         }
 
         if ($Adapter["IPDHCP"]) {
-            write-text -Type "compare" -OldData "IPv4 Address. . . : $($Original["ip"])" -NewData "Dynamic"
-            write-text -Type "compare" -OldData "Subnet Mask . . . : $($Original["subnet"])" -NewData "Dynamic"
-            write-text -Type "compare" -OldData "Default Gateway . : $($Original["gateway"])" -NewData "Dynamic"
+            write-text -type "compare" -oldData "IPv4 Address. . . : $($Original["ip"])" -newData "Dynamic"
+            write-text -type "compare" -oldData "Subnet Mask . . . : $($Original["subnet"])" -newData "Dynamic"
+            write-text -type "compare" -oldData "Default Gateway . : $($Original["gateway"])" -newData "Dynamic"
         } else {
-            write-text -Type "compare" -OldData "IPv4 Address. . . : $($Original["ip"])" -NewData $($Adapter['ip'])
-            write-text -Type "compare" -OldData "Subnet Mask . . . : $($Original["subnet"])" -NewData $($Adapter['subnet'])
-            write-text -Type "compare" -OldData "Default Gateway . : $($Original["gateway"])" -NewData $($Adapter['gateway'])
+            write-text -type "compare" -oldData "IPv4 Address. . . : $($Original["ip"])" -newData $($Adapter['ip'])
+            write-text -type "compare" -oldData "Subnet Mask . . . : $($Original["subnet"])" -newData $($Adapter['subnet'])
+            write-text -type "compare" -oldData "Default Gateway . : $($Original["gateway"])" -newData $($Adapter['gateway'])
         }
 
         $originalDNS = $Original["dns"]
@@ -191,17 +191,17 @@ function confirm-edits {
         if ($Adapter["DNSDHCP"]) {
             for ($i = 0; $i -lt $count; $i++) {
                 if ($i -eq 0) {
-                    write-text -Type "compare" -OldData "DNS Servers . . . : $($originalDNS[$i])" -NewData "Dynamic"
+                    write-text -type "compare" -oldData "DNS Servers . . . : $($originalDNS[$i])" -newData "Dynamic"
                 } else {
-                    write-text -Type "compare" -OldData "                    $($originalDNS[$i])" -NewData "Dynamic"
+                    write-text -type "compare" -oldData "                    $($originalDNS[$i])" -newData "Dynamic"
                 }
             }
         } else {
             for ($i = 0; $i -lt $count; $i++) {
                 if ($i -eq 0) {
-                    write-text -Type "compare" -OldData "DNS Servers . . . : $($originalDNS[$i])" -NewData $($newDNS[$i])
+                    write-text -type "compare" -oldData "DNS Servers . . . : $($originalDNS[$i])" -newData $($newDNS[$i])
                 } else {
-                    write-text -Type "compare" -OldData "                    $($originalDNS[$i])" -NewData $($newDNS[$i])
+                    write-text -type "compare" -oldData "                    $($originalDNS[$i])" -newData $($newDNS[$i])
                 }
             }
         }
@@ -250,7 +250,7 @@ function confirm-edits {
         Start-Sleep 1
         Enable-NetAdapter -Name $Adapter["name"] -Confirm:$false
 
-        exit-script -Type "success" -Text "Your settings have been applied."
+        exit-script -type "success" -Text "Your settings have been applied."
     } catch {
         exit-script -type "error" -text "Confirm Error: $($_.Exception)"
     }

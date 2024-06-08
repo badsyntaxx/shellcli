@@ -1,6 +1,6 @@
 function add-ad-user {
     try {
-        write-text -Type "fail" -Text "Editing domain users doesn't work yet."
+        write-text -type "fail" -Text "Editing domain users doesn't work yet."
         exit-script
         write-welcome -Title "Add AD User v0315241122" -Description "Add domain users to the system." -Command "add ad user"
         Get-Item -ErrorAction SilentlyContinue "$path\add-ad-user.ps1" | Remove-Item -ErrorAction SilentlyContinue
@@ -45,9 +45,9 @@ function add-ad-user {
 
         $data = get-userdata -Username $name
 
-        write-text -Type "list" -List $data -lineAfter
+        write-text -type "list" -List $data -lineAfter
 
-        exit-script -Type "success" -Text "The user account was created."
+        exit-script -type "success" -Text "The user account was created."
     } catch {
         exit-script -type "error" -text "Add user error: $($_.Exception.Message)"
     }

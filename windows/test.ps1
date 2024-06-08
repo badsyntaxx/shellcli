@@ -154,7 +154,7 @@ function add-script {
 }
 
 function get-help() {
-    write-text -Type 'header' -text 'Commands'
+    write-text -type 'header' -text 'Commands'
     Write-Host "    enable admin        - Toggle the built-in administrator account."
     Write-Host "    add user            - Add a user to the system."
     Write-Host "    add local user      - Add a local user to the system."
@@ -185,9 +185,9 @@ function write-text {
         [parameter(Mandatory = $false)]
         [System.Collections.Specialized.OrderedDictionary]$List,
         [parameter(Mandatory = $false)]
-        [System.Collections.Specialized.OrderedDictionary]$OldData,
+        [System.Collections.Specialized.OrderedDictionary]$oldData,
         [parameter(Mandatory = $false)]
-        [System.Collections.Specialized.OrderedDictionary]$NewData
+        [System.Collections.Specialized.OrderedDictionary]$newData
     )
 
     # Add a new line before output if specified
@@ -212,13 +212,13 @@ function write-text {
 
     # Format output for data comparison
     if ($Type -eq 'compare') { 
-        foreach ($data in $OldData.Keys) {
-            if ($OldData["$data"] -ne $NewData["$data"]) {
-                Write-Host "    $($OldData["$data"])" -ForegroundColor "Gray" -NoNewline
+        foreach ($data in $oldData.Keys) {
+            if ($oldData["$data"] -ne $newData["$data"]) {
+                Write-Host "    $($oldData["$data"])" -ForegroundColor "Gray" -NoNewline
                 Write-Host " $([char]0x2192) " -ForegroundColor "Magenta" -NoNewline
-                Write-Host "$($NewData["$data"])" -ForegroundColor "White"
+                Write-Host "$($newData["$data"])" -ForegroundColor "White"
             } else {
-                Write-Host "    $($OldData["$data"])"
+                Write-Host "    $($oldData["$data"])"
             }
         }
     }
@@ -241,7 +241,7 @@ function exit-script {
 
     # Add a new line before output if specified
     if ($lineBefore) { Write-Host }
-    write-text -Type $Type -Text $Text
+    write-text -type $Type -Text $Text
     # Add a new line after output if specified
     if ($lineAfter) { Write-Host }
     get-cscommand 
@@ -418,8 +418,8 @@ function get-download {
                 
                 if ($downloadComplete) { return $true } else { return $false }
             } catch {
-                # write-text -Type "fail" -Text "$($_.Exception.Message)"
-                write-text -Type "fail" -Text "Download failed..."
+                # write-text -type "fail" -Text "$($_.Exception.Message)"
+                write-text -type "fail" -Text "Download failed..."
                 
                 $downloadComplete = $false
             
@@ -699,7 +699,7 @@ function select-user {
         $data = get-userdata -Username $choice
 
         # Display user data as a list
-        write-text -Type "list" -List $data -lineAfter
+        write-text -type "list" -List $data -lineAfter
 
         # Return the user data dictionary
         return $data

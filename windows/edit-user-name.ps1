@@ -12,34 +12,35 @@ function edit-user-name {
 function Edit-LocalUserName {
     param (
         [Parameter(Mandatory)]
-        [System.Collections.Specialized.OrderedDictionary]$User
+        [System.Collections.Specialized.OrderedDictionary]$user
     )
 
     try {
 
         $newName = get-input -prompt "Enter username:" -Validate "^(\s*|[a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser -lineBefore
 
-        write-text -type "label" -text "Are you sure?"  -lineAfter
+        write-text -type "label" -text "Are you sure?"  -lineBefore
         get-closing -Script "edit-user-name"
     
-        Rename-LocalUser -Name $User["Name"] -NewName $newName
+        Rename-LocalUser -Name $user["Name"] -NewName $newName
 
         $newUser = Get-LocalUser -Name $newName
 
         if ($null -ne $newUser) { 
-            $newData = get-userdata -Username $newUser
-            write-text -Type "compare" -OldData $User -NewData $newData -lineAfter
-            exit-script -Type "success" -Text "Account name changed." -lineAfter
+            # $newData = get-userdata -Username $newUser
+            write-compare -oldData "$($user['name'])" -newData $newUser
+            exit-script -type "success" -Text "Account name successfully changed." -lineBefore -lineAfter
         } else {
-            exit-script -type "error" -text "There was an unknown error when trying to rename this user." -lineAfter
+            exit-script -type "error" -text "There was an unknown error when trying to rename this user." -lineBefore -lineAfter
         }
     } catch {
         # Display error message and end the script
-        exit-script -type "error" -text "Edit-LocalUserName-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter -lineAfter
+        exit-script -type "error" -text "Edit-LocalUserName-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 
 function Edit-ADUserName {
-    write-text -Type "fail" -Text "Editing domain users doesn't work yet."
+    write-text -type "fail" -Text "Editing domain users doesn't work yet."
     write-text
 }
+
