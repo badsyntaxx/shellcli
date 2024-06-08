@@ -1,7 +1,5 @@
 function edit-user-name {
     try {
-        write-welcome -Title "Edit User Name" -Description "Edit an existing users name." -Command "edit user name"
-
         $user = select-user
 
         if ($user["Source"] -eq "Local") { Edit-LocalUserName -User $user } else { Edit-ADUserName }

@@ -579,9 +579,20 @@ function get-option {
             }
         }
 
-        $host.UI.RawUI.CursorPosition = $menuNewPos
-        Write-Host "  $([char]0x2713)" -ForegroundColor "Green" -NoNewline
-        Write-Host " $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($Options[$orderedKeys[$pos]])" -ForegroundColor "Cyan"
+        if ($orderedKeys.Count -ne 1) {
+            $host.UI.RawUI.CursorPosition = $menuNewPos
+        } else {
+            $host.UI.RawUI.CursorPosition = New-Object System.Management.Automation.Host.Coordinates(0, ($currPos.Y - ($menuLen + 1)))
+        }
+
+        if ($orderedKeys.Count -ne 1) {
+            Write-Host "  $([char]0x2713)" -ForegroundColor "Green" -NoNewline
+            Write-Host " $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($Options[$orderedKeys[$pos]])" -ForegroundColor "Cyan"
+        } else {
+            Write-Host "  $([char]0x2713)" -ForegroundColor "Green" -NoNewline
+            Write-Host " $($orderedKeys[$pos])" -ForegroundColor "Cyan"
+        }
+        
         $host.UI.RawUI.CursorPosition = $currPos
 
         # Add a line break after the menu if lineAfter is specified
