@@ -34,7 +34,7 @@ function remove-user {
         exit-script -type 'success' -text "User removed." -lineAfter
     } catch {
         # Display error message and end the script
-        exit-script -Type "error" -Text "remove-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        exit-script -type "error" -text "remove-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 

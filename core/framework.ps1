@@ -37,7 +37,7 @@ function invoke-script {
         Invoke-Expression $script
     } catch {
         # Error handling: display error message and give an opportunity to run another command
-        exit-script -Type "error" -Text "Initialization Error: $($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        exit-script -type "error" -text "Initialization Error: $($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
         get-cscommand
     }
 }
@@ -211,7 +211,7 @@ function write-text {
         if ($LineAfter) { Write-Host }
     } catch {
         # Display error message and end the script
-        exit-script -Type "error" -Text "write-text-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        exit-script -type "error" -text "write-text-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 
@@ -415,7 +415,7 @@ function get-download {
                     write-text "Retrying..."
                     Start-Sleep -Seconds $Interval
                 } else {
-                    write-text -Type "error" -Text "Maximum retries reached." 
+                    write-text -type "error" -text "Maximum retries reached." 
                 }
             } finally {
                 # cleanup
@@ -472,7 +472,7 @@ function get-input {
 
         # Display error message if encountered
         if ($ErrorMessage -ne "") {
-            write-text -Type "error" -Text $ErrorMessage
+            write-text -type "error" -text $ErrorMessage
             # Recursively call get-input if user exists
             if ($CheckExistingUser) { return get-input -Prompt $prompt -Validate $Validate -CheckExistingUser } 
 
@@ -498,7 +498,7 @@ function get-input {
         return $userInput
     } catch {
         # Handle errors during input
-        write-text -Type "error" -Text "Input Error: $($_.Exception.Message)"
+        write-text -type "error" -text "Input Error: $($_.Exception.Message)"
     }
 }
 
@@ -593,7 +593,7 @@ function get-option {
         else { return $pos }
     } catch {
         # Display error message and end the script
-        write-text -Type "error" -Text "Error | get-option-$($_.InvocationInfo.ScriptLineNumber)"
+        write-text -type "error" -text "Error | get-option-$($_.InvocationInfo.ScriptLineNumber)"
     }
 }
 
@@ -613,7 +613,7 @@ function get-closing {
         if ($script -ne "") { invoke-script $script } 
         else { get-cscommand }
     }
-    if ($choice -eq 2) { exit-script }
+    if ($choice -eq 2) { get-cscommand }
 }
 
 function get-userdata {
@@ -640,7 +640,7 @@ function get-userdata {
 
         return $data
     } catch {
-        write-text -Type "error" -Text "Error getting account info: $($_.Exception.Message)"
+        write-text -type "error" -text "Error getting account info: $($_.Exception.Message)"
     }
 }
 
@@ -700,6 +700,6 @@ function select-user {
         return $data
     } catch {
         # Handle errors during user selection
-        write-text -Type "error" -Text "Select user error: $($_.Exception.Message)"
+        write-text -type "error" -text "Select user error: $($_.Exception.Message)"
     }
 }

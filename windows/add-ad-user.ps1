@@ -49,7 +49,7 @@ function add-ad-user {
 
         exit-script -Type "success" -Text "The user account was created."
     } catch {
-        exit-script -Type "error" -Text "Add user error: $($_.Exception.Message)"
+        exit-script -type "error" -text "Add user error: $($_.Exception.Message)"
     }
 }
 

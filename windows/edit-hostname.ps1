@@ -37,7 +37,7 @@ function edit-hostname {
         exit-script -Type "success" -Text "The PC name changes have been applied. No restart required!" -lineAfter
     } catch {
         # Display error message and end the script
-        exit-script -Type "error" -Text "edit-hostname-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        exit-script -type "error" -text "edit-hostname-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 

@@ -7,7 +7,7 @@ function edit-user-password {
         if ($user["Source"] -eq "Local") { Edit-LocalUserPassword -Username $user["Name"] } else { Edit-ADUserPassword }
     } catch {
         # Display error message and end the script
-        exit-script -Type "error" -Text "edit-user-password-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        exit-script -type "error" -text "edit-user-password-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 
@@ -32,7 +32,7 @@ function Edit-LocalUserPassword {
         exit-script -Type "success" -Text "The password for this account has been changed." -lineAfter
     } catch {
         # Display error message and end the script
-        exit-script -Type "error" -Text "Edit-LocalUserPassword-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        exit-script -type "error" -text "Edit-LocalUserPassword-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 

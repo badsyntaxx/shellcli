@@ -7,7 +7,7 @@ function edit-user-group {
         if ($user["Source"] -eq "Local") { Edit-LocalUserGroup -User $user } else { Edit-ADUserGroup }
     } catch {
         # Display error message and end the script
-        exit-script -Type "error" -Text "Error | edit-user-group-$($_.InvocationInfo.ScriptLineNumber)"
+        exit-script -type "error" -text "Error | edit-user-group-$($_.InvocationInfo.ScriptLineNumber)"
     }
 } 
 
@@ -86,7 +86,7 @@ function Edit-LocalUserGroup {
         exit-script -Type "success" -Text "The group membership for $($User["Name"]) has been changed to $group." -lineAfter
     } catch {
         # Display error message and end the script
-        exit-script -Type "error" -Text "edit-user-group-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        exit-script -type "error" -text "edit-user-group-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 

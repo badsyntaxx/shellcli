@@ -10,7 +10,7 @@ function add-user {
 
         get-cscommand -command $command
     } catch {
-        exit-script -Type "error" -Text "add-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        exit-script -type "error" -text "add-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 

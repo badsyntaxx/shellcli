@@ -12,7 +12,7 @@ function edit-net-adapter {
         if (1 -eq $choice) { select-adapter }
         if (3 -eq $choice) { Exit }
     } catch {
-        exit-script -Type "error" -Text "Edit net adapter error: $($_.Exception)"
+        exit-script -type "error" -text "Edit net adapter error: $($_.Exception)"
     }
     
 }
@@ -45,7 +45,7 @@ function select-adapter {
 
         get-desiredsettings -Adapter $adapter
     } catch {
-        exit-script -Type "error" -Text "Select adapter error: $($_.Exception)"
+        exit-script -type "error" -text "Select adapter error: $($_.Exception)"
     }
 }
 
@@ -71,7 +71,7 @@ function get-desiredsettings {
 
         confirm-edits -Adapter $Adapter -Original $Original
     } catch {
-        exit-script -Type "error" -Text "Get desired net adapter settings error: $($_.Exception)"
+        exit-script -type "error" -text "Get desired net adapter settings error: $($_.Exception)"
     }
 }
 
@@ -112,7 +112,7 @@ function get-ipsettings {
 
         return $desiredSettings 
     } catch {
-        exit-script -Type "error" -Text "Get IP settings error: $($_.Exception)"
+        exit-script -type "error" -text "Get IP settings error: $($_.Exception)"
     }
 }
 
@@ -145,7 +145,7 @@ function get-dnssettings {
 
         return $Adapter
     } catch {
-        exit-script -Type "error" -Text "Get DNS error: $($_.Exception)"
+        exit-script -type "error" -text "Get DNS error: $($_.Exception)"
     }
 }
 
@@ -252,7 +252,7 @@ function confirm-edits {
 
         exit-script -Type "success" -Text "Your settings have been applied."
     } catch {
-        exit-script -Type "error" -Text "Confirm Error: $($_.Exception)"
+        exit-script -type "error" -text "Confirm Error: $($_.Exception)"
     }
 }
 
@@ -298,7 +298,7 @@ function get-adapter-info {
         }
         Write-Host
     } catch {
-        exit-script -Type "error" -Text "Get adapter error: $($_.Exception)"
+        exit-script -type "error" -text "Get adapter error: $($_.Exception)"
     }
 }
 

@@ -1,7 +1,7 @@
 function get-wifi-creds {
     $wifiProfiles = netsh wlan show profiles
     if ($wifiProfiles -match "There is no wireless interface on the system.") {
-        get-cscommand
+        exit-script -type "error" -text "There is no wireless interface on the system."
     }
 
     if ($wifiProfiles.Count -gt 0) {

@@ -20,7 +20,7 @@ function add-drive-letter {
         exit-script -Type "success" -Text $message -lineAfter
     } catch {
         # Display error message and end the script
-        exit-script -Type "error" -Text "add-drive-letter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        exit-script -type "error" -text "add-drive-letter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 

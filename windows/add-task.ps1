@@ -15,6 +15,6 @@ function add-task {
         Register-ScheduledTask -TaskName "RebootTask" -Trigger $trigger -User $User -Action $action -RunLevel Highest -Force
     } catch {
         # Display error message and end the script
-        exit-script -Type "error" -Text "add-task-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        exit-script -type "error" -text "add-task-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }

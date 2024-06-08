@@ -11,7 +11,7 @@ function remove-file {
             if ($file) {
                 $file | Remove-Item -Force 
             } else {
-                write-text -Type "error" -Text "Could not find the file. Check that the path for typos."
+                write-text -type "error" -text "Could not find the file. Check that the path for typos."
             }
         } while (!$file)
 
@@ -19,7 +19,7 @@ function remove-file {
         if (!$file) { exit-script -Type "success" -Text "File successfully deleted." -lineAfter }
     } catch {
         # Display error message and end the script
-        exit-script -Type "error" -Text "remove-file-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        exit-script -type "error" -text "remove-file-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 
