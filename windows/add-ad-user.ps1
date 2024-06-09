@@ -2,7 +2,7 @@ function add-ad-user {
     try {
         write-text -type "fail" -text "Editing domain users doesn't work yet."
         exit-script
-        write-welcome -Title "Add AD User v0315241122" -description "Add domain users to the system." -command "add ad user"
+
         Get-Item -ErrorAction SilentlyContinue "$path\add-ad-user.ps1" | Remove-Item -ErrorAction SilentlyContinue
         Write-Host " Chased Scripts: Add Domain User v0321240710"
         Write-Host "$des" -ForegroundColor DarkGray

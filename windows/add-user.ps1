@@ -1,7 +1,5 @@
 function add-user {
     try {
-        write-welcome -command "add user" -description "Create a local or domain user account."
-
         $choice = get-option -options $([ordered]@{
                 "Add local user"  = "Add a local user to the system."
                 "Add domain user" = "Add a domain user to the system."

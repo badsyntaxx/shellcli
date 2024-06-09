@@ -1,9 +1,6 @@
 function add-task {
     # Begin try/catch block for error handling
     try {
-        # Display a welcome message with title, description, and command
-        write-welcome -Title "New Scheduled Task" -description "Add a new local user to the system." -command "new task"
-
         # Prompt for group membership with options and return key
         write-text -type "label" -text "Pick a time"  -lineAfter
         $time = get-input -Validate "^(0[0-9]|1[0-2]):[0-5][0-9]\s?(?i)(am|pm)$"

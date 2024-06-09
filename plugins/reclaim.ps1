@@ -1,7 +1,4 @@
 function reclaim {
-    # Display a welcome message with title, description, and command
-    write-welcome -Title "Reclaim" -description "Disabled Windows 11 bloat and attempt to make it usable." -command "plugins reclaim"
-
     write-text -type "label" -text "Making Windows 11 less sucky"  -lineAfter
 
     $tweaks = @(    

@@ -1,7 +1,5 @@
 function toggle-admin {
     try { 
-        write-welcome -command "toggle admin"
-
         $admin = Get-LocalUser -Name "Administrator"
         Write-Host
         Write-Host "    Administrator account is currently: " -NoNewLine
