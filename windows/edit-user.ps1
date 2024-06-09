@@ -12,6 +12,8 @@ function edit-user {
             2 { $command = "edit user group" }
         }
 
+        write-welcome -command $command
+
         get-cscommand -command $command
     } catch {
         # Display error message and end the script

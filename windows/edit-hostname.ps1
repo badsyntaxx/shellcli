@@ -1,7 +1,5 @@
 function edit-hostname {
     try {
-        write-welcome -command "edit hostname" -description "Edit the hostname and description of this computer."
-
         $currentHostname = $env:COMPUTERNAME
         $currentDescription = (Get-WmiObject -Class Win32_OperatingSystem).Description
 

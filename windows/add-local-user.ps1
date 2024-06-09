@@ -1,7 +1,5 @@
 function add-local-user {
     try {
-        write-welcome -command "add local user" -description "Create a local user account."
-
         # Prompt for user name with validation, and check for existing users
         $name = get-input -prompt "Enter name:" -Validate "^([a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser -lineBefore
         # Prompt for password securely

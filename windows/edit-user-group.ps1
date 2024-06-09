@@ -1,7 +1,5 @@
 function edit-user-group {
     try {
-        write-welcome -description "Edit an existing users group membership." -command "edit user group"
-
         $user = select-user
 
         if ($user["Source"] -eq "Local") { Edit-LocalUserGroup -User $user } else { Edit-ADUserGroup }

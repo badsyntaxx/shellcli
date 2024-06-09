@@ -1,7 +1,5 @@
 function remove-file {
     try {
-        Write-Welcome -Title "Force Delete File" -description "Forcefully delete a file." -command "remove file"
-
         do {
             Write-text -type 'header' -text 'Enter or paste the path and file'  -lineAfter
             $filepath = Get-Input -lineAfter

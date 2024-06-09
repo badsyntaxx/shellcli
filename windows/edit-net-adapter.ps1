@@ -1,7 +1,5 @@
 function edit-net-adapter {
     try {
-        write-welcome -Title "Edit Network Adapter" -description "Edit the network adapters on this PC." -command "edit net adapter"
-
         write-text -type "label" -text "Edit a network adapter"  -lineAfter
         $choice = get-option -options $([ordered]@{
                 "Display adapters"       = "Display all non hidden network adapters."

@@ -1,7 +1,5 @@
 function remove-user {
     try {
-        write-welcome -command "remove user" -description "Delete a local user account."
-
         $user = select-user
 
         $choice = get-option -options $([ordered]@{

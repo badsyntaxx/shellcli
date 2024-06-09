@@ -24,6 +24,8 @@ function menu {
         if ($choice -eq 5) { $command = "edit net adapter" }
         if ($choice -eq 6) { $command = "get wifi creds" }
 
+        write-welcome -command $command
+
         get-cscommand -command $command
     } catch {
         exit-script -type "error" -text "Menu error: $($_.Exception.Message) $url/$subPath/$dependency.ps1" 
