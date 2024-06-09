@@ -91,7 +91,7 @@ function Edit-LocalUserGroup {
             }
         }
 
-        $updatedUser = get-userdata -username $user
+        $updatedUser = get-userdata -username $user["Name"]
         write-text -type "list" -list $updatedUser -lineAfter
         exit-script -type "success" -text "The group membership for $($user["Name"]) has been changed to $group." -lineAfter
     } catch {
