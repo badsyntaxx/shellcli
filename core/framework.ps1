@@ -256,8 +256,6 @@ function write-box {
 
 function write-welcome {
     param (
-        [parameter(Mandatory = $true)]
-        [string]$description,
         [parameter(Mandatory = $false)]
         [string]$command,
         [switch]$lineBefore = $false, # Add a new line before output if specified
