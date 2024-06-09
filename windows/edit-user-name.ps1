@@ -18,7 +18,6 @@ function Edit-LocalUserName {
     try {
         $newName = get-input -prompt "Enter username:" -Validate "^(\s*|[a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser -lineBefore
 
-        write-text -type "label" -text "Are you sure?"  -lineBefore
         get-closing -Script "edit-user-name"
     
         Rename-LocalUser -Name $user["Name"] -NewName $newName
@@ -28,7 +27,7 @@ function Edit-LocalUserName {
         if ($null -ne $newUser) { 
             # $newData = get-userdata -Username $newUser
             write-compare -oldData "$($user['name'])" -newData $newUser
-            exit-script -type "success" -Text "Account name successfully changed." -lineBefore -lineAfter
+            exit-script -type "success" -text "Account name successfully changed." -lineBefore -lineAfter
         } else {
             exit-script -type "error" -text "There was an unknown error when trying to rename this user." -lineBefore -lineAfter
         }
@@ -39,6 +38,6 @@ function Edit-LocalUserName {
 }
 
 function Edit-ADUserName {
-    write-text -type "fail" -Text "Editing domain users doesn't work yet."
+    write-text -type "fail" -text "Editing domain users doesn't work yet."
     write-text
 }

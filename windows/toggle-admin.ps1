@@ -6,7 +6,7 @@ function toggle-admin {
         if ($admin.Enabled) { Write-Host "enabled" -ForegroundColor Magenta } 
         else { Write-Host "disabled" -ForegroundColor Magenta }
         
-        $choice = get-option -Options $([ordered]@{
+        $choice = get-option -options $([ordered]@{
                 "Enable"  = "Enable the Windows built in administrator account."
                 "Disable" = "Disable the built in administrator account."
             }) -lineAfter 

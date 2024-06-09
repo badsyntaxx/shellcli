@@ -5,18 +5,15 @@ function add-local-user {
         # Prompt for password securely
         $password = get-input -prompt "Enter password:" -IsSecure
 
-        $group = get-option -Options $([ordered]@{
+        $group = get-option -options $([ordered]@{
                 "Administrators" = "Set this user's group membership to administrators."
                 "Users"          = "Set this user's group membership to standard users."
-            }) -ReturnKey
-
-        # Confirmation prompt with options
-        write-text -type "notice" -Text "Are you sure?" -LineBefore
+            }) -returnKey
         
         get-closing -script "add-local-user"
 
         # Create the new local user and add to the specified group
-        New-LocalUser $name -Password $password -Description "Local User" -AccountNeverExpires -PasswordNeverExpires -ErrorAction Stop | Out-Null
+        New-LocalUser $name -Password $password -description "Local User" -AccountNeverExpires -PasswordNeverExpires -ErrorAction Stop | Out-Null
         $newUser = Get-LocalUser -Name $name
         if ($null -eq $newUser) {
             # User creation failed, exit with error

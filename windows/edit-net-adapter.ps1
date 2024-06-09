@@ -1,9 +1,9 @@
 function edit-net-adapter {
     try {
-        write-welcome -Title "Edit Network Adapter" -Description "Edit the network adapters on this PC." -Command "edit net adapter"
+        write-welcome -Title "Edit Network Adapter" -description "Edit the network adapters on this PC." -command "edit net adapter"
 
         write-text -type "label" -text "Edit a network adapter"  -lineAfter
-        $choice = get-option -Options $([ordered]@{
+        $choice = get-option -options $([ordered]@{
                 "Display adapters"       = "Display all non hidden network adapters."
                 "Select network adapter" = "Select the network adapter you want to edit."
             }) -lineAfter
@@ -24,7 +24,7 @@ function select-adapter {
         Get-NetAdapter | ForEach-Object { $adapters[$_.Name] = $_.MediaConnectionState }
         $adapterList = [ordered]@{}
         foreach ($al in $adapters) { $adapterList = $al }
-        $choice = get-option -Options $adapterList -lineAfter -ReturnKey
+        $choice = get-option -options $adapterList -lineAfter -returnKey
         $netAdapter = Get-NetAdapter -Name $choice
         $adapterIndex = $netAdapter.InterfaceIndex
         $ipData = Get-NetIPAddress -InterfaceIndex $adapterIndex -AddressFamily IPv4 | Where-Object { $_.PrefixOrigin -ne "WellKnown" -and $_.SuffixOrigin -ne "Link" -and ($_.AddressState -eq "Preferred" -or $_.AddressState -eq "Tentative") } | Select-Object -First 1
@@ -84,7 +84,7 @@ function get-ipsettings {
     try {
         write-text -type "label" -text "Enter adapter settings" -lineAfter
 
-        $choice = get-option -Options $([ordered]@{
+        $choice = get-option -options $([ordered]@{
                 "Static IP addressing" = "Set this adapter to static and enter IP data manually."
                 "DHCP IP addressing"   = "Set this adapter to DHCP."
                 "Back"                 = "Go back to network adapter selection."
@@ -123,7 +123,7 @@ function get-dnssettings {
     )
 
     try {
-        $choice = get-option -Options $([ordered]@{
+        $choice = get-option -options $([ordered]@{
                 "Static DNS addressing" = "Set this adapter to static and enter DNS data manually."
                 "DHCP DNS addressing"   = "Set this adapter to DHCP."
                 "Back"                  = "Go back to network adapter selection."
@@ -206,7 +206,7 @@ function confirm-edits {
             }
         }
 
-        $choice = get-option -Options $([ordered]@{
+        $choice = get-option -options $([ordered]@{
                 "Submit & apply" = "Submit your changes and apply them to the system." 
                 "Start over"     = "Start this function over at the beginning."
                 "Other options"  = "Discard changes and do something else."
@@ -229,28 +229,28 @@ function confirm-edits {
             write-text "Enabling DHCP for IPv4." 
             Set-NetIPInterface -InterfaceIndex $adapterIndex -Dhcp Enabled  | Out-Null
             netsh interface ipv4 set address name = "$($adapter["name"])" source = dhcp | Out-Null
-            write-text -type 'success' -Text "The network adapters IP settings were set to dynamic"
+            write-text -type 'success' -text "The network adapters IP settings were set to dynamic"
         } else {
             write-text "Disabling DHCP and applying static addresses." 
             netsh interface ipv4 set address name = "$($adapter["name"])" static $Adapter["ip"] $Adapter["subnet"] $Adapter["gateway"] | Out-Null
-            write-text -type 'success' -Text "The network adapters IP, subnet, and gateway were set to static and your addresses were applied."
+            write-text -type 'success' -text "The network adapters IP, subnet, and gateway were set to static and your addresses were applied."
         }
 
         if ($Adapter["DNSDHCP"]) {
             write-text "Enabling DHCP for DNS."
             Set-DnsClientServerAddress -InterfaceAlias $Adapter["name"] -ResetServerAddresses | Out-Null
-            write-text -type 'success' -Text "The network adapters DNS settings were set to dynamic"
+            write-text -type 'success' -text "The network adapters DNS settings were set to dynamic"
         } else {
             write-text "Disabling DHCP and applying static addresses."
             Set-DnsClientServerAddress -InterfaceAlias $Adapter["name"] -ServerAddresses $dnsString
-            write-text -type 'success' -Text "The network adapters DNS was set to static and your addresses were applied."
+            write-text -type 'success' -text "The network adapters DNS was set to static and your addresses were applied."
         }
 
         Disable-NetAdapter -Name $Adapter["name"] -Confirm:$false
         Start-Sleep 1
         Enable-NetAdapter -Name $Adapter["name"] -Confirm:$false
 
-        exit-script -type "success" -Text "Your settings have been applied."
+        exit-script -type "success" -text "Your settings have been applied."
     } catch {
         exit-script -type "error" -text "Confirm Error: $($_.Exception)"
     }

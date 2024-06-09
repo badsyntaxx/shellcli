@@ -1,6 +1,6 @@
 function edit-hostname {
     try {
-        write-welcome -Title "Edit Hostname" -Description "Edit the hostname and description of this computer." -Command "edit hostname"
+        write-welcome -Title "Edit Hostname" -description "Edit the hostname and description of this computer." -command "edit hostname"
 
         $currentHostname = $env:COMPUTERNAME
         $currentDescription = (Get-WmiObject -Class Win32_OperatingSystem).Description
@@ -34,7 +34,7 @@ function edit-hostname {
             Set-CimInstance -Query 'Select * From Win32_OperatingSystem' -Property @{Description = $description }
         } 
 
-        exit-script -type "success" -Text "The PC name changes have been applied. No restart required!" -lineAfter
+        exit-script -type "success" -text "The PC name changes have been applied. No restart required!" -lineAfter
     } catch {
         # Display error message and end the script
         exit-script -type "error" -text "edit-hostname-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter

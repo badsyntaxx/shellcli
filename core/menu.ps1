@@ -5,7 +5,7 @@ function menu {
         $subPath = "framework"
 
         # Create an ordered hashtable containing menu options and descriptions
-        $choice = get-option -Options $([ordered]@{
+        $choice = get-option -options $([ordered]@{
                 "Toggle administrator" = "Toggle the Windows built in administrator account."
                 "Add user"             = "Add a user to the system."
                 "Remove user"          = "Remove a user from the system."

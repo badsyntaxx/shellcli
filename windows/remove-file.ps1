@@ -1,9 +1,9 @@
 function remove-file {
     try {
-        Write-Welcome -Title "Force Delete File" -Description "Forcefully delete a file." -Command "remove file"
+        Write-Welcome -Title "Force Delete File" -description "Forcefully delete a file." -command "remove file"
 
         do {
-            Write-Text -type 'header' -Text 'Enter or paste the path and file'  -lineAfter
+            Write-text -type 'header' -text 'Enter or paste the path and file'  -lineAfter
             $filepath = Get-Input -lineAfter
 
             $file = Get-Item $filepath -ErrorAction SilentlyContinue
@@ -16,7 +16,7 @@ function remove-file {
         } while (!$file)
 
         $file = Get-Item $filepath -ErrorAction SilentlyContinue
-        if (!$file) { exit-script -type "success" -Text "File successfully deleted." -lineAfter }
+        if (!$file) { exit-script -type "success" -text "File successfully deleted." -lineAfter }
     } catch {
         # Display error message and end the script
         exit-script -type "error" -text "remove-file-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter

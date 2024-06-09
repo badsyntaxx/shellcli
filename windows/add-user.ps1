@@ -1,6 +1,6 @@
 function add-user {
     try {
-        $choice = get-option -Options $([ordered]@{
+        $choice = get-option -options $([ordered]@{
                 "Add local user"  = "Add a local user to the system."
                 "Add domain user" = "Add a domain user to the system."
             })

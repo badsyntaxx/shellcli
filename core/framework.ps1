@@ -60,7 +60,7 @@ function get-cscommand {
         # Extract the first word
         if ($command -ne "" -and $command -match "^(?-i)(\w+(-\w+)*)") { $firstWord = $matches[1] }
 
-        if (Get-Command $firstWord -ErrorAction SilentlyContinue) {
+        if (Get-command $firstWord -ErrorAction SilentlyContinue) {
             Invoke-Expression $command
             get-cscommand
         }
@@ -148,9 +148,9 @@ function write-text {
         [parameter(Mandatory = $false)]
         [string]$Color = "Gray",
         [parameter(Mandatory = $false)]
-        [switch]$LineBefore = $false, # Add a new line before output if specified
+        [switch]$lineBefore = $false, # Add a new line before output if specified
         [parameter(Mandatory = $false)]
-        [switch]$LineAfter = $false, # Add a new line after output if specified
+        [switch]$lineAfter = $false, # Add a new line after output if specified
         [parameter(Mandatory = $false)]
         [System.Collections.Specialized.OrderedDictionary]$List,
         [parameter(Mandatory = $false)]
@@ -161,7 +161,7 @@ function write-text {
 
     try {
         # Add a new line before output if specified
-        if ($LineBefore) { Write-Host }
+        if ($lineBefore) { Write-Host }
 
         # Format output based on the specified Type
         if ($type -eq "label") { Write-Host "    $text" -ForegroundColor "Yellow" }
@@ -170,7 +170,7 @@ function write-text {
         if ($type -eq 'notice') { Write-Host "    $text" -ForegroundColor "Yellow" }
         if ($type -eq 'plain') { Write-Host "    $text" -ForegroundColor $Color }
         if ($type -eq 'list') { 
-            # Get a list of keys from the Options dictionary
+            # Get a list of keys from the options dictionary
             $orderedKeys = $List.Keys | ForEach-Object { $_ }
 
             # Find the length of the longest key for padding
@@ -206,7 +206,7 @@ function write-text {
         }
 
         # Add a new line after output if specified
-        if ($LineAfter) { Write-Host }
+        if ($lineAfter) { Write-Host }
     } catch {
         # Display error message and end the script
         exit-script -type "error" -text "write-text-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
@@ -257,19 +257,24 @@ function write-box {
 function write-welcome {
     param (
         [parameter(Mandatory = $true)]
-        [string]$Title,
-        [parameter(Mandatory = $true)]
-        [string]$Description,
+        [string]$description,
         [parameter(Mandatory = $false)]
-        [string]$Command
+        [string]$command,
+        [switch]$lineBefore = $false, # Add a new line before output if specified
+        [parameter(Mandatory = $false)]
+        [switch]$lineAfter = $false # Add a new line after output if specified
     )
 
-    # Get-Item -ErrorAction SilentlyContinue "$env:TEMP\CHASED-Script.ps1" | Remove-Item -ErrorAction SilentlyContinue
-    Write-Host
+    # Add a new line before output if specified
+    if ($lineBefore) { Write-Host }
+
     Write-Host " ::"  -ForegroundColor Magenta -NoNewline
     Write-Host " Executing command:" -NoNewline
-    Write-Host " $Command" -ForegroundColor Cyan -NoNewline
-    Write-Host " | $Description" -ForegroundColor Gray
+    Write-Host " $command" -ForegroundColor Cyan -NoNewline
+    Write-Host " | $description" -ForegroundColor Gray
+
+    # Add a new line after output if specified
+    if ($lineAfter) { Write-Host }
 }
 
 function exit-script {
@@ -286,7 +291,7 @@ function exit-script {
 
     # Add a new line before output if specified
     if ($lineBefore) { Write-Host }
-    write-text -type $Type -Text $Text
+    write-text -type $Type -text $Text
     # Add a new line after output if specified
     if ($lineAfter) { Write-Host }
     get-cscommand 
@@ -417,8 +422,8 @@ function get-download {
                 
                 if ($downloadComplete) { return $true } else { return $false }
             } catch {
-                # write-text -type "fail" -Text "$($_.Exception.Message)"
-                write-text -type "fail" -Text $failText
+                # write-text -type "fail" -text "$($_.Exception.Message)"
+                write-text -type "fail" -text $failText
                 
                 $downloadComplete = $false
             
@@ -516,9 +521,9 @@ function get-input {
 function get-option {
     param (
         [parameter(Mandatory = $true)]
-        [System.Collections.Specialized.OrderedDictionary]$Options,
+        [System.Collections.Specialized.OrderedDictionary]$options,
         [parameter(Mandatory = $false)]
-        [switch]$ReturnKey = $false,
+        [switch]$returnKey = $false,
         [parameter(Mandatory = $false)]
         [switch]$ReturnValue = $false,
         [parameter(Mandatory = $false)]
@@ -536,8 +541,8 @@ function get-option {
         $pos = 0
         $oldPos = 0
 
-        # Get a list of keys from the Options dictionary
-        $orderedKeys = $Options.Keys | ForEach-Object { $_ }
+        # Get a list of keys from the options dictionary
+        $orderedKeys = $options.Keys | ForEach-Object { $_ }
 
         # Find the length of the longest key for padding
         $longestKeyLength = ($orderedKeys | Measure-Object -Property Length -Maximum).Maximum
@@ -545,7 +550,7 @@ function get-option {
         # Display single option if only one exists
         if ($orderedKeys.Count -eq 1) {
             Write-Host "  $([char]0x203A)" -ForegroundColor "Gray" -NoNewline
-            Write-Host " $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($Options[$orderedKeys])" -ForegroundColor "Cyan"
+            Write-Host " $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($options[$orderedKeys])" -ForegroundColor "Cyan"
         } else {
             # Loop through each option and display with padding and color
             for ($i = 0; $i -lt $orderedKeys.Count; $i++) {
@@ -553,8 +558,8 @@ function get-option {
                 $padding = " " * ($longestKeyLength - $key.Length)
                 if ($i -eq $pos) { 
                     Write-Host "  $([char]0x203A)" -ForegroundColor "Gray" -NoNewline  
-                    Write-Host " $key $padding - $($Options[$key])" -ForegroundColor "Cyan"
-                } else { Write-Host "    $key $padding - $($Options[$key])" -ForegroundColor "Gray" }
+                    Write-Host " $key $padding - $($options[$key])" -ForegroundColor "Cyan"
+                } else { Write-Host "    $key $padding - $($options[$key])" -ForegroundColor "Gray" }
             }
         }
 
@@ -582,10 +587,10 @@ function get-option {
             
                 # Re-draw the previously selected and newly selected options
                 $host.UI.RawUI.CursorPosition = $menuOldPos
-                Write-Host "    $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $($Options[$orderedKeys[$oldPos]])" -ForegroundColor "Gray"
+                Write-Host "    $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $($options[$orderedKeys[$oldPos]])" -ForegroundColor "Gray"
                 $host.UI.RawUI.CursorPosition = $menuNewPos
                 Write-Host "  $([char]0x203A)" -ForegroundColor "Gray" -NoNewline
-                Write-Host " $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($Options[$orderedKeys[$pos]])" -ForegroundColor "Cyan"
+                Write-Host " $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($options[$orderedKeys[$pos]])" -ForegroundColor "Cyan"
                 $host.UI.RawUI.CursorPosition = $currPos
             }
         }
@@ -598,7 +603,7 @@ function get-option {
 
         if ($orderedKeys.Count -ne 1) {
             Write-Host "  $([char]0x2713)" -ForegroundColor "Green" -NoNewline
-            Write-Host " $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($Options[$orderedKeys[$pos]])" -ForegroundColor "Cyan"
+            Write-Host " $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($options[$orderedKeys[$pos]])" -ForegroundColor "Cyan"
         } else {
             Write-Host "  $([char]0x2713)" -ForegroundColor "Green" -NoNewline
             Write-Host " $($orderedKeys[$pos])" -ForegroundColor "Cyan"
@@ -610,8 +615,8 @@ function get-option {
         if ($lineAfter) { Write-Host }
 
         # Handle function return values (key, value, menu position) based on parameters
-        if ($ReturnKey) { if ($orderedKeys.Count -eq 1) { return $orderedKeys } else { return $orderedKeys[$pos] } } 
-        if ($ReturnValue) { if ($orderedKeys.Count -eq 1) { return $Options[$pos] } else { return $Options[$orderedKeys[$pos]] } }
+        if ($returnKey) { if ($orderedKeys.Count -eq 1) { return $orderedKeys } else { return $orderedKeys[$pos] } } 
+        if ($ReturnValue) { if ($orderedKeys.Count -eq 1) { return $options[$pos] } else { return $options[$orderedKeys[$pos]] } }
         else { return $pos }
     } catch {
         # Display error message and end the script
@@ -622,14 +627,18 @@ function get-option {
 function get-closing {
     param (
         [parameter(Mandatory = $false)]
-        [string]$script = ""
+        [string]$script = "",
+        [parameter(Mandatory = $false)]
+        [string]$customText = "Are you sure?"
     ) 
 
-    $choice = get-option -Options $([ordered]@{
+    write-text -type "label" -text $customText -lineBefore
+
+    $choice = get-option -options $([ordered]@{
             "Submit" = "Submit and apply your changes." 
             "Rest"   = "Discard changes and start this task over at the beginning."
             "Exit"   = "Exit this task but remain in the CHASED Scripts CLI." 
-        }) -lineAfter
+        }) -lineBefore -lineAfter
 
     if ($choice -eq 1) { 
         if ($script -ne "") { invoke-script $script } 
@@ -641,20 +650,20 @@ function get-closing {
 function get-userdata {
     param (
         [parameter(Mandatory = $true)]
-        [string]$Username
+        [string]$username
     )
 
     try {
-        $user = Get-LocalUser -Name $Username
+        $user = Get-LocalUser -Name $username
         $groups = Get-LocalGroup | Where-Object { $user.SID -in ($_ | Get-LocalGroupMember | Select-Object -ExpandProperty "SID") } | Select-Object -ExpandProperty "Name"
         $userProfile = Get-CimInstance Win32_UserProfile -Filter "SID = '$($user.SID)'"
         $dir = $userProfile.LocalPath
         if ($null -ne $userProfile) { $dir = $userProfile.LocalPath } else { $dir = "Awaiting first sign in." }
 
-        $source = Get-LocalUser -Name $Username | Select-Object -ExpandProperty PrincipalSource
+        $source = Get-LocalUser -Name $username | Select-Object -ExpandProperty PrincipalSource
 
         $data = [ordered]@{
-            "Name"   = "$Username"
+            "Name"   = "$username"
             "Groups" = "$($groups -join ';')"
             "Path"   = "$dir"
             "Source" = "$source"
@@ -667,11 +676,6 @@ function get-userdata {
 }
 
 function select-user {
-    param (
-        [parameter(Mandatory = $false)]
-        [string]$CustomHeader = "Select a user"
-    )
-
     try {
         # Initialize empty array to store user names
         $userNames = @()
@@ -710,7 +714,7 @@ function select-user {
         }
 
         # Prompt user to select a user from the list and return the key (username)
-        $choice = get-option -Options $accounts -ReturnKey -lineAfter
+        $choice = get-option -options $accounts -returnKey -lineAfter
 
         # Get user data using the selected username
         $data = get-userdata -Username $choice

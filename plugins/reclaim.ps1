@@ -1,6 +1,6 @@
 function reclaim {
     # Display a welcome message with title, description, and command
-    write-welcome -Title "Reclaim" -Description "Disabled Windows 11 bloat and attempt to make it usable." -Command "plugins reclaim"
+    write-welcome -Title "Reclaim" -description "Disabled Windows 11 bloat and attempt to make it usable." -command "plugins reclaim"
 
     write-text -type "label" -text "Making Windows 11 less sucky"  -lineAfter
 
@@ -79,7 +79,7 @@ function reclaim {
 
     $tweaks | ForEach-Object { Invoke-Expression $_ }
 
-    exit-script -type "success" -Text "Windows 11 has been made semi-normal again." -lineAfter
+    exit-script -type "success" -text "Windows 11 has been made semi-normal again." -lineAfter
 }
 
 ##########

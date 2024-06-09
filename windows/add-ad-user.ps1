@@ -1,8 +1,8 @@
 function add-ad-user {
     try {
-        write-text -type "fail" -Text "Editing domain users doesn't work yet."
+        write-text -type "fail" -text "Editing domain users doesn't work yet."
         exit-script
-        write-welcome -Title "Add AD User v0315241122" -Description "Add domain users to the system." -Command "add ad user"
+        write-welcome -Title "Add AD User v0315241122" -description "Add domain users to the system." -command "add ad user"
         Get-Item -ErrorAction SilentlyContinue "$path\add-ad-user.ps1" | Remove-Item -ErrorAction SilentlyContinue
         Write-Host " Chased Scripts: Add Domain User v0321240710"
         Write-Host "$des" -ForegroundColor DarkGray
@@ -17,14 +17,14 @@ function add-ad-user {
         $password = get-input -prompt "" -IsSecure
         
         write-text -type "label" -text "Set group membership"  -lineAfter
-        $choice = get-option -Options @("Administrator", "Standard user")
+        $choice = get-option -options @("Administrator", "Standard user")
         
         if ($choice -eq 0) { $group = 'Administrators' } else { $group = "Users" }
         if ($group -eq 'Administrators') { $groupDisplay = 'Administrator' } else { $groupDisplay = 'Standard user' }
 
         write-text -type "label" -text "YOU'RE ABOUT TO CREATE A NEW AD USER!"  -lineAfter
 
-        $choice = get-option -Options @(
+        $choice = get-option -options @(
             "Submit  - Confirm and apply." 
             "Reset   - Start over at the beginning."
             "Exit    - Run a different command."
@@ -47,7 +47,7 @@ function add-ad-user {
 
         write-text -type "list" -List $data -lineAfter
 
-        exit-script -type "success" -Text "The user account was created."
+        exit-script -type "success" -text "The user account was created."
     } catch {
         exit-script -type "error" -text "Add user error: $($_.Exception.Message)"
     }

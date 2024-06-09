@@ -1,7 +1,7 @@
 function add-drive-letter {
     try { 
         
-        $choice = get-option -Options $([ordered]@{
+        $choice = get-option -options $([ordered]@{
                 "Enable"  = "Enable volume 1"
                 "Disable" = "Disable volume 1"
             }) -lineAfter 
@@ -17,7 +17,7 @@ function add-drive-letter {
 
         } 
 
-        exit-script -type "success" -Text $message -lineAfter
+        exit-script -type "success" -text $message -lineAfter
     } catch {
         # Display error message and end the script
         exit-script -type "error" -text "add-drive-letter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
