@@ -10,10 +10,10 @@ function remove-user {
         if ($choice -eq 0) { $deleteData = $true }
         if ($choice -eq 1) { $deleteData = $false }
 
-        if ($deleteData) { write-text -type "label" -text "Delete this account and its data?" } 
-        else { write-text -type "label" -text "Delete this account?" }
+        if ($deleteData) { $alert = "Delete this account and its data?" } 
+        else { $alert = "Delete this account?" }
         
-        get-closing -Script "remove-user"
+        get-closing -Script "remove-user" -customText $alert
 
         if ($deleteData) {
             $dir = (Get-CimInstance Win32_UserProfile -Filter "SID = '$((Get-LocalUser $user["Name"]).Sid)'").LocalPath

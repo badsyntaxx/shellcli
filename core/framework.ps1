@@ -55,7 +55,12 @@ function get-cscommand {
             Write-Host "  $([char]0x203A) " -NoNewline 
             $command = Read-Host 
         }
+
+        # Convert the command to lowercase
         $command = $command.ToLower()
+
+        # Trim leading and trailing spaces
+        $command = $command.Trim()
 
         # Extract the first word
         if ($command -ne "" -and $command -match "^(?-i)(\w+(-\w+)*)") { $firstWord = $matches[1] }
