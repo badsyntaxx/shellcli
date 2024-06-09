@@ -268,10 +268,10 @@ function write-welcome {
     # Add a new line before output if specified
     if ($lineBefore) { Write-Host }
 
-    Write-Host " ::"  -ForegroundColor Magenta -NoNewline
-    Write-Host " Executing command:" -NoNewline
-    Write-Host " $command" -ForegroundColor Cyan -NoNewline
-    Write-Host " | $description" -ForegroundColor Gray
+    Write-Host
+    Write-Host " ::"  -ForegroundColor "DarkCyan" -NoNewline
+    Write-Host " Running command:" -NoNewline -ForegroundColor "DarkGray"
+    Write-Host " $command" -ForegroundColor "Gray"
 
     # Add a new line after output if specified
     if ($lineAfter) { Write-Host }
