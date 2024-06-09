@@ -24,11 +24,11 @@ function invoke-script {
             # Display a stylized menu prompt
             Clear-Host
             Write-Host
-            Write-Host "  Welcome to Chased Scripts"
+            Write-Host "  Welcome to Chased Scripts" -ForegroundColor DarkCyan
             Write-Host "  Enter" -ForegroundColor DarkGray -NoNewLine
-            Write-Host " menu" -ForegroundColor DarkCyan -NoNewLine
+            Write-Host " menu" -ForegroundColor Gray -NoNewLine
             Write-Host " or" -ForegroundColor DarkGray -NoNewLine
-            Write-Host " help" -ForegroundColor DarkCyan -NoNewLine
+            Write-Host " help" -ForegroundColor Gray -NoNewLine
             Write-Host " if you don't know commands." -ForegroundColor DarkGray
             Write-Host
         }
