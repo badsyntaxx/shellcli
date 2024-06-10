@@ -70,7 +70,7 @@ function read-command {
         }
 
         # Adjust command and paths
-        $subCommands = @("windows", "plugins", "nuvia");
+        $subCommands = @("windows", "plugins");
         $subPath = "windows"
         foreach ($sub in $subCommands) {
             if ($firstWord -eq $sub -and $firstWord -ne 'menu') { 
