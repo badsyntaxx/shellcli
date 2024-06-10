@@ -1,13 +1,6 @@
 function edit-net-adapter {
     try {
-        $choice = get-option -options $([ordered]@{
-                "Display adapters"       = "Display all non hidden network adapters."
-                "Select network adapter" = "Select the network adapter you want to edit."
-            }) -lineAfter
-
-        if (0 -eq $choice) { show-adapters }
-        if (1 -eq $choice) { select-adapter }
-        if (3 -eq $choice) { Exit }
+        show-adapters 
     } catch {
         exit-script -type "error" -text "Edit net adapter error: $($_.Exception)"
     }
@@ -16,7 +9,6 @@ function edit-net-adapter {
 
 function select-adapter {
     try {
-        write-text -type "label" -text "Select an adapter" -lineAfter
         $adapters = [ordered]@{}
         Get-NetAdapter | ForEach-Object { $adapters[$_.Name] = $_.MediaConnectionState }
         $adapterList = [ordered]@{}
@@ -277,10 +269,10 @@ function get-adapter-info {
 
             if ($status -eq "Up") {
                 Write-Host "  $([char]0x2022)" -ForegroundColor "Green" -NoNewline
-                Write-Host " $name($dhcp)" -ForegroundColor "Gray" 
+                Write-Host " $name | $dhcp" -ForegroundColor "Gray" 
             } else {
                 Write-Host "  $([char]0x25BC)" -ForegroundColor "Red" -NoNewline
-                Write-Host " $name($dhcp)" -ForegroundColor "Gray"
+                Write-Host " $name | $dhcp" -ForegroundColor "Gray"
             }
 
             write-text "MAC Address . . . : $macAddress" -Color "Gray"
