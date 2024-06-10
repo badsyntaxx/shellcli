@@ -150,7 +150,7 @@ function confirm-edits {
     )
 
     try {
-        write-text -type "label" -text "Confirm your changes"  -lineAfter
+        get-closing -script "edit-net-adapter"
 
         $status = Get-NetAdapter -Name $Adapter["name"] | Select-Object -ExpandProperty Status
         if ($status -eq "Up") {
@@ -162,13 +162,13 @@ function confirm-edits {
         }
 
         if ($Adapter["IPDHCP"]) {
-            write-text -type "compare" -oldData "IPv4 Address. . . : $($Original["ip"])" -newData "Dynamic"
-            write-text -type "compare" -oldData "Subnet Mask . . . : $($Original["subnet"])" -newData "Dynamic"
-            write-text -type "compare" -oldData "Default Gateway . : $($Original["gateway"])" -newData "Dynamic"
+            write-compare -oldData "IPv4 Address. . . : $($Original["ip"])" -newData "Dynamic"
+            write-compare -oldData "Subnet Mask . . . : $($Original["subnet"])" -newData "Dynamic"
+            write-compare -oldData "Default Gateway . : $($Original["gateway"])" -newData "Dynamic"
         } else {
-            write-text -type "compare" -oldData "IPv4 Address. . . : $($Original["ip"])" -newData $($Adapter['ip'])
-            write-text -type "compare" -oldData "Subnet Mask . . . : $($Original["subnet"])" -newData $($Adapter['subnet'])
-            write-text -type "compare" -oldData "Default Gateway . : $($Original["gateway"])" -newData $($Adapter['gateway'])
+            write-compare -oldData "IPv4 Address. . . : $($Original["ip"])" -newData $($Adapter['ip'])
+            write-compare -oldData "Subnet Mask . . . : $($Original["subnet"])" -newData $($Adapter['subnet'])
+            write-compare -oldData "Default Gateway . : $($Original["gateway"])" -newData $($Adapter['gateway'])
         }
 
         $originalDNS = $Original["dns"]
@@ -183,17 +183,17 @@ function confirm-edits {
         if ($Adapter["DNSDHCP"]) {
             for ($i = 0; $i -lt $count; $i++) {
                 if ($i -eq 0) {
-                    write-text -type "compare" -oldData "DNS Servers . . . : $($originalDNS[$i])" -newData "Dynamic"
+                    write-compare -oldData "DNS Servers . . . : $($originalDNS[$i])" -newData "Dynamic"
                 } else {
-                    write-text -type "compare" -oldData "                    $($originalDNS[$i])" -newData "Dynamic"
+                    write-compare -oldData "                    $($originalDNS[$i])" -newData "Dynamic"
                 }
             }
         } else {
             for ($i = 0; $i -lt $count; $i++) {
                 if ($i -eq 0) {
-                    write-text -type "compare" -oldData "DNS Servers . . . : $($originalDNS[$i])" -newData $($newDNS[$i])
+                    write-compare -oldData "DNS Servers . . . : $($originalDNS[$i])" -newData $($newDNS[$i])
                 } else {
-                    write-text -type "compare" -oldData "                    $($originalDNS[$i])" -newData $($newDNS[$i])
+                    write-compare -oldData "                    $($originalDNS[$i])" -newData $($newDNS[$i])
                 }
             }
         }
