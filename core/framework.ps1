@@ -134,9 +134,9 @@ function get-help() {
     write-text -type "plain" -text "edit net adapter                     - Edit network adapter settings like IP and DNS." -Color "DarkGray"
     write-text -type "plain" -text "get wifi creds                       - View WiFi credentials saved on the system." -Color "DarkGray" -lineAfter
     Write-Host
-    Write-Host "    Skip entering more commands by entering the" -ForegroundColor DarkGray -NoNewLine
-    Write-Host " menu" -ForegroundColor Gray -NoNewLine
-    Write-Host " command." -ForegroundColor DarkGray -NoNewLine
+    Write-Host "    Skip entering more commands by entering the" -ForegroundColor "DarkGray" -NoNewLine
+    Write-Host " menu" -ForegroundColor "Gray" -NoNewLine
+    Write-Host " command." -ForegroundColor "DarkGray" -NoNewLine
     Write-Host
     read-command # Recursively call itself to prompt for a new command
 }
