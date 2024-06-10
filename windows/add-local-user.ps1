@@ -40,5 +40,3 @@ function add-local-user {
         exit-script -type "error" -text "add-local-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
-
-

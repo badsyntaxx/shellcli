@@ -5,7 +5,7 @@ function remove-user {
         $choice = read-option -options $([ordered]@{
                 "Delete" = "Also delete the users data."
                 "Keep"   = "Do not delete the users data."
-            }) -lineAfter
+            })
 
         if ($choice -eq 0) { $deleteData = $true }
         if ($choice -eq 1) { $deleteData = $false }
