@@ -133,12 +133,12 @@ function get-help() {
     write-text -type "plain" -text "    Chased scripts aims to simplify tedious powershell commands and make common IT tasks" -Color "DarkGray"
     write-text -type "plain" -text "    simpler by keeping commands logical, intuitive and short." -Color "DarkGray" -lineAfter
     write-text -type "plain" -text "## DOCS:" -Color "DarkGray" -lineBefore 
-    write-text -type "plain" -text "    https://chased.dev/chased-scripts." -Color "DarkGray" -lineAfter
+    write-text -type "plain" -text "    https://chased.dev/chased-scripts" -Color "DarkGray" -lineAfter
     write-text -type "plain" -text "## COMMANDS:" -Color "DarkGray" -lineBefore
     write-text -type "plain" -text "    enable admin                     - Toggle the Windows built-in administrator account." -Color "DarkGray"
-    write-text -type "plain" -text "    add [local,domain] user          - Add a local or domain user to the system." -Color "DarkGray"
-    write-text -type "plain" -text "    edit user [name,password,group]  - Edit user account settings." -Color "DarkGray"
-    write-text -type "plain" -text "    edit net adapter                 - Edit network adapter settings." -Color "DarkGray"
+    write-text -type "plain" -text "    add [ local, domain ] user          - Add a local or domain user to the system." -Color "DarkGray"
+    write-text -type "plain" -text "    edit user [ name, password, group ]  - Edit user account settings." -Color "DarkGray"
+    write-text -type "plain" -text "    edit net adapter                 - Edit network adapter settings like IP and DNS." -Color "DarkGray"
     write-text -type "plain" -text "    get wifi creds                   - View WiFi credentials saved on the system." -Color "DarkGray" -lineAfter
     read-command # Recursively call itself to prompt for a new command
 }
