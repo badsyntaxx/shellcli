@@ -28,7 +28,8 @@ function menu {
 
         get-cscommand -command $command
     } catch {
-        exit-script -type "error" -text "Menu error: $($_.Exception.Message) $url/$subPath/$dependency.ps1" 
+        # Display error message and exit this script
+        exit-script -type "error" -text "menu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 

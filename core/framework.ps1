@@ -36,9 +36,8 @@ function invoke-script {
         # Call the script specified by the parameter
         Invoke-Expression $script
     } catch {
-        # Error handling: display error message and give an opportunity to run another command
-        exit-script -type "error" -text "Initialization Error: $($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
-        get-cscommand
+        # Display error message and exit this script
+        exit-script -type "error" -text "invoke-script-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 
@@ -213,7 +212,7 @@ function write-text {
         # Add a new line after output if specified
         if ($lineAfter) { Write-Host }
     } catch {
-        # Display error message and end the script
+        # Display error message and exit this script
         exit-script -type "error" -text "write-text-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
@@ -622,7 +621,7 @@ function get-option {
         if ($ReturnValue) { if ($orderedKeys.Count -eq 1) { return $options[$pos] } else { return $options[$orderedKeys[$pos]] } }
         else { return $pos }
     } catch {
-        # Display error message and end the script
+        # Display error message and exit this script
         write-text -type "error" -text "Error | get-option-$($_.InvocationInfo.ScriptLineNumber)"
     }
 }

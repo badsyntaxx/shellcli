@@ -36,7 +36,7 @@ function add-local-user {
 
         exit-script 
     } catch {
-        # Display error message and end the script
+        # Display error message and exit this script
         exit-script -type "error" -text "add-local-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }

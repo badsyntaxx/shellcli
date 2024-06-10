@@ -46,7 +46,7 @@ function edit-hostname {
 
         get-cscommand
     } catch {
-        # Display error message and end the script
+        # Display error message and exit this script
         exit-script -type "error" -text "edit-hostname-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }

@@ -16,7 +16,7 @@ function remove-file {
         $file = Get-Item $filepath -ErrorAction SilentlyContinue
         if (!$file) { exit-script -type "success" -text "File successfully deleted." -lineAfter }
     } catch {
-        # Display error message and end the script
+        # Display error message and exit this script
         exit-script -type "error" -text "remove-file-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }

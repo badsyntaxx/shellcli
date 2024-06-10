@@ -1,8 +1,10 @@
 function edit-net-adapter {
     try {
+        Write-Host
         show-adapters 
     } catch {
-        exit-script -type "error" -text "Edit net adapter error: $($_.Exception)"
+        # Display error message and exit this script
+        exit-script -type "error" -text "edit-net-adapter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
     
 }
@@ -34,7 +36,8 @@ function select-adapter {
 
         get-desiredsettings -Adapter $adapter
     } catch {
-        exit-script -type "error" -text "Select adapter error: $($_.Exception)"
+        # Display error message and exit this script
+        exit-script -type "error" -text "select-adapter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 
@@ -60,7 +63,8 @@ function get-desiredsettings {
 
         confirm-edits -Adapter $Adapter -Original $Original
     } catch {
-        exit-script -type "error" -text "Get desired net adapter settings error: $($_.Exception)"
+        # Display error message and exit this script
+        exit-script -type "error" -text "get-desired-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 
@@ -71,12 +75,10 @@ function get-ipsettings {
     )
 
     try {
-        write-text -type "label" -text "Enter adapter settings" -lineAfter
-
         $choice = get-option -options $([ordered]@{
-                "Static IP addressing" = "Set this adapter to static and enter IP data manually."
-                "DHCP IP addressing"   = "Set this adapter to DHCP."
-                "Back"                 = "Go back to network adapter selection."
+                "Set IP to static" = "Set this adapter to static and enter IP data manually."
+                "Set IP to DHCP"   = "Set this adapter to DHCP."
+                "Back"             = "Go back to network adapter selection."
             }) -lineAfter
 
         $desiredSettings = $Adapter
@@ -101,7 +103,8 @@ function get-ipsettings {
 
         return $desiredSettings 
     } catch {
-        exit-script -type "error" -text "Get IP settings error: $($_.Exception)"
+        # Display error message and exit this script
+        exit-script -type "error" -text "get-ipsettings-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 
@@ -113,9 +116,9 @@ function get-dnssettings {
 
     try {
         $choice = get-option -options $([ordered]@{
-                "Static DNS addressing" = "Set this adapter to static and enter DNS data manually."
-                "DHCP DNS addressing"   = "Set this adapter to DHCP."
-                "Back"                  = "Go back to network adapter selection."
+                "Set DNS to static"  = "Set this adapter to static and enter DNS data manually."
+                "Set DNS to dynamic" = "Set this adapter to DHCP."
+                "Back"               = "Go back to network adapter selection."
             }) -lineAfter
 
         $dns = @()
@@ -134,7 +137,8 @@ function get-dnssettings {
 
         return $Adapter
     } catch {
-        exit-script -type "error" -text "Get DNS error: $($_.Exception)"
+        # Display error message and exit this script
+        exit-script -type "error" -text "get-dnssettings-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 
@@ -241,7 +245,8 @@ function confirm-edits {
 
         exit-script -type "success" -text "Your settings have been applied."
     } catch {
-        exit-script -type "error" -text "Confirm Error: $($_.Exception)"
+        # Display error message and exit this script
+        exit-script -type "error" -text "confirm-edits-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 
@@ -290,7 +295,8 @@ function get-adapter-info {
             Write-Host
         }
     } catch {
-        exit-script -type "error" -text "Get adapter error: $($_.Exception)"
+        # Display error message and exit this script
+        exit-script -type "error" -text "get-adapter-info-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 
@@ -339,7 +345,7 @@ function show-adapters {
 
         select-adapter
     } catch {
-        # Display error message and end the script
+        # Display error message and exit this script
         exit-script -type "error" -text "show-adapters-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
     
