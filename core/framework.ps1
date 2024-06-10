@@ -136,7 +136,7 @@ function get-help() {
     Write-Host
     Write-Host "    Skip entering more commands by entering the" -ForegroundColor "DarkGray" -NoNewLine
     Write-Host " menu" -ForegroundColor "Gray" -NoNewLine
-    Write-Host " command." -ForegroundColor "DarkGray" -NoNewLine
+    Write-Host " command." -ForegroundColor "DarkGray"
     Write-Host
     read-command # Recursively call itself to prompt for a new command
 }
