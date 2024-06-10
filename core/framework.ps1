@@ -128,7 +128,7 @@ function get-help() {
     write-text -type "header" -text "DOCS:" -Color "DarkGray" -lineBefore 
     write-text -type "plain" -text "https://chased.dev/chased-scripts" -Color "DarkGray"
     write-text -type "header" -text "COMMANDS:" -Color "DarkGray" -lineBefore
-    write-text -type "plain" -text "enable admin                     - Toggle the Windows built-in administrator account." -Color "DarkGray"
+    write-text -type "plain" -text "toggle admin                     - Toggle the Windows built-in administrator account." -Color "DarkGray"
     write-text -type "plain" -text "add [local,domain] user          - Add a local or domain user to the system." -Color "DarkGray"
     write-text -type "plain" -text "edit user [name,password,group]  - Edit user account settings." -Color "DarkGray"
     write-text -type "plain" -text "edit net adapter                 - Edit network adapter settings like IP and DNS." -Color "DarkGray"
