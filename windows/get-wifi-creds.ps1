@@ -4,6 +4,10 @@ function get-wifi-creds {
         exit-script -type "error" -text "There is no wireless interface on the system." -lineBefore -lineAfter
     }
 
+    if ((Get-Service wlansvc).Status -ne "Running") {
+        exit-script -type "error" -text "The wlansvc service is not running." -lineBefore -lineAfter
+    }
+
     if ($wifiProfiles.Count -gt 0) {
         $wifiList = ($wifiProfiles | Select-String -Pattern "\w*All User Profile.*: (.*)" -AllMatches).Matches | ForEach-Object { $_.Groups[1].Value }
     } else {
@@ -26,4 +30,3 @@ function get-wifi-creds {
     Write-Host
     read-command
 }
-
