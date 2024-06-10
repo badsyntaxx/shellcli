@@ -1,6 +1,5 @@
 function edit-net-adapter {
     try {
-        write-text -type "label" -text "Edit a network adapter"  -lineAfter
         $choice = get-option -options $([ordered]@{
                 "Display adapters"       = "Display all non hidden network adapters."
                 "Select network adapter" = "Select the network adapter you want to edit."
@@ -261,40 +260,43 @@ function get-adapter-info {
     )
     
     try {
-        $macAddress = Get-NetAdapter -Name $AdapterName | Select-Object -ExpandProperty MacAddress
-        $name = Get-NetAdapter -Name $AdapterName | Select-Object -ExpandProperty Name
         $status = Get-NetAdapter -Name $AdapterName | Select-Object -ExpandProperty Status
-        $index = Get-NetAdapter -Name $AdapterName | Select-Object -ExpandProperty InterfaceIndex
-        $gateway = Get-NetIPConfiguration -InterfaceAlias $adapterName | ForEach-Object { $_.IPv4DefaultGateway.NextHop }
-        # $gateway = Get-NetRoute -InterfaceAlias $AdapterName -DestinationPrefix "0.0.0.0/0" | Select-Object -ExpandProperty "NextHop"
-        $interface = Get-NetIPInterface -InterfaceIndex $index
-        $dhcp = $(if ($interface.Dhcp -eq "Enabled") { "DHCP" } else { "Static" })
-        $ipData = Get-NetIPAddress -InterfaceIndex $index -AddressFamily IPv4 | Where-Object { $_.PrefixOrigin -ne "WellKnown" -and $_.SuffixOrigin -ne "Link" -and ($_.AddressState -eq "Preferred" -or $_.AddressState -eq "Tentative") } | Select-Object -First 1
-        $ipAddress = $ipData.IPAddress
-        $subnet = convert-cidr-to-mask -CIDR $ipData.PrefixLength
-        $dnsServers = Get-DnsClientServerAddress -InterfaceIndex $index | Select-Object -ExpandProperty ServerAddresses
+        if ($status -ne "Disabled") {
+            $macAddress = Get-NetAdapter -Name $AdapterName | Select-Object -ExpandProperty MacAddress
+            $name = Get-NetAdapter -Name $AdapterName | Select-Object -ExpandProperty Name
+            $status = Get-NetAdapter -Name $AdapterName | Select-Object -ExpandProperty Status
+            $index = Get-NetAdapter -Name $AdapterName | Select-Object -ExpandProperty InterfaceIndex
+            $gateway = Get-NetIPConfiguration -InterfaceAlias $adapterName | ForEach-Object { $_.IPv4DefaultGateway.NextHop }
+            # $gateway = Get-NetRoute -InterfaceAlias $AdapterName -DestinationPrefix "0.0.0.0/0" | Select-Object -ExpandProperty "NextHop"
+            $interface = Get-NetIPInterface -InterfaceIndex $index 
+            $dhcp = $(if ($interface.Dhcp -eq "Enabled") { "DHCP" } else { "Static" })
+            $ipData = Get-NetIPAddress -InterfaceIndex $index -AddressFamily IPv4 | Where-Object { $_.PrefixOrigin -ne "WellKnown" -and $_.SuffixOrigin -ne "Link" -and ($_.AddressState -eq "Preferred" -or $_.AddressState -eq "Tentative") } | Select-Object -First 1
+            $ipAddress = $ipData.IPAddress
+            $subnet = convert-cidr-to-mask -CIDR $ipData.PrefixLength
+            $dnsServers = Get-DnsClientServerAddress -InterfaceIndex $index | Select-Object -ExpandProperty ServerAddresses
 
-        if ($status -eq "Up") {
-            Write-Host "  $([char]0x2022)" -ForegroundColor "Green" -NoNewline
-            Write-Host " $name($dhcp)" -ForegroundColor "Gray" 
-        } else {
-            Write-Host "  $([char]0x25BC)" -ForegroundColor "Red" -NoNewline
-            Write-Host " $name($dhcp)" -ForegroundColor "Gray"
-        }
-
-        write-text "MAC Address . . . : $macAddress" -Color "Gray"
-        write-text "IPv4 Address. . . : $ipAddress" -Color "Gray"
-        write-text "Subnet Mask . . . : $subnet" -Color "Gray"
-        write-text "Default Gateway . : $gateway" -Color "Gray"
-
-        for ($i = 0; $i -lt $dnsServers.Count; $i++) {
-            if ($i -eq 0) {
-                write-text "DNS Servers . . . : $($dnsServers[$i])" -Color "Gray"
+            if ($status -eq "Up") {
+                Write-Host "  $([char]0x2022)" -ForegroundColor "Green" -NoNewline
+                Write-Host " $name($dhcp)" -ForegroundColor "Gray" 
             } else {
-                write-text "                    $($dnsServers[$i])" -Color "Gray"
+                Write-Host "  $([char]0x25BC)" -ForegroundColor "Red" -NoNewline
+                Write-Host " $name($dhcp)" -ForegroundColor "Gray"
             }
+
+            write-text "MAC Address . . . : $macAddress" -Color "Gray"
+            write-text "IPv4 Address. . . : $ipAddress" -Color "Gray"
+            write-text "Subnet Mask . . . : $subnet" -Color "Gray"
+            write-text "Default Gateway . : $gateway" -Color "Gray"
+
+            for ($i = 0; $i -lt $dnsServers.Count; $i++) {
+                if ($i -eq 0) {
+                    write-text "DNS Servers . . . : $($dnsServers[$i])" -Color "Gray"
+                } else {
+                    write-text "                    $($dnsServers[$i])" -Color "Gray"
+                }
+            }
+            Write-Host
         }
-        Write-Host
     } catch {
         exit-script -type "error" -text "Get adapter error: $($_.Exception)"
     }
@@ -338,10 +340,15 @@ function convert-cidr-to-mask {
 }
 
 function show-adapters {
-    $adapters = @()
-    foreach ($n in (Get-NetAdapter | Select-Object -ExpandProperty Name)) { $adapters += $n }
-    foreach ($a in $adapters) { get-adapter-info -AdapterName $a }
+    try {
+        $adapters = @()
+        foreach ($n in (Get-NetAdapter | Select-Object -ExpandProperty Name)) { $adapters += $n }
+        foreach ($a in $adapters) { get-adapter-info -AdapterName $a }
 
-    select-adapter
+        select-adapter
+    } catch {
+        # Display error message and end the script
+        exit-script -type "error" -text "show-adapters-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+    }
+    
 }
-
