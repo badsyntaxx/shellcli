@@ -129,7 +129,7 @@ function add-script {
 }
 
 function get-help() {
-    write-text -type "plain" -text "Commands" -Color "DarkGray" -lineAfter
+    write-text -type "plain" -text "For more information on commands, check the official docs at https://chased.dev/chased-scripts." -Color "DarkGray" -lineBefore -lineAfter
     Write-Host "    enable admin                     - Toggle the built-in administrator account." -ForegroundColor "DarkGray"
     Write-Host "    add [local,domain] user          - Add a user to the system." -ForegroundColor "DarkGray"
     Write-Host "    edit user [name,password,group]  - Add a domain user to the system." -ForegroundColor "DarkGray"
