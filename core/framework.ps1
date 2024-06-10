@@ -23,14 +23,7 @@ function invoke-script {
         if ($initialize) {
             # Display a stylized menu prompt
             Clear-Host
-            Write-Host
-            Write-Host "  Welcome to Chased Scripts" -ForegroundColor DarkCyan
-            Write-Host "  Enter" -ForegroundColor DarkGray -NoNewLine
-            Write-Host " menu" -ForegroundColor Gray -NoNewLine
-            Write-Host " or" -ForegroundColor DarkGray -NoNewLine
-            Write-Host " help" -ForegroundColor Gray -NoNewLine
-            Write-Host " if you don't know commands." -ForegroundColor DarkGray
-            Write-Host
+            get-help
         }
 
         # Call the script specified by the parameter
@@ -129,17 +122,22 @@ function add-script {
 }
 
 function get-help() {
-    write-text -type "plain" -text "## CHASED SCRIPTS:" -Color "DarkGray" -lineBefore
-    write-text -type "plain" -text "    Chased scripts aims to simplify tedious powershell commands and make common IT tasks" -Color "DarkGray"
-    write-text -type "plain" -text "    simpler by keeping commands logical, intuitive and short." -Color "DarkGray" -lineAfter
-    write-text -type "plain" -text "## DOCS:" -Color "DarkGray" -lineBefore 
-    write-text -type "plain" -text "    https://chased.dev/chased-scripts" -Color "DarkGray" -lineAfter
-    write-text -type "plain" -text "## COMMANDS:" -Color "DarkGray" -lineBefore
-    write-text -type "plain" -text "    enable admin                     - Toggle the Windows built-in administrator account." -Color "DarkGray"
-    write-text -type "plain" -text "    add [ local, domain ] user          - Add a local or domain user to the system." -Color "DarkGray"
-    write-text -type "plain" -text "    edit user [ name, password, group ]  - Edit user account settings." -Color "DarkGray"
-    write-text -type "plain" -text "    edit net adapter                 - Edit network adapter settings like IP and DNS." -Color "DarkGray"
-    write-text -type "plain" -text "    get wifi creds                   - View WiFi credentials saved on the system." -Color "DarkGray" -lineAfter
+    write-text -type "header" -text "DESCRIPTION:" -Color "DarkGray" -lineBefore
+    write-text -type "plain" -text "Chased scripts aims to simplify tedious powershell commands and make common IT tasks" -Color "DarkGray"
+    write-text -type "plain" -text "simpler by keeping commands logical, intuitive and short." -Color "DarkGray" -lineAfter
+    write-text -type "header" -text "DOCS:" -Color "DarkGray" -lineBefore 
+    write-text -type "plain" -text "https://chased.dev/chased-scripts" -Color "DarkGray" -lineAfter
+    write-text -type "header" -text "COMMANDS:" -Color "DarkGray" -lineBefore
+    write-text -type "plain" -text "enable admin                     - Toggle the Windows built-in administrator account." -Color "DarkGray"
+    write-text -type "plain" -text "add [ local, domain ] user          - Add a local or domain user to the system." -Color "DarkGray"
+    write-text -type "plain" -text "edit user [ name, password, group ]  - Edit user account settings." -Color "DarkGray"
+    write-text -type "plain" -text "edit net adapter                 - Edit network adapter settings like IP and DNS." -Color "DarkGray"
+    write-text -type "plain" -text "get wifi creds                   - View WiFi credentials saved on the system." -Color "DarkGray" -lineAfter
+    Write-Host
+    Write-Host "  You can skip entering more commands by entering the" -ForegroundColor DarkGray -NoNewLine
+    Write-Host " menu" -ForegroundColor Gray -NoNewLine
+    Write-Host " command. To navigate the menu, use the up/down arrow keys and the ENTER key. " -ForegroundColor DarkGray -NoNewLine
+    Write-Host
     read-command # Recursively call itself to prompt for a new command
 }
 
@@ -168,6 +166,7 @@ function write-text {
         if ($lineBefore) { Write-Host }
 
         # Format output based on the specified Type
+        if ($type -eq "header") { Write-Host "  ## $text" -ForegroundColor "DarkCyan" }
         if ($type -eq "label") { Write-Host "    $text" -ForegroundColor "Yellow" }
         if ($type -eq 'success') { Write-Host "    $text"  -ForegroundColor "Green" }
         if ($type -eq 'error') { Write-Host "    $text" -ForegroundColor "Red" }
