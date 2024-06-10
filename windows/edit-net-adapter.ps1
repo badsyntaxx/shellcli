@@ -1,7 +1,6 @@
 function edit-net-adapter {
     try {
-        Write-Host
-        show-adapters 
+        select-adapter
     } catch {
         # Display error message and exit this script
         exit-script -type "error" -text "edit-net-adapter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
@@ -292,7 +291,6 @@ function get-adapter-info {
                     write-text "                    $($dnsServers[$i])" -Color "Gray"
                 }
             }
-            Write-Host
         }
     } catch {
         # Display error message and exit this script
