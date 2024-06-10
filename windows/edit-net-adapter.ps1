@@ -58,8 +58,8 @@ function get-desiredsettings {
         $Original = $binaryFormatter.Deserialize($memoryStream)
         $memoryStream.Close()
 
-        $Adapter = get-ipsettings -Adapter $Adapter
-        $Adapter = get-dnssettings -Adapter $Adapter
+        $Adapter = read-ipsettings -Adapter $Adapter
+        $Adapter = read-dnssettings -Adapter $Adapter
 
         confirm-edits -Adapter $Adapter -Original $Original
     } catch {
@@ -68,7 +68,7 @@ function get-desiredsettings {
     }
 }
 
-function get-ipsettings {
+function read-ipsettings {
     param (
         [parameter(Mandatory = $true)]
         [System.Collections.Specialized.OrderedDictionary]$Adapter
@@ -104,11 +104,11 @@ function get-ipsettings {
         return $desiredSettings 
     } catch {
         # Display error message and exit this script
-        exit-script -type "error" -text "get-ipsettings-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        exit-script -type "error" -text "read-ipsettings-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 
-function get-dnssettings {
+function read-dnssettings {
     param (
         [parameter(Mandatory = $true)]
         [System.Collections.Specialized.OrderedDictionary]$Adapter
@@ -133,12 +133,12 @@ function get-dnssettings {
             $Adapter["dns"] = $dns
         }
         if (1 -eq $choice) { $Adapter["DNSDHCP"] = $true }
-        if (2 -eq $choice) { get-ipsettings }
+        if (2 -eq $choice) { read-ipsettings }
 
         return $Adapter
     } catch {
         # Display error message and exit this script
-        exit-script -type "error" -text "get-dnssettings-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        exit-script -type "error" -text "read-dnssettings-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 
