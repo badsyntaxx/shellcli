@@ -134,9 +134,9 @@ function get-help() {
     write-text -type "plain" -text "edit net adapter                     - Edit network adapter settings like IP and DNS." -Color "DarkGray"
     write-text -type "plain" -text "get wifi creds                       - View WiFi credentials saved on the system." -Color "DarkGray" -lineAfter
     Write-Host
-    Write-Host "  You can skip entering more commands by entering the" -ForegroundColor DarkGray -NoNewLine
+    Write-Host "    Skip entering more commands by entering the" -ForegroundColor DarkGray -NoNewLine
     Write-Host " menu" -ForegroundColor Gray -NoNewLine
-    Write-Host " command. To navigate the menu, use the up/down arrow keys and the ENTER key. " -ForegroundColor DarkGray -NoNewLine
+    Write-Host " command." -ForegroundColor DarkGray -NoNewLine
     Write-Host
     read-command # Recursively call itself to prompt for a new command
 }
@@ -166,7 +166,7 @@ function write-text {
         if ($lineBefore) { Write-Host }
 
         # Format output based on the specified Type
-        if ($type -eq "header") { Write-Host "  ## $text" -ForegroundColor "DarkCyan" }
+        if ($type -eq "header") { Write-Host " ## $text" -ForegroundColor "DarkCyan" }
         if ($type -eq "label") { Write-Host "    $text" -ForegroundColor "Yellow" }
         if ($type -eq 'success') { Write-Host "    $text"  -ForegroundColor "Green" }
         if ($type -eq 'error') { Write-Host "    $text" -ForegroundColor "Red" }
