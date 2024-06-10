@@ -16,7 +16,7 @@ function Edit-LocalUserGroup {
     )
 
     try {
-        $addOrRemove = get-option -options $([ordered]@{
+        $addOrRemove = read-option -options $([ordered]@{
                 "Add"    = "Add this user to more groups"
                 "Remove" = "Remove this user from certain groups"
             }) -returnKey
@@ -55,7 +55,7 @@ function Edit-LocalUserGroup {
         }
     
         $selectedGroups = @()
-        $selectedGroups += get-option -options $groups -returnKey
+        $selectedGroups += read-option -options $groups -returnKey
 
         $groupsList = [ordered]@{}
         $groupsList["Done"] = "Stop selecting groups and move to the next step."
@@ -78,7 +78,7 @@ function Edit-LocalUserGroup {
             }
 
             # $availableGroups
-            $selectedGroups += get-option -options $availableGroups -ReturnKey
+            $selectedGroups += read-option -options $availableGroups -ReturnKey
         }
 
         get-closing -Script "Edit-LocalUserGroup"

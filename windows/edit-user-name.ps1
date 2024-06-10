@@ -16,7 +16,7 @@ function Edit-LocalUserName {
     )
 
     try {
-        $newName = get-input -prompt "Enter username:" -Validate "^(\s*|[a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser -lineBefore
+        $newName = read-input -prompt "Enter username:" -Validate "^(\s*|[a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser -lineBefore
 
         get-closing -Script "edit-user-name"
     

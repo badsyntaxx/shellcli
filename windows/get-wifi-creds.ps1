@@ -24,6 +24,6 @@ function get-wifi-creds {
     }
    
     Write-Host
-    get-cscommand
+    read-command
 }
 

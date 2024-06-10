@@ -13,7 +13,7 @@ function initialize-chasedScripts {
         add-script -subpath "core" -script "framework"
 
         # Add a final line that will invoke the desired function
-        Add-Content -Path "$env:TEMP\CHASED-Script.ps1" -Value 'invoke-script -script "get-cscommand" -initialize $true'
+        Add-Content -Path "$env:TEMP\CHASED-Script.ps1" -Value 'invoke-script -script "read-command" -initialize $true'
 
         # Execute the combined script
         $chasedScript = Get-Content -Path "$env:TEMP\CHASED-Script.ps1" -Raw

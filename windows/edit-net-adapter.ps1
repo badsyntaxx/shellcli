@@ -15,7 +15,7 @@ function select-adapter {
         Get-NetAdapter | ForEach-Object { $adapters[$_.Name] = $_.MediaConnectionState }
         $adapterList = [ordered]@{}
         foreach ($al in $adapters) { $adapterList = $al }
-        $choice = get-option -options $adapterList -lineAfter -returnKey
+        $choice = read-option -options $adapterList -lineAfter -returnKey
         $netAdapter = Get-NetAdapter -Name $choice
         $adapterIndex = $netAdapter.InterfaceIndex
         $ipData = Get-NetIPAddress -InterfaceIndex $adapterIndex -AddressFamily IPv4 | Where-Object { $_.PrefixOrigin -ne "WellKnown" -and $_.SuffixOrigin -ne "Link" -and ($_.AddressState -eq "Preferred" -or $_.AddressState -eq "Tentative") } | Select-Object -First 1
@@ -75,7 +75,7 @@ function get-ipsettings {
     )
 
     try {
-        $choice = get-option -options $([ordered]@{
+        $choice = read-option -options $([ordered]@{
                 "Set IP to static" = "Set this adapter to static and enter IP data manually."
                 "Set IP to DHCP"   = "Set this adapter to DHCP."
                 "Back"             = "Go back to network adapter selection."
@@ -84,9 +84,9 @@ function get-ipsettings {
         $desiredSettings = $Adapter
 
         if ($choice -eq 0) { 
-            $ip = get-input -prompt "IPv4:" -Validate $ipv4Regex -Value $Adapter["ip"]
-            $subnet = get-input -prompt "Subnet mask:" -Validate $ipv4Regex -Value $Adapter["subnet"]  
-            $gateway = get-input -prompt "Gateway:" -Validate $ipv4Regex -Value $Adapter["gateway"] -lineAfter
+            $ip = read-input -prompt "IPv4:" -Validate $ipv4Regex -Value $Adapter["ip"]
+            $subnet = read-input -prompt "Subnet mask:" -Validate $ipv4Regex -Value $Adapter["subnet"]  
+            $gateway = read-input -prompt "Gateway:" -Validate $ipv4Regex -Value $Adapter["gateway"] -lineAfter
         
             if ($ip -eq "") { $ip = $Adapter["ip"] }
             if ($subnet -eq "") { $subnet = $Adapter["subnet"] }
@@ -115,7 +115,7 @@ function get-dnssettings {
     )
 
     try {
-        $choice = get-option -options $([ordered]@{
+        $choice = read-option -options $([ordered]@{
                 "Set DNS to static"  = "Set this adapter to static and enter DNS data manually."
                 "Set DNS to dynamic" = "Set this adapter to DHCP."
                 "Back"               = "Go back to network adapter selection."
@@ -124,10 +124,10 @@ function get-dnssettings {
         $dns = @()
 
         if ($choice -eq 0) { 
-            $prompt = get-input -prompt "Enter a DNS (Leave blank to skip)" -Validate $ipv4Regex
+            $prompt = read-input -prompt "Enter a DNS (Leave blank to skip)" -Validate $ipv4Regex
             $dns += $prompt
             while ($prompt.Length -gt 0) {
-                $prompt = get-input -prompt "Enter another DNS (Leave blank to skip)" -Validate $ipv4Regex
+                $prompt = read-input -prompt "Enter another DNS (Leave blank to skip)" -Validate $ipv4Regex
                 if ($prompt -ne "") { $dns += $prompt }
             }
             $Adapter["dns"] = $dns
@@ -199,7 +199,7 @@ function confirm-edits {
             }
         }
 
-        $choice = get-option -options $([ordered]@{
+        $choice = read-option -options $([ordered]@{
                 "Submit & apply" = "Submit your changes and apply them to the system." 
                 "Start over"     = "Start this function over at the beginning."
                 "Other options"  = "Discard changes and do something else."

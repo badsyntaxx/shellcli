@@ -41,7 +41,7 @@ function invoke-script {
     }
 }
 
-function get-cscommand {
+function read-command {
     param (
         [Parameter(Mandatory = $false)]
         [string]$command = ""
@@ -66,7 +66,7 @@ function get-cscommand {
 
         if (Get-command $firstWord -ErrorAction SilentlyContinue) {
             Invoke-Expression $command
-            get-cscommand
+            read-command
         }
 
         # Adjust command and paths
@@ -100,7 +100,7 @@ function get-cscommand {
     } catch {
         # Error handling: display an error message and prompt for a new command
         Write-Host "    $($_.Exception.Message) | init-$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor Red
-        get-cscommand
+        read-command
     }
 }
 
@@ -118,7 +118,7 @@ function add-script {
 
     # Download the script
     $download = get-download -Url "$url/$subPath/$script.ps1" -Target "$env:TEMP\$script.ps1" -failText "Could not acquire components..."
-    if (!$download) { get-cscommand }
+    if (!$download) { read-command }
 
     # Append the script to the main script
     $rawScript = Get-Content -Path "$env:TEMP\$script.ps1" -Raw -ErrorAction SilentlyContinue
@@ -140,7 +140,7 @@ function get-help() {
     Write-Host "    edit user group     - Add a domain user to the system."
     Write-Host "    edit net adapter    - Add a domain user to the system."
     Write-Host
-    get-cscommand # Recursively call itself to prompt for a new command
+    read-command # Recursively call itself to prompt for a new command
 }
 
 function write-text {
@@ -296,7 +296,7 @@ function exit-script {
     write-text -type $Type -text $Text
     # Add a new line after output if specified
     if ($lineAfter) { Write-Host }
-    get-cscommand 
+    read-command 
 }
 
 function get-download {
@@ -447,7 +447,7 @@ function get-download {
     }
 }
 
-function get-input {
+function read-input {
     param (
         [parameter(Mandatory = $false)]
         [string]$Value = "", # A pre-fill value so the user can hit enter without typing command and get the current value if there is one
@@ -491,11 +491,11 @@ function get-input {
         # Display error message if encountered
         if ($ErrorMessage -ne "") {
             write-text -type "error" -text $ErrorMessage
-            # Recursively call get-input if user exists
-            if ($CheckExistingUser) { return get-input -prompt $prompt -Validate $Validate -CheckExistingUser } 
+            # Recursively call read-input if user exists
+            if ($CheckExistingUser) { return read-input -prompt $prompt -Validate $Validate -CheckExistingUser } 
 
             # Otherwise, simply call again without CheckExistingUser
-            else { return get-input -prompt $prompt -Validate $Validate }
+            else { return read-input -prompt $prompt -Validate $Validate }
         }
 
         # Use provided default value if user enters nothing for a non-secure input
@@ -520,7 +520,7 @@ function get-input {
     }
 }
 
-function get-option {
+function read-option {
     param (
         [parameter(Mandatory = $true)]
         [System.Collections.Specialized.OrderedDictionary]$options,
@@ -622,7 +622,7 @@ function get-option {
         else { return $pos }
     } catch {
         # Display error message and exit this script
-        write-text -type "error" -text "Error | get-option-$($_.InvocationInfo.ScriptLineNumber)"
+        write-text -type "error" -text "Error | read-option-$($_.InvocationInfo.ScriptLineNumber)"
     }
 }
 
@@ -636,7 +636,7 @@ function get-closing {
 
     write-text -type "label" -text $customText -lineBefore
 
-    $choice = get-option -options $([ordered]@{
+    $choice = read-option -options $([ordered]@{
             "Submit" = "Submit and apply your changes." 
             "Rest"   = "Discard changes and start this task over at the beginning."
             "Exit"   = "Exit this task but remain in the CHASED Scripts CLI." 
@@ -644,9 +644,9 @@ function get-closing {
 
     if ($choice -eq 1) { 
         if ($script -ne "") { invoke-script $script } 
-        else { get-cscommand }
+        else { read-command }
     }
-    if ($choice -eq 2) { get-cscommand }
+    if ($choice -eq 2) { read-command }
 }
 
 function get-userdata {
@@ -716,7 +716,7 @@ function select-user {
         }
 
         # Prompt user to select a user from the list and return the key (username)
-        $choice = get-option -options $accounts -returnKey -lineAfter
+        $choice = read-option -options $accounts -returnKey -lineAfter
 
         # Get user data using the selected username
         $data = get-userdata -Username $choice

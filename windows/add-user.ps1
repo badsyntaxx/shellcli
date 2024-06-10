@@ -1,6 +1,6 @@
 function add-user {
     try {
-        $choice = get-option -options $([ordered]@{
+        $choice = read-option -options $([ordered]@{
                 "Add local user"  = "Add a local user to the system."
                 "Add domain user" = "Add a domain user to the system."
             })
@@ -10,7 +10,7 @@ function add-user {
 
         write-welcome -command $command
 
-        get-cscommand -command $command
+        read-command -command $command
     } catch {
         # Display error message and exit this script
         exit-script -type "error" -text "add-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter

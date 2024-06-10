@@ -3,7 +3,7 @@ function add-task {
     try {
         # Prompt for group membership with options and return key
         write-text -type "label" -text "Pick a time"  -lineAfter
-        $time = get-input -Validate "^(0[0-9]|1[0-2]):[0-5][0-9]\s?(?i)(am|pm)$"
+        $time = read-input -Validate "^(0[0-9]|1[0-2]):[0-5][0-9]\s?(?i)(am|pm)$"
 
         $trigger = New-ScheduledTaskTrigger -At $time -Daily
         $User = "NT AUTHORITY\SYSTEM"

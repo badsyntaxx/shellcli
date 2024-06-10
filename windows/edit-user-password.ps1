@@ -16,7 +16,7 @@ function Edit-LocalUserPassword {
     )
 
     try {
-        $password = get-input -prompt "Enter password or leave blank:" -IsSecure $true -lineBefore
+        $password = read-input -prompt "Enter password or leave blank:" -IsSecure $true -lineBefore
 
         if ($password.Length -eq 0) { $alert = "Removing password. Are you sure?" } 
         else { $alert = "Changing password. Are you sure?" }

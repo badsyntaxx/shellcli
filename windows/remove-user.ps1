@@ -2,7 +2,7 @@ function remove-user {
     try {
         $user = select-user
 
-        $choice = get-option -options $([ordered]@{
+        $choice = read-option -options $([ordered]@{
                 "Delete" = "Also delete the users data."
                 "Keep"   = "Do not delete the users data."
             }) -lineAfter

@@ -1,6 +1,6 @@
 function edit-user {
     try {
-        $choice = get-option -options $([ordered]@{
+        $choice = read-option -options $([ordered]@{
                 "Edit user name"     = "Edit an existing users name."
                 "Edit user password" = "Edit an existing users password."
                 "Edit user group"    = "Edit an existing users group membership."
@@ -14,7 +14,7 @@ function edit-user {
 
         write-welcome -command $command
 
-        get-cscommand -command $command
+        read-command -command $command
     } catch {
         # Display error message and exit this script
         exit-script -type "error" -text "edit-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter

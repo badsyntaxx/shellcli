@@ -1,7 +1,7 @@
 function add-drive-letter {
     try { 
         
-        $choice = get-option -options $([ordered]@{
+        $choice = read-option -options $([ordered]@{
                 "Enable"  = "Enable volume 1"
                 "Disable" = "Disable volume 1"
             }) -lineAfter 

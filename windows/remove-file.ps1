@@ -2,7 +2,7 @@ function remove-file {
     try {
         do {
             Write-text -type 'header' -text 'Enter or paste the path and file'  -lineAfter
-            $filepath = Get-Input -lineAfter
+            $filepath = read-input -lineAfter
 
             $file = Get-Item $filepath -ErrorAction SilentlyContinue
 

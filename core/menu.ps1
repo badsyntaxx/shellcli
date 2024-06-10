@@ -5,7 +5,7 @@ function menu {
         $subPath = "framework"
 
         # Create an ordered hashtable containing menu options and descriptions
-        $choice = get-option -options $([ordered]@{
+        $choice = read-option -options $([ordered]@{
                 "Toggle administrator" = "Toggle the Windows built in administrator account."
                 "Add user"             = "Add a user to the system."
                 "Remove user"          = "Remove a user from the system."
@@ -26,7 +26,7 @@ function menu {
 
         write-welcome -command $command
 
-        get-cscommand -command $command
+        read-command -command $command
     } catch {
         # Display error message and exit this script
         exit-script -type "error" -text "menu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
