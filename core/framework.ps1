@@ -129,7 +129,12 @@ function add-script {
 }
 
 function get-help() {
-    write-text -type "plain" -text "For more information on commands, check the official docs at https://chased.dev/chased-scripts." -Color "DarkGray" -lineBefore -lineAfter
+    write-text -type "plain" -text "## CHASED SCRIPTS:" -Color "DarkGray" -lineBefore
+    write-text -type "plain" -text "Chased scripts aims to simplify tedious powershell commands and make common IT tasks" -Color "DarkGray"
+    write-text -type "plain" -text "simpler by keeping commands logical, intuitive and short." -Color "DarkGray" -lineAfter
+    write-text -type "plain" -text "## DOCS:" -Color "DarkGray" -lineBefore 
+    write-text -type "plain" -text "https://chased.dev/chased-scripts." -Color "DarkGray" -lineAfter
+    write-text -type "plain" -text "## COMMANDS:" -Color "DarkGray" -lineBefore
     Write-Host "    enable admin                     - Toggle the built-in administrator account." -ForegroundColor "DarkGray"
     Write-Host "    add [local,domain] user          - Add a user to the system." -ForegroundColor "DarkGray"
     Write-Host "    edit user [name,password,group]  - Add a domain user to the system." -ForegroundColor "DarkGray"
