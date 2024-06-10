@@ -129,16 +129,12 @@ function add-script {
 }
 
 function get-help() {
-    write-text -type 'header' -text 'Commands'
-    Write-Host "    enable admin        - Toggle the built-in administrator account."
-    Write-Host "    add user            - Add a user to the system."
-    Write-Host "    add local user      - Add a local user to the system."
-    Write-Host "    add ad user         - Add a domain user to the system."
-    Write-Host "    edit user           - Add a domain user to the system."
-    Write-Host "    edit user name      - Add a domain user to the system."
-    Write-Host "    edit user password  - Add a domain user to the system."
-    Write-Host "    edit user group     - Add a domain user to the system."
-    Write-Host "    edit net adapter    - Add a domain user to the system."
+    write-text -type "plain" -text "Commands" -Color "DarkGray" -lineAfter
+    Write-Host "    enable admin                     - Toggle the built-in administrator account." -ForegroundColor "DarkGray"
+    Write-Host "    add [local,domain] user          - Add a user to the system." -ForegroundColor "DarkGray"
+    Write-Host "    edit user [name,password,group]  - Add a domain user to the system." -ForegroundColor "DarkGray"
+    Write-Host "    edit net adapter                 - Add a domain user to the system." -ForegroundColor "DarkGray"
+    Write-Host "    get wifi creds                   - Add a domain user to the system." -ForegroundColor "DarkGray"
     Write-Host
     read-command # Recursively call itself to prompt for a new command
 }
