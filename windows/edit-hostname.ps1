@@ -3,16 +3,12 @@ function edit-hostname {
         $currentHostname = $env:COMPUTERNAME
         $currentDescription = (Get-WmiObject -Class Win32_OperatingSystem).Description
 
-        write-text -type "label" -text "Enter hostname"  -lineAfter
-        $hostname = get-input -Validate "^(\s*|[a-zA-Z0-9 _\-]{1,15})$" -Value $currentHostname
+        $hostname = get-input -prompt "Enter hostname:" -Validate "^(\s*|[a-zA-Z0-9 _\-]{1,15})$" -Value $currentHostname
 
-        write-text -type "label" -text "Enter description"  -lineAfter
-        $description = get-input -Validate "^(\s*|[a-zA-Z0-9 |_\-]{1,64})$" -Value $currentDescription
+        $description = get-input -prompt "Enter description:" -Validate "^(\s*|[a-zA-Z0-9 |_\-]{1,64})$" -Value $currentDescription
 
         if ($hostname -eq "") { $hostname = $currentHostname } 
         if ($description -eq "") { $description = $currentDescription } 
-
-        write-text -type "label" -text "YOU'RE ABOUT TO CHANGE THE COMPUTER NAME AND DESCRIPTION"  -lineAfter
         
         get-closing -Script "edit-hostname"
 
@@ -28,11 +24,27 @@ function edit-hostname {
             $env:COMPUTERNAME = $hostname
         } 
 
+        if ($env:COMPUTERNAME -eq $hostname) {
+            if ($hostname -eq $currentHostname) {
+                write-text -type "success" -text "The hostname will remain $hostname"
+            } else {
+                write-text -type "success" -text "The hostname has been changed to $hostname"
+            }
+        }
+
         if ($description -ne "") {
             Set-CimInstance -Query 'Select * From Win32_OperatingSystem' -Property @{Description = $description }
         } 
 
-        exit-script -type "success" -text "The PC name changes have been applied. No restart required!" -lineAfter
+        if ((Get-WmiObject -Class Win32_OperatingSystem).Description -eq $description) {
+            if ($description -eq $currentDescription) {
+                write-text -type "success" -text "The description will remain $description"
+            } else {
+                write-text -type "success" -text "The description has been changed to $description"
+            }
+        }
+
+        get-cscommand
     } catch {
         # Display error message and end the script
         exit-script -type "error" -text "edit-hostname-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
