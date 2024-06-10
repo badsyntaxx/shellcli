@@ -149,8 +149,6 @@ function confirm-edits {
     )
 
     try {
-        
-
         $status = Get-NetAdapter -Name $Adapter["name"] | Select-Object -ExpandProperty Status
         if ($status -eq "Up") {
             Write-Host "  $([char]0x2022)" -ForegroundColor "Green" -NoNewline
@@ -210,7 +208,6 @@ function confirm-edits {
         Remove-NetRoute -InterfaceAlias $adapter["name"] -DestinationPrefix 0.0.0.0 / 0 -Confirm:$false -ErrorAction SilentlyContinue
 
         if ($Adapter["IPDHCP"]) {
-            write-text "Enabling DHCP for IPv4." 
             Set-NetIPInterface -InterfaceIndex $adapterIndex -Dhcp Enabled  | Out-Null
             netsh interface ipv4 set address name = "$($adapter["name"])" source = dhcp | Out-Null
             write-text -type 'success' -text "The network adapters IP settings were set to dynamic"
@@ -221,7 +218,6 @@ function confirm-edits {
         }
 
         if ($Adapter["DNSDHCP"]) {
-            write-text "Enabling DHCP for DNS."
             Set-DnsClientServerAddress -InterfaceAlias $Adapter["name"] -ResetServerAddresses | Out-Null
             write-text -type 'success' -text "The network adapters DNS settings were set to dynamic"
         } else {
@@ -234,7 +230,7 @@ function confirm-edits {
         Start-Sleep 1
         Enable-NetAdapter -Name $Adapter["name"] -Confirm:$false
 
-        exit-script -type "success" -text "Your settings have been applied."
+        read-command
     } catch {
         # Display error message and exit this script
         exit-script -type "error" -text "confirm-edits-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
