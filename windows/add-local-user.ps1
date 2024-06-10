@@ -23,11 +23,16 @@ function add-local-user {
         write-text -type 'success' -text "User $name created successfully."
           
         Add-LocalGroupMember -Group $group -Member $name -ErrorAction Stop | Out-Null
-        if ((Get-LocalGroupMember -Group $group -Member $name).Count -gt 0) {
+
+        # There is a powershell bug with Get-LocalGroupMember So we can't do a manual check.
+        <# if ((Get-LocalGroupMember -Group $group -Name $name).Count -gt 0) {
             write-text -type "success" -text "$name has been assigned to the $group group." -lineAfter
         } else {
             exit-script -type 'error' -text  "$($_.Exception.Message)" -lineAfter
-        }
+        } #>
+
+        # Because of the bug listed above we just assume success if the script is still executing at this point.
+        write-text -type "success" -text "$name has been assigned to the $group group." -lineAfter
 
         # Retrieve user information and display it in a list
         $username = Get-LocalUser -Name $name -ErrorAction Stop | Select-Object -ExpandProperty Name
