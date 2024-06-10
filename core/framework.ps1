@@ -132,7 +132,7 @@ function get-help() {
     write-text -type "plain" -text "add [local,domain] user          - Add a local or domain user to the system." -Color "DarkGray"
     write-text -type "plain" -text "edit user [name,password,group]  - Edit user account settings." -Color "DarkGray"
     write-text -type "plain" -text "edit net adapter                 - Edit network adapter settings like IP and DNS." -Color "DarkGray"
-    write-text -type "plain" -text "get wifi creds                   - View WiFi credentials saved on the system." -Color "DarkGray" -lineAfter
+    write-text -type "plain" -text "get wifi creds                   - View WiFi credentials saved on the system." -Color "DarkGray"
     Write-Host
     Write-Host "    Skip entering more commands by entering the" -ForegroundColor "DarkGray" -NoNewLine
     Write-Host " menu" -ForegroundColor "Gray" -NoNewLine
