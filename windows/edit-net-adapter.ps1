@@ -5,7 +5,6 @@ function edit-net-adapter {
         # Display error message and exit this script
         exit-script -type "error" -text "edit-net-adapter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
-    
 }
 
 function select-adapter {
@@ -78,7 +77,7 @@ function read-ipsettings {
                 "Set IP to static" = "Set this adapter to static and enter IP data manually."
                 "Set IP to DHCP"   = "Set this adapter to DHCP."
                 "Back"             = "Go back to network adapter selection."
-            }) -lineAfter
+            })
 
         $desiredSettings = $Adapter
 
@@ -118,7 +117,7 @@ function read-dnssettings {
                 "Set DNS to static"  = "Set this adapter to static and enter DNS data manually."
                 "Set DNS to dynamic" = "Set this adapter to DHCP."
                 "Back"               = "Go back to network adapter selection."
-            }) -lineAfter
+            })
 
         $dns = @()
 
@@ -150,7 +149,7 @@ function confirm-edits {
     )
 
     try {
-        get-closing -script "edit-net-adapter"
+        
 
         $status = Get-NetAdapter -Name $Adapter["name"] | Select-Object -ExpandProperty Status
         if ($status -eq "Up") {
@@ -198,14 +197,7 @@ function confirm-edits {
             }
         }
 
-        $choice = read-option -options $([ordered]@{
-                "Submit & apply" = "Submit your changes and apply them to the system." 
-                "Start over"     = "Start this function over at the beginning."
-                "Other options"  = "Discard changes and do something else."
-            })  -lineAfter
-
-        if ($choice -ne 0 -and $choice -ne 2) { invoke-script -script "Edit-NetAdapter" }
-        if ($choice -eq 2) { write-text }
+        get-closing -script "edit-net-adapter"
 
         $dnsString = ""
     
