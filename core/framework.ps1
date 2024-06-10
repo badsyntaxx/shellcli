@@ -550,7 +550,7 @@ function read-option {
 
         # Display single option if only one exists
         if ($orderedKeys.Count -eq 1) {
-            Write-Host "  $([char]0x203A)" -ForegroundColor "Gray" -NoNewline
+            Write-Host "  $([char]0x2192)" -ForegroundColor "Gray" -NoNewline
             Write-Host " $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($options[$orderedKeys])" -ForegroundColor "Cyan"
         } else {
             # Loop through each option and display with padding and color
@@ -558,7 +558,7 @@ function read-option {
                 $key = $orderedKeys[$i]
                 $padding = " " * ($longestKeyLength - $key.Length)
                 if ($i -eq $pos) { 
-                    Write-Host "  $([char]0x203A)" -ForegroundColor "Gray" -NoNewline  
+                    Write-Host "  $([char]0x2192)" -ForegroundColor "Gray" -NoNewline  
                     Write-Host " $key $padding - $($options[$key])" -ForegroundColor "Cyan"
                 } else { Write-Host "    $key $padding - $($options[$key])" -ForegroundColor "Gray" }
             }
@@ -590,7 +590,7 @@ function read-option {
                 $host.UI.RawUI.CursorPosition = $menuOldPos
                 Write-Host "    $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $($options[$orderedKeys[$oldPos]])" -ForegroundColor "Gray"
                 $host.UI.RawUI.CursorPosition = $menuNewPos
-                Write-Host "  $([char]0x203A)" -ForegroundColor "Gray" -NoNewline
+                Write-Host "  $([char]0x2192)" -ForegroundColor "Gray" -NoNewline
                 Write-Host " $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($options[$orderedKeys[$pos]])" -ForegroundColor "Cyan"
                 $host.UI.RawUI.CursorPosition = $currPos
             }
