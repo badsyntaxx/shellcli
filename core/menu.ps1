@@ -1,10 +1,6 @@
 function menu {
     try {
-        # Define the URL where submenus might be located
-        $url = "https://raw.githubusercontent.com/badsyntaxx/chased-scripts/main"
-        $subPath = "framework"
-
-        # Create an ordered hashtable containing menu options and descriptions
+        # Create a menu with options and descriptions using an ordered hashtable
         $choice = read-option -options $([ordered]@{
                 "Toggle administrator" = "Toggle the Windows built in administrator account."
                 "Add user"             = "Add a user to the system."
