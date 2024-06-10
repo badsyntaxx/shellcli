@@ -5,7 +5,7 @@ function get-wifi-creds {
     }
 
     if ((Get-Service wlansvc).Status -ne "Running") {
-        exit-script -type "error" -text "The wlansvc service is not running." -lineBefore -lineAfter
+        exit-script -type "notice" -text "The wlansvc service is not running or the wireless adapter is disabled." -lineBefore -lineAfter
     }
 
     if ($wifiProfiles.Count -gt 0) {
