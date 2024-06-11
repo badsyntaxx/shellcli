@@ -2,13 +2,14 @@ function menu {
     try {
         # Create a menu with options and descriptions using an ordered hashtable
         $choice = read-option -options $([ordered]@{
-                "Toggle administrator" = "Toggle the Windows built in administrator account."
-                "Add user"             = "Add a user to the system."
-                "Remove user"          = "Remove a user from the system."
-                "Edit user"            = "Edit a users."
-                "Edit hostname"        = "Edit this computers name and description."
-                "Edit network adapter" = "Edit a network adapter.(BETA)"
-                "Get WiFi credentials" = "View all saved WiFi credentials on the system."
+                "Toggle administrator"    = "Toggle the Windows built in administrator account."
+                "Add user"                = "Add a user to the system."
+                "Remove user"             = "Remove a user from the system."
+                "Edit user"               = "Edit a users."
+                "Edit hostname"           = "Edit this computers name and description."
+                "Edit network adapter"    = "Edit a network adapter.(BETA)"
+                "Get WiFi credentials"    = "View all saved WiFi credentials on the system."
+                "Toggle W11 Context Menu" = "Enable or Disable the Windows 11 context menu."
             })
 
         # Map user selection to corresponding commands
@@ -19,6 +20,7 @@ function menu {
         if ($choice -eq 4) { $command = "edit hostname" }
         if ($choice -eq 5) { $command = "edit net adapter" }
         if ($choice -eq 6) { $command = "get wifi creds" }
+        if ($choice -eq 7) { $command = "toggle context menu" }
 
         write-welcome -command $command
 
