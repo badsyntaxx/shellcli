@@ -23,7 +23,7 @@ function Edit-LocalUserPassword {
 
         get-closing -script "edit-user-password" -customText $alert
 
-        Get-LocalUser -Name $username | Set-LocalUser -Password $password -Force
+        Get-LocalUser -Name $username | Set-LocalUser -Password $password
 
         exit-script -Type "success" -text "Password settings for $username successfully updated." -lineAfter
     } catch {
