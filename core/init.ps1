@@ -10,7 +10,18 @@ function initialize-chasedScripts {
         # Create the main script file
         New-Item -Path "$env:TEMP\CHASED-Script.ps1" -ItemType File -Force | Out-Null
 
-        add-script -subpath "core" -script "framework"
+        $url = "https://raw.githubusercontent.com/badsyntaxx/chased-scripts/main"
+
+        # Download the script
+        $download = get-script -Url "$url/core/framework.ps1" -Target "$env:TEMP\framework.ps1"
+        if (!$download) { throw "Could not acquire dependency." }
+
+        # Append the script to the main script
+        $rawScript = Get-Content -Path "$env:TEMP\framework.ps1" -Raw -ErrorAction SilentlyContinue
+        Add-Content -Path "$env:TEMP\CHASED-Script.ps1" -Value $rawScript
+
+        # Remove the script file
+        Get-Item -ErrorAction SilentlyContinue "$env:TEMP\framework.ps1" | Remove-Item -ErrorAction SilentlyContinue
 
         # Add a final line that will invoke the desired function
         Add-Content -Path "$env:TEMP\CHASED-Script.ps1" -Value 'invoke-script -script "read-command" -initialize $true'
@@ -22,28 +33,6 @@ function initialize-chasedScripts {
         # Error handling: display an error message and prompt for a new command
         Write-Host "    Connection Error: $($_.Exception.Message) | init-$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor "Red"
     }
-}
-
-function add-script {
-    param (
-        [Parameter(Mandatory)]
-        [string]$subPath,
-        [Parameter(Mandatory)]
-        [string]$script
-    )
-
-    $url = "https://raw.githubusercontent.com/badsyntaxx/chased-scripts/main"
-
-    # Download the script
-    $download = get-script -Url "$url/$subPath/$script.ps1" -Target "$env:TEMP\$script.ps1"
-    if (!$download) { throw "Could not acquire dependency. ($url/$subPath/$script.ps1)" }
-
-    # Append the script to the main script
-    $rawScript = Get-Content -Path "$env:TEMP\$script.ps1" -Raw -ErrorAction SilentlyContinue
-    Add-Content -Path "$env:TEMP\CHASED-Script.ps1" -Value $rawScript
-
-    # Remove the script file
-    Get-Item -ErrorAction SilentlyContinue "$env:TEMP\$script.ps1" | Remove-Item -ErrorAction SilentlyContinue
 }
 
 function get-script {
@@ -85,6 +74,8 @@ function get-script {
             # Close streams silently (assuming success)
             if ($downloadComplete) { return $true } else { return $false }
         } catch {
+            write-host $($_.Exception.Message)
+            read-host
             return $false
         } finally {
             $reader.Close()
