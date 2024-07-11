@@ -115,7 +115,7 @@ function add-script {
         [string]$progressText
     )
 
-    $url = "https://raw.githubusercontent.com/badsyntaxx/chased-scripts/main"
+    $url = "https://raw.githubusercontent.com/badsyntaxx/chaste-scripts/main"
 
     # Download the script
     $download = get-download -Url "$url/$subPath/$script.ps1" -Target "$env:TEMP\$script.ps1" -failText "Could not acquire components..."
@@ -141,7 +141,7 @@ function write-help {
             write-text -type "plain" -text "Chased scripts aims to simplify tedious powershell commands and make common IT tasks" -Color "DarkGray"
             write-text -type "plain" -text "simpler by keeping commands logical, intuitive and short." -Color "DarkGray"
             write-text -type "header" -text "DOCS:" -lineBefore 
-            write-text -type "plain" -text "https://chased.dev/chased-scripts" -Color "DarkGray"
+            write-text -type "plain" -text "https://chased.dev/chaste-scripts" -Color "DarkGray"
             write-text -type "header" -text "COMMANDS:" -lineBefore
             write-text -type "plain" -text "toggle admin                     - Toggle the Windows built-in administrator account." -Color "DarkGray"
             write-text -type "plain" -text "add [local,domain] user          - Add a local or domain user to the system." -Color "DarkGray"

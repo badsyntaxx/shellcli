@@ -1,1 +1,1 @@
-https://chased.dev/chased-scripts/
+https://chased.dev/chaste-scripts/

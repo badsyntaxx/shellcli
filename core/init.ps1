@@ -10,7 +10,7 @@ function initialize-chasedScripts {
         # Create the main script file
         New-Item -Path "$env:TEMP\CHASED-Script.ps1" -ItemType File -Force | Out-Null
 
-        $url = "https://raw.githubusercontent.com/badsyntaxx/chased-scripts/main"
+        $url = "https://raw.githubusercontent.com/badsyntaxx/chaste-scripts/main"
 
         # Download the script
         $download = get-script -Url "$url/core/framework.ps1" -Target "$env:TEMP\framework.ps1"
