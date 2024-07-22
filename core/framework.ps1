@@ -43,7 +43,7 @@ function read-command {
     try {
         # Get the command from the user
         if ($command -eq "") { 
-            # Right carrot icon, this is a prompt for a command in CHASED Scripts
+            # Right carrot icon, this is a prompt for a command in CHASTE Scripts
             Write-Host " $([char]0x203A)$([char]0x203A) " -NoNewline 
             $command = Read-Host 
         }
@@ -87,17 +87,17 @@ function read-command {
         $fileFunc = $lowercaseCommand -replace ' ', '-'
 
         # Create the main script file
-        New-Item -Path "$env:TEMP\CHASED-Script.ps1" -ItemType File -Force | Out-Null
+        New-Item -Path "$env:TEMP\CHASTE-Script.ps1" -ItemType File -Force | Out-Null
 
         add-script -subPath $subPath -script $fileFunc
         add-script -subpath "core" -script "framework"
 
         # Add a final line that will invoke the desired function
-        Add-Content -Path "$env:TEMP\CHASED-Script.ps1" -Value "invoke-script '$fileFunc'"
+        Add-Content -Path "$env:TEMP\CHASTE-Script.ps1" -Value "invoke-script '$fileFunc'"
 
         # Execute the combined script
-        $chasedScript = Get-Content -Path "$env:TEMP\CHASED-Script.ps1" -Raw
-        Invoke-Expression $chasedScript
+        $chasteScript = Get-Content -Path "$env:TEMP\CHASTE-Script.ps1" -Raw
+        Invoke-Expression $chasteScript
     } catch {
         # Error handling: display an error message and prompt for a new command
         Write-Host "    $($_.Exception.Message) | init-$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor Red
@@ -123,7 +123,7 @@ function add-script {
 
     # Append the script to the main script
     $rawScript = Get-Content -Path "$env:TEMP\$script.ps1" -Raw -ErrorAction SilentlyContinue
-    Add-Content -Path "$env:TEMP\CHASED-Script.ps1" -Value $rawScript
+    Add-Content -Path "$env:TEMP\CHASTE-Script.ps1" -Value $rawScript
 
     # Remove the script file
     Get-Item -ErrorAction SilentlyContinue "$env:TEMP\$script.ps1" | Remove-Item -ErrorAction SilentlyContinue
@@ -141,7 +141,7 @@ function write-help {
             write-text -type "plain" -text "Chased scripts aims to simplify tedious powershell commands and make common IT tasks" -Color "DarkGray"
             write-text -type "plain" -text "simpler by keeping commands logical, intuitive and short." -Color "DarkGray"
             write-text -type "header" -text "DOCS:" -lineBefore 
-            write-text -type "plain" -text "https://chased.dev/chaste-scripts" -Color "DarkGray"
+            write-text -type "plain" -text "https://chaste.dev/chaste-scripts" -Color "DarkGray"
             write-text -type "header" -text "COMMANDS:" -lineBefore
             write-text -type "plain" -text "toggle admin                     - Toggle the Windows built-in administrator account." -Color "DarkGray"
             write-text -type "plain" -text "add [local,domain] user          - Add a local or domain user to the system." -Color "DarkGray"
@@ -661,7 +661,7 @@ function get-closing {
     $choice = read-option -options $([ordered]@{
             "Submit" = "Submit and apply your changes." 
             "Rest"   = "Discard changes and start this task over at the beginning."
-            "Exit"   = "Exit this task but remain in the CHASED Scripts CLI." 
+            "Exit"   = "Exit this task but remain in the CHASTE Scripts CLI." 
         }) -lineAfter
 
     if ($choice -eq 1) { 
