@@ -18,7 +18,7 @@ function invoke-script {
         $console = $host.UI.RawUI
         $console.BackgroundColor = "Black"
         $console.ForegroundColor = "Gray"
-        $console.WindowTitle = "Chased Scripts"
+        $console.WindowTitle = "Chaste Scripts"
 
         if ($initialize) {
             # Display a stylized menu prompt
@@ -138,7 +138,7 @@ function write-help {
     switch ($type) {
         "" { 
             write-text -type "header" -text "DESCRIPTION:" -lineBefore
-            write-text -type "plain" -text "Chased scripts aims to simplify tedious powershell commands and make common IT tasks" -Color "DarkGray"
+            write-text -type "plain" -text "Chaste scripts aims to simplify tedious powershell commands and make common IT tasks" -Color "DarkGray"
             write-text -type "plain" -text "simpler by keeping commands logical, intuitive and short." -Color "DarkGray"
             write-text -type "header" -text "DOCS:" -lineBefore 
             write-text -type "plain" -text "https://chaste.dev/chaste-scripts" -Color "DarkGray"
