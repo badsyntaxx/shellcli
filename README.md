@@ -7,7 +7,7 @@ This is my PowerShell script library for various Windows tasks. No need to downl
 ## Before we begin
 
 NOTE
-There are some anti-virus softwares that block Chaste Scripts. Some do and some don't. If you encounter an av software that does there are some steps you can take.
+There are some anti-virus softwares that block Chaste Scripts. Some do and some don't. If you encounter an av software that does there are some [steps you can take](https://github.com/badsyntaxx/chaste-scripts?tab=readme-ov-file#bypass-anti-virus).
 
 You may also need to enable running powershell scripts on your system.
 
@@ -101,5 +101,4 @@ Some anti-virus programs will block the use of Chaste Scripts. Most of the time 
 
 To bypass this problem you can download and run or paste in the root functions of Chaste Scripts.
 
-Chaste Scripts Root
-`foo`
+[Chaste Scripts Root](https://raw.githubusercontent.com/badsyntaxx/chaste-scripts/main/core/init.ps1)
