@@ -16,13 +16,13 @@ You may also need to enable running powershell scripts on your system.
 Open powershell as an administrator, paste in the command below and hit Enter. Thats it!
 
 Getting started\
-`irm chastescripts.com | iex`
+`irm chastescripts.com | iex`\
 
-The above command is shorthand Powershell. It is the same as `Invoke-RestMethod webaddress.com | Invoke-Expression`
+The above command is shorthand Powershell. It is the same as `Invoke-RestMethod webaddress.com | Invoke-Expression`\
 
 ## Using the menu
 
-If you don't know any commands, you can just enter the `menu` command. Once in the menu, you can use the _up_ and _down_ arrow keys to make selections and then the enter key to confirm your selection.
+If you don't know any commands, you can just enter the `menu` command. Once in the menu, you can use the _up_ and _down_ arrow keys to make selections and then the enter key to confirm your selection.\
 
 ## Using commands
 
@@ -32,66 +32,66 @@ Add a new local user to the system.\
 `add local user`
 
 Edit the network adapters on target PC.\
-`edit net adapter`
+`edit net adapter`\
 
 ## Commands
 
 ### TOGGLE ADMINISTRATOR
 
-Toggle the Windows built-in administrator account.
-`toggle admin`
+Toggle the Windows built-in administrator account.\
+`toggle admin`\
 
 ### ADD USER ACCOUNTS
 
-Add a new user to the target system. Gives option to add local or domain users.
+Add a new user to the target system. Gives option to add local or domain users.\
 `add user`
 
-Add a new local user to the target system. Skips prompt to choose local or domain.
+Add a new local user to the target system. Skips prompt to choose local or domain.\
 `add local user`
 
-Add a new domain user to the target system. Skips prompt to choose local or domain.
-`add domain user`
+Add a new domain user to the target system. Skips prompt to choose local or domain.\
+`add domain user`\
 
 ### REMOVE USER ACCOUNTS
 
-Remove an existing user account from the target system.
-`remove user`
+Remove an existing user account from the target system.\
+`remove user`\
 
 ### EDIT USER ACCOUNTS
 
-Edit an existing user account on the system.
+Edit an existing user account on the system.\
 `edit user`
 
-Edit a user account name.
+Edit a user account name.\
 `edit user name`
 
-Edit a user account password.
+Edit a user account password.\
 `edit user password`
 
-Edit a user accounts groups.
-`edit user group`
+Edit a user accounts groups.\
+`edit user group`\
 
 ### EDIT HOSTNAME & DESCRIPTION
 
-Edit the hostname and description of the target computer.
-`edit hostname`
+Edit the hostname and description of the target computer.\
+`edit hostname`\
 
 ### EDIT NETWORK ADAPTERS
 
-Edit network adapter settings on the target computer.
-`edit net adapter`
+Edit network adapter settings on the target computer.\
+`edit net adapter`\
 
 ### GET WIFI CREDENTIALS
 
-View WiFi ssid and passwords for the currently enabled NIC's.
-`get wifi creds`
+View WiFi ssid and passwords for the currently enabled NIC's.\
+`get wifi creds`\
 
 ## Enable running powershell
 
 Its fairly common that running powershell scripts is disabled by default. You can enable running powershell scripts by opening powershell as an administrator and entering this command.
 
 Set the execution policy to unrestricted.
-`Set-ExecutionPolicy Unrestricted`
+`Set-ExecutionPolicy Unrestricted`\
 
 ## Bypass anti-virus
 
