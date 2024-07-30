@@ -71,14 +71,12 @@ function read-command {
         }
 
         # Adjust command and paths
-        $subCommands = @("windows", "plugins");
+        $subCommands = @("plugins");
         $subPath = "windows"
         foreach ($sub in $subCommands) {
             if ($firstWord -eq $sub -and $firstWord -ne 'menu') { 
                 $command = $command -replace "^$firstWord \s*", "" 
                 $subPath = $sub
-            } elseif ($firstWord -eq 'menu') {
-                $subPath = "core"
             }
         }
 
@@ -141,7 +139,7 @@ function write-help {
             write-text -type "plain" -text "Chaste scripts aims to simplify tedious powershell commands and make common IT tasks" -Color "DarkGray"
             write-text -type "plain" -text "simpler by keeping commands logical, intuitive and short." -Color "DarkGray"
             write-text -type "header" -text "DOCS:" -lineBefore 
-            write-text -type "plain" -text "https://chaste.dev/chaste-scripts" -Color "DarkGray"
+            write-text -type "plain" -text "https://guided.chaste.pro/development/chaste-scripts" -Color "DarkGray"
             write-text -type "header" -text "COMMANDS:" -lineBefore
             write-text -type "plain" -text "toggle admin                     - Toggle the Windows built-in administrator account." -Color "DarkGray"
             write-text -type "plain" -text "add [local,domain] user          - Add a local or domain user to the system." -Color "DarkGray"
