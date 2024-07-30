@@ -16,7 +16,7 @@ You may also need to enable running powershell scripts on your system.
 Open powershell as an administrator, paste in the command below and hit Enter. Thats it!
 
 Getting started\
-`irm chastescripts.com | iex`\
+`irm chastescripts.com | iex`
 
 The above command is shorthand Powershell. It is the same as `Invoke-RestMethod webaddress.com | Invoke-Expression`\
 
@@ -32,14 +32,14 @@ Add a new local user to the system.\
 `add local user`
 
 Edit the network adapters on target PC.\
-`edit net adapter`\
+`edit net adapter`
 
 ## Commands
 
 ### TOGGLE ADMINISTRATOR
 
 Toggle the Windows built-in administrator account.\
-`toggle admin`\
+`toggle admin`
 
 ### ADD USER ACCOUNTS
 
@@ -50,12 +50,12 @@ Add a new local user to the target system. Skips prompt to choose local or domai
 `add local user`
 
 Add a new domain user to the target system. Skips prompt to choose local or domain.\
-`add domain user`\
+`add domain user`
 
 ### REMOVE USER ACCOUNTS
 
 Remove an existing user account from the target system.\
-`remove user`\
+`remove user`
 
 ### EDIT USER ACCOUNTS
 
@@ -69,29 +69,29 @@ Edit a user account password.\
 `edit user password`
 
 Edit a user accounts groups.\
-`edit user group`\
+`edit user group`
 
 ### EDIT HOSTNAME & DESCRIPTION
 
 Edit the hostname and description of the target computer.\
-`edit hostname`\
+`edit hostname`
 
 ### EDIT NETWORK ADAPTERS
 
 Edit network adapter settings on the target computer.\
-`edit net adapter`\
+`edit net adapter`
 
 ### GET WIFI CREDENTIALS
 
 View WiFi ssid and passwords for the currently enabled NIC's.\
-`get wifi creds`\
+`get wifi creds`
 
 ## Enable running powershell
 
 Its fairly common that running powershell scripts is disabled by default. You can enable running powershell scripts by opening powershell as an administrator and entering this command.
 
 Set the execution policy to unrestricted.
-`Set-ExecutionPolicy Unrestricted`\
+`Set-ExecutionPolicy Unrestricted`
 
 ## Bypass anti-virus
 
