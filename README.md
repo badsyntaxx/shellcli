@@ -16,6 +16,7 @@ You may also need to enable running powershell scripts on your system.
 Open powershell as an administrator, paste in the command below and hit Enter. Thats it!
 
 Getting started
+
 `irm chastescripts.com | iex`
 
 The above command is shorthand Powershell. It is the same as `Invoke-RestMethod webaddress.com | Invoke-Expression`
@@ -29,9 +30,11 @@ If you don't know any commands, you can just enter the `menu` command. Once in t
 You don't need to rely on the menu. You can accomplish more, faster, by accessing commands directly. For instance, creating a new user or editing the target PC's network adapter can be done with short intuitive commands.
 
 Add a new local user to the system.
+
 `add local user`
 
 Edit the network adapters on target PC.
+
 `edit net adapter`
 
 ## Commands
