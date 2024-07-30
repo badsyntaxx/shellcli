@@ -24,7 +24,7 @@ The above command is shorthand Powershell. It is the same as\
 ## Using the menu
 
 If you don't know any commands, you can just enter the `menu` command. Once in the menu, you can use the _up_ and _down_ arrow keys to make selections and then the enter key to confirm your selection.\
-![Screenshot of a comment on a GitHub issue showing an image, added in the Markdown, of an Octocat smiling and raising a tentacle.](https://myoctocat.com/assets/images/base-octocat.svg)
+![Chaste scripts menu](https://guided.chaste.pro/images/chaste-scripts/chaste-scripts.png)
 
 ## Using commands
 
