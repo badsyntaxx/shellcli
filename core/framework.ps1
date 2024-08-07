@@ -44,7 +44,7 @@ function read-command {
         # Get the command from the user
         if ($command -eq "") { 
             # Right carrot icon, this is a prompt for a command in CHASTE Scripts
-            Write-Host " $([char]0x203A)$([char]0x203A) " -ForegroundColor 'DarkCyan' -NoNewline 
+            Write-Host " $([char]0x203A)$([char]0x203A) "  -ForegroundColor 'DarkCyan' -NoNewline 
             $command = Read-Host 
         }
 
@@ -136,22 +136,22 @@ function write-help {
     switch ($type) {
         "" { 
             write-text -type "header" -text "DESCRIPTION:" -lineBefore
-            write-text -type "plain" -text "Chaste scripts aims to simplify tedious powershell commands and make common IT tasks" -Color "White"
-            write-text -type "plain" -text "simpler by keeping commands logical, intuitive and short." -Color "White"
+            write-text -type "plain" -text "Chaste scripts aims to simplify tedious powershell commands and make common IT tasks" -Color "DarkGray"
+            write-text -type "plain" -text "simpler by keeping commands logical, intuitive and short." -Color "DarkGray"
             write-text -type "header" -text "DOCS:" -lineBefore 
-            write-text -type "plain" -text "https://guided.chaste.pro/development/chaste-scripts" -Color "White"
+            write-text -type "plain" -text "https://guided.chaste.pro/development/chaste-scripts" -Color "DarkGray"
             write-text -type "header" -text "COMMANDS:" -lineBefore
-            write-text -type "plain" -text "toggle admin                     - Toggle the Windows built-in administrator account." -Color "White"
-            write-text -type "plain" -text "add [local,domain] user          - Add a local or domain user to the system." -Color "White"
-            write-text -type "plain" -text "edit user [name,password,group]  - Edit user account settings." -Color "White"
-            write-text -type "plain" -text "edit net adapter                 - Edit network adapter settings like IP and DNS." -Color "White"
-            write-text -type "plain" -text "get wifi creds                   - View WiFi credentials saved on the system." -Color "White"
+            write-text -type "plain" -text "toggle admin                     - Toggle the Windows built-in administrator account." -Color "DarkGray"
+            write-text -type "plain" -text "add [local,domain] user          - Add a local or domain user to the system." -Color "DarkGray"
+            write-text -type "plain" -text "edit user [name,password,group]  - Edit user account settings." -Color "DarkGray"
+            write-text -type "plain" -text "edit net adapter                 - Edit network adapter settings like IP and DNS." -Color "DarkGray"
+            write-text -type "plain" -text "get wifi creds                   - View WiFi credentials saved on the system." -Color "DarkGray"
             write-text -type "header" -text "PLUGINS:" -lineBefore
-            write-text -type "plain" -text "plugins [plugin name]  - Useful scripts made by others. Try the 'help plugins' command." -Color "White"
+            write-text -type "plain" -text "plugins [plugin name]  - Useful scripts made by others. Try the 'help plugins' command." -Color "DarkGray"
             Write-Host
-            Write-Host "    Skip entering more commands by entering the" -ForegroundColor "White" -NoNewLine
+            Write-Host "    Skip entering more commands by entering the" -ForegroundColor "DarkGray" -NoNewLine
             Write-Host " menu" -ForegroundColor "Gray" -NoNewLine
-            Write-Host " command." -ForegroundColor "White"
+            Write-Host " command." -ForegroundColor "DarkGray"
             Write-Host
         }
         "plugins" {
@@ -187,7 +187,7 @@ function write-text {
         if ($lineBefore) { Write-Host }
 
         # Format output based on the specified Type
-        if ($type -eq "header") { Write-Host " ## $text" -ForegroundColor "DarkCyan" }
+        if ($type -eq "header") { Write-Host " ## $text" -ForegroundColor "White" }
         if ($type -eq "label") { Write-Host "    $text" -ForegroundColor "Yellow" }
         if ($type -eq 'success') { Write-Host "    $text"  -ForegroundColor "Green" }
         if ($type -eq 'error') { Write-Host "    $text" -ForegroundColor "Red" }
