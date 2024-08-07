@@ -44,7 +44,7 @@ function read-command {
         # Get the command from the user
         if ($command -eq "") { 
             # Right carrot icon, this is a prompt for a command in CHASTE Scripts
-            Write-Host " $([char]0x203A)$([char]0x203A) " -ForegroundColor 'Violet' -NoNewline 
+            Write-Host " $([char]0x203A)$([char]0x203A) " -ForegroundColor 'Magenta' -NoNewline 
             $command = Read-Host 
         }
 
