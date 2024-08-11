@@ -145,10 +145,6 @@ function write-help {
             write-text -type "header" -text "PLUGINS:" -lineBefore
             write-text -type "plain" -text "plugins [plugin name]  - Useful scripts made by others. Try the 'help plugins' command." -Color "DarkGray"
             Write-Host
-            Write-Host "    Skip entering more commands by entering the" -ForegroundColor "DarkGray" -NoNewLine
-            Write-Host " menu" -ForegroundColor "Gray" -NoNewLine
-            Write-Host " command." -ForegroundColor "DarkGray"
-            Write-Host
         }
         "plugins" {
             write-text "plugins help unwritten"
