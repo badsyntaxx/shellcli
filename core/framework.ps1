@@ -183,7 +183,10 @@ function write-text {
         if ($lineBefore) { Write-Host }
 
         # Format output based on the specified Type
-        if ($type -eq "header") { Write-Host " ## $text" -ForegroundColor "DarkCyan" }
+        if ($type -eq "header") {
+            Write-Host " ## " -ForegroundColor "Cyan" -NoNewline
+            Write-Host "$text" -ForegroundColor "White" 
+        }
         if ($type -eq "label") { Write-Host "    $text" -ForegroundColor "Yellow" }
         if ($type -eq 'success') { Write-Host "    $text"  -ForegroundColor "Green" }
         if ($type -eq 'error') { Write-Host "    $text" -ForegroundColor "Red" }
