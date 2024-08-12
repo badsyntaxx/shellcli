@@ -41,17 +41,12 @@ function read-command {
     )
 
     try {
-        # Get the command from the user
         if ($command -eq "") { 
-            # Right carrot icon, this is a prompt for a command in CHASTE Scripts
-            Write-Host " $([char]0x203A)$([char]0x203A) " -ForegroundColor 'Magenta' -NoNewline 
+            Write-Host "~/> " -ForegroundColor "Green" -NoNewline 
             $command = Read-Host 
         }
 
-        # Convert the command to lowercase
         $command = $command.ToLower()
-
-        # Trim leading and trailing spaces
         $command = $command.Trim()
 
         if ($command -eq 'help') {
@@ -62,8 +57,9 @@ function read-command {
             write-help -type 'plugins'
         }   
 
-        # Extract the first word
-        if ($command -ne "" -and $command -match "^(?-i)(\w+(-\w+)*)") { $firstWord = $matches[1] }
+        if ($command -ne "" -and $command -match "^(?-i)(\w+(-\w+)*)") { 
+            $firstWord = $matches[1] 
+        }
 
         if (Get-command $firstWord -ErrorAction SilentlyContinue) {
             Invoke-Expression $command
@@ -149,10 +145,6 @@ function write-help {
             write-text -type "header" -text "PLUGINS:" -lineBefore
             write-text -type "plain" -text "plugins [plugin name]  - Useful scripts made by others. Try the 'help plugins' command." -Color "DarkGray"
             Write-Host
-            Write-Host "    Skip entering more commands by entering the" -ForegroundColor "DarkGray" -NoNewLine
-            Write-Host " menu" -ForegroundColor "Gray" -NoNewLine
-            Write-Host " command." -ForegroundColor "DarkGray"
-            Write-Host
         }
         "plugins" {
             write-text "plugins help unwritten"
@@ -187,7 +179,10 @@ function write-text {
         if ($lineBefore) { Write-Host }
 
         # Format output based on the specified Type
-        if ($type -eq "header") { Write-Host " ## $text" -ForegroundColor "DarkCyan" }
+        if ($type -eq "header") {
+            Write-Host " ## " -ForegroundColor "Cyan" -NoNewline
+            Write-Host "$text" -ForegroundColor "White" 
+        }
         if ($type -eq "label") { Write-Host "    $text" -ForegroundColor "Yellow" }
         if ($type -eq 'success') { Write-Host "    $text"  -ForegroundColor "Green" }
         if ($type -eq 'error') { Write-Host "    $text" -ForegroundColor "Red" }
