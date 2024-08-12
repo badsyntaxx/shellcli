@@ -42,7 +42,7 @@ function read-command {
 
     try {
         if ($command -eq "") { 
-            Write-Host "~/> " -ForegroundColor "Cyan" -NoNewline 
+            Write-Host "~/> " -ForegroundColor "Green" -NoNewline 
             $command = Read-Host 
         }
 
