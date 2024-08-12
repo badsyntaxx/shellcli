@@ -8,26 +8,26 @@ function initialize-chasteScripts {
         }
         
         # Create the main script file
-        New-Item -Path "$env:TEMP\CHASTE-Script.ps1" -ItemType File -Force | Out-Null
+        New-Item -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -ItemType File -Force | Out-Null
 
         $url = "https://raw.githubusercontent.com/badsyntaxx/chaste-scripts/main"
 
         # Download the script
-        $download = get-script -Url "$url/core/framework.ps1" -Target "$env:TEMP\framework.ps1"
+        $download = get-script -Url "$url/core/framework.ps1" -Target "$env:SystemRoot\Temp\framework.ps1"
         if (!$download) { throw "Could not acquire dependency." }
 
         # Append the script to the main script
-        $rawScript = Get-Content -Path "$env:TEMP\framework.ps1" -Raw -ErrorAction SilentlyContinue
-        Add-Content -Path "$env:TEMP\CHASTE-Script.ps1" -Value $rawScript
+        $rawScript = Get-Content -Path "$env:SystemRoot\Temp\framework.ps1" -Raw -ErrorAction SilentlyContinue
+        Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value $rawScript
 
         # Remove the script file
-        Get-Item -ErrorAction SilentlyContinue "$env:TEMP\framework.ps1" | Remove-Item -ErrorAction SilentlyContinue
+        Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\framework.ps1" | Remove-Item -ErrorAction SilentlyContinue
 
         # Add a final line that will invoke the desired function
-        Add-Content -Path "$env:TEMP\CHASTE-Script.ps1" -Value 'invoke-script -script "read-command" -initialize $true'
+        Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value 'invoke-script -script "read-command" -initialize $true'
 
         # Execute the combined script
-        $chasteScript = Get-Content -Path "$env:TEMP\CHASTE-Script.ps1" -Raw
+        $chasteScript = Get-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Raw
         Invoke-Expression $chasteScript
     } catch {
         # Error handling: display an error message and prompt for a new command
