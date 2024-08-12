@@ -42,7 +42,7 @@ function read-command {
 
     try {
         if ($command -eq "") { 
-            Write-Host "  : " -ForegroundColor "Green" -NoNewline 
+            Write-Host "  : " -NoNewline 
             $command = Read-Host 
         }
 
@@ -491,7 +491,7 @@ function read-input {
 
         # Display prompt with a diamond symbol (optional secure input for passwords)
         Write-Host "  ? $prompt"
-        Write-Host "   " -NoNewline
+        Write-Host "  : " -NoNewline
         if ($IsSecure) { $userInput = Read-Host -AsSecureString } 
         else { $userInput = Read-Host }
 
