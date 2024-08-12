@@ -490,7 +490,7 @@ function read-input {
         $currPos = $host.UI.RawUI.CursorPosition
 
         # Display prompt with a diamond symbol (optional secure input for passwords)
-        Write-Host "  ? $prompt" -NoNewline 
+        Write-Host "  ? $prompt"
         Write-Host
         if ($IsSecure) { $userInput = Read-Host -AsSecureString } 
         else { $userInput = Read-Host }
