@@ -488,7 +488,6 @@ function read-input {
 
         # Display prompt with a diamond symbol (optional secure input for passwords)
         Write-Host "  $([char]0x3F) $prompt" -ForegroundColor "Yellow"
-        Write-Host
         Write-Host "  : " -NoNewline
         if ($IsSecure) { $userInput = Read-Host -AsSecureString } 
         else { $userInput = Read-Host }
