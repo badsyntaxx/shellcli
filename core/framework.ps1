@@ -131,11 +131,8 @@ function write-help {
 
     switch ($type) {
         "" { 
-            write-text -type "header" -text "DESCRIPTION:" -lineBefore
-            write-text -type "plain" -text "Chaste scripts aims to simplify tedious powershell commands and make common IT tasks" -Color "DarkGray"
-            write-text -type "plain" -text "simpler by keeping commands logical, intuitive and short." -Color "DarkGray"
             write-text -type "header" -text "DOCS:" -lineBefore 
-            write-text -type "plain" -text "https://guided.chaste.pro/development/chaste-scripts" -Color "DarkGray"
+            write-text -type "plain" -text "https://guided.chaste.pro/dev/chaste-scripts" -Color "DarkGray"
             write-text -type "header" -text "COMMANDS:" -lineBefore
             write-text -type "plain" -text "toggle admin                     - Toggle the Windows built-in administrator account." -Color "DarkGray"
             write-text -type "plain" -text "add [local,domain] user          - Add a local or domain user to the system." -Color "DarkGray"
@@ -491,6 +488,7 @@ function read-input {
 
         # Display prompt with a diamond symbol (optional secure input for passwords)
         Write-Host "  $([char]0x3F) $prompt" -ForegroundColor "Yellow"
+        Write-Host
         Write-Host "  : " -NoNewline
         if ($IsSecure) { $userInput = Read-Host -AsSecureString } 
         else { $userInput = Read-Host }
