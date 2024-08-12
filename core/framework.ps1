@@ -483,14 +483,14 @@ function read-input {
         # Add a new line before prompt if specified
         if ($lineBefore) { Write-Host }
 
-        # Get current cursor position
-        $currPos = $host.UI.RawUI.CursorPosition
-
         # Display prompt with a diamond symbol (optional secure input for passwords)
         Write-Host "  $([char]0x3F) $prompt" -ForegroundColor "Yellow"
         Write-Host "  : " -NoNewline
         if ($IsSecure) { $userInput = Read-Host -AsSecureString } 
         else { $userInput = Read-Host }
+
+        # Get current cursor position
+        $currPos = $host.UI.RawUI.CursorPosition
 
         # Check for existing user if requested
         if ($CheckExistingUser) {
