@@ -81,16 +81,16 @@ function read-command {
         $fileFunc = $lowercaseCommand -replace ' ', '-'
 
         # Create the main script file
-        New-Item -Path "$env:TEMP\CHASTE-Script.ps1" -ItemType File -Force | Out-Null
+        New-Item -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -ItemType File -Force | Out-Null
 
         add-script -subPath $subPath -script $fileFunc
         add-script -subpath "core" -script "framework"
 
         # Add a final line that will invoke the desired function
-        Add-Content -Path "$env:TEMP\CHASTE-Script.ps1" -Value "invoke-script '$fileFunc'"
+        Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "invoke-script '$fileFunc'"
 
         # Execute the combined script
-        $chasteScript = Get-Content -Path "$env:TEMP\CHASTE-Script.ps1" -Raw
+        $chasteScript = Get-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Raw
         Invoke-Expression $chasteScript
     } catch {
         # Error handling: display an error message and prompt for a new command
@@ -112,15 +112,15 @@ function add-script {
     $url = "https://raw.githubusercontent.com/badsyntaxx/chaste-scripts/main"
 
     # Download the script
-    $download = get-download -Url "$url/$subPath/$script.ps1" -Target "$env:TEMP\$script.ps1" -failText "Could not acquire components..."
+    $download = get-download -Url "$url/$subPath/$script.ps1" -Target "$env:SystemRoot\Temp\$script.ps1" -failText "Could not acquire components..."
     if (!$download) { read-command }
 
     # Append the script to the main script
-    $rawScript = Get-Content -Path "$env:TEMP\$script.ps1" -Raw -ErrorAction SilentlyContinue
-    Add-Content -Path "$env:TEMP\CHASTE-Script.ps1" -Value $rawScript
+    $rawScript = Get-Content -Path "$env:SystemRoot\Temp\$script.ps1" -Raw -ErrorAction SilentlyContinue
+    Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value $rawScript
 
     # Remove the script file
-    Get-Item -ErrorAction SilentlyContinue "$env:TEMP\$script.ps1" | Remove-Item -ErrorAction SilentlyContinue
+    Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\$script.ps1" | Remove-Item -ErrorAction SilentlyContinue
 }
 
 function write-help {
