@@ -169,7 +169,7 @@ function write-text {
     )
 
     try {
-        Start-Sleep -Milliseconds 250
+        Start-Sleep -Milliseconds 150
         # Add a new line before output if specified
         if ($lineBefore) { Write-Host }
 
@@ -179,7 +179,7 @@ function write-text {
             Write-Host "$text" -ForegroundColor "White" 
         }
         if ($type -eq "label") { Write-Host "    $text" -ForegroundColor "Yellow" }
-        if ($type -eq 'success') { Write-Host "    -----$text-----"  -ForegroundColor "Green" }
+        if ($type -eq 'success') { Write-Host "    $text"  -ForegroundColor "Green" }
         if ($type -eq 'error') { Write-Host "  X $text" -ForegroundColor "Red" }
         if ($type -eq 'notice') { Write-Host "    $text" -ForegroundColor "Yellow" }
         if ($type -eq 'plain') { Write-Host "    $text" -ForegroundColor $Color }
