@@ -1,6 +1,6 @@
 function add-local-user {
     try {
-        $name = read-input -prompt "What name would you like for the account?" -Validate "^([a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser -lineBefore
+        $name = read-input -prompt "What name would you like for the account?" -Validate "^([a-zA-Z0-9 ._\-]{1,64})$" -CheckExistingUser -lineBefore
         $password = read-input -prompt "Enter password or leave blank." -IsSecure -lineBefore
 
         # Create the new local user and add to the specified group
@@ -10,7 +10,7 @@ function add-local-user {
             # User creation failed, exit with error
             write-text -type 'error' -text "Failed to create user $name. Please check the logs for details."
         }
-        write-text -type 'success' -text "User $name created successfully." -lineBefore
+        write-text -type 'success' -text "User $name created successfully."
 
         $group = read-option -options $([ordered]@{
                 "Administrators" = "Set this user's group membership to administrators."
@@ -27,7 +27,7 @@ function add-local-user {
         } #>
 
         # Because of the bug listed above we just assume success if the script is still executing at this point.
-        write-text -type "success" -text "$name has been assigned to the $group group." -lineAfter -lineBefore
+        write-text -type "success" -text "$name has been assigned to the $group group." -lineAfter
 
         read-command
     } catch {
@@ -36,6 +36,8 @@ function add-local-user {
         read-command
     }
 }
+
+
 
 
 
