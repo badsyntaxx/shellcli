@@ -196,7 +196,7 @@ function write-text {
                 for ($i = 0; $i -lt $orderedKeys.Count; $i++) {
                     $key = $orderedKeys[$i]
                     $padding = " " * ($longestKeyLength - $key.Length)
-                    Write-Host "    $($key): $padding $($List[$key])" -ForegroundColor "DarkGray"
+                    Write-Host "    $($key): $padding $($List[$key])" -ForegroundColor $Color
                 }
             }
         }
@@ -740,7 +740,7 @@ function select-user {
             $data = get-userdata -Username $choice
 
             # Display user data as a list
-            write-text -type "list" -List $data
+            write-text -type "list" -List $data -Color "Green"
         }
 
         # Add a line break after the menu if lineAfter is specified
