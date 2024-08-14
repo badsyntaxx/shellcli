@@ -20,7 +20,7 @@ function remove-user {
             if ($null -ne $dir -And (Test-Path -Path $dir)) { Remove-Item -Path $dir -Recurse -Force }
         }
 
-        if (!(Test-Path -Path $dir)) { 
+        if ($null -ne $dir -and !(Test-Path -Path $dir)) { 
             write-text -type 'success' -text "User data deleted." 
         } else {
             write-text -type 'error' -text "Unable to delete user data."
