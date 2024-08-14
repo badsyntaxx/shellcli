@@ -13,7 +13,7 @@ function edit-hostname {
             $description = $currentDescription 
         } 
         
-        get-closing -Script "edit-hostname"
+        read-closing -Script "edit-hostname"
 
         if ($hostname -ne "") {
             Remove-ItemProperty -path "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" -name "Hostname" 

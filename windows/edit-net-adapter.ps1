@@ -200,7 +200,7 @@ function confirm-edits {
             }
         }
 
-        get-closing -script "edit-net-adapter"
+        read-closing -script "edit-net-adapter"
 
         $dnsString = ""
     

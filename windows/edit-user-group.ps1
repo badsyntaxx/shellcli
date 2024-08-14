@@ -82,7 +82,7 @@ function Edit-LocalUserGroup {
             $selectedGroups += read-option -options $availableGroups -ReturnKey
         }
 
-        get-closing -Script "Edit-LocalUserGroup"
+        read-closing -Script "Edit-LocalUserGroup"
 
         foreach ($group in $selectedGroups) {
             if ($addOrRemove -eq "Add" -and $group -ne "Done") {

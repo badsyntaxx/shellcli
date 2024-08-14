@@ -22,7 +22,7 @@ function Edit-LocalUserPassword {
         if ($password.Length -eq 0) { $alert = "Removing password. Are you sure?" } 
         else { $alert = "Changing password. Are you sure?" }
 
-        get-closing -script "edit-user-password" -customText $alert
+        read-closing -script "edit-user-password" -customText $alert
 
         Get-LocalUser -Name $username | Set-LocalUser -Password $password
 

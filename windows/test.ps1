@@ -660,7 +660,7 @@ function read-option {
         write-text -type "error" -text "Error | read-option-$($_.InvocationInfo.ScriptLineNumber)"
     }
 }
-function get-closing {
+function read-closing {
     param (
         [parameter(Mandatory = $false)]
         [string]$script = "",
