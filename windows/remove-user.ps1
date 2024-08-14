@@ -1,6 +1,6 @@
 function remove-user {
     try {
-        $user = select-user -prompt "Select an account to remove."
+        $user = select-user -prompt "Select an account to remove." -lineBefore
         $dir = (Get-CimInstance Win32_UserProfile -Filter "SID = '$((Get-LocalUser $user["Name"]).Sid)'").LocalPath
 
         Remove-LocalUser -Name $user["Name"] | Out-Null
