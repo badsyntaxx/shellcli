@@ -270,45 +270,6 @@ function write-text {
         read-command
     }
 }
-function write-compare() {
-    param (
-        [parameter(Mandatory)]
-        [string]$oldData,
-        [parameter(Mandatory)]
-        [string]$newData
-    )
-
-    Write-Host "    $oldData" -ForegroundColor "DarkGray" -NoNewline
-    Write-Host " $([char]0x2192) " -ForegroundColor "Magenta" -NoNewline
-    Write-Host $newData -ForegroundColor "Gray"
-}
-function write-box {
-    param (
-        [parameter(Mandatory = $false)]
-        [array]$Text
-    )
-
-    $horizontalLine = [string][char]0x2500
-    $verticalLine = [string][char]0x2502
-    $topLeft = [string][char]0x250C
-    $topRight = [string][char]0x2510
-    $bottomLeft = [string][char]0x2514
-    $bottomRight = [string][char]0x2518
-    $longestString = $Text | Sort-Object Length -Descending | Select-Object -First 1
-    $count = $longestString.Length
-
-    Write-Host " $topLeft$($horizontalLine * ($count + 2))$topRight" -ForegroundColor Cyan
-
-    foreach ($line in $Text) {
-        Write-Host " $verticalLine" -ForegroundColor Cyan -NoNewline
-        
-        Write-Host " $($line.PadRight($count))" -ForegroundColor White -NoNewline
-        
-        Write-Host " $verticalLine" -ForegroundColor Cyan
-    }
-
-    Write-Host " $bottomLeft$($horizontalLine * ($count + 2))$bottomRight" -ForegroundColor Cyan
-}
 function write-welcome {
     param (
         [parameter(Mandatory = $false)]
