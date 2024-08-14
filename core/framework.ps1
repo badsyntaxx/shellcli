@@ -182,7 +182,7 @@ function write-text {
         }
         if ($type -eq "label") { Write-Host "    $text" -ForegroundColor "Yellow" }
         if ($type -eq 'success') { Write-Host "    $text"  -ForegroundColor "Green" }
-        if ($type -eq 'error') { Write-Host "    $text" -ForegroundColor "Red" }
+        if ($type -eq 'error') { Write-Host "  X $text" -ForegroundColor "Red" }
         if ($type -eq 'notice') { Write-Host "    $text" -ForegroundColor "Yellow" }
         if ($type -eq 'plain') { Write-Host "    $text" -ForegroundColor $Color }
         if ($type -eq 'list') { 
@@ -206,7 +206,7 @@ function write-text {
         }
 
         if ($type -eq 'fail') { 
-            Write-Host "  X " -ForegroundColor "Red" -NoNewline
+            Write-Host "    " -ForegroundColor "Red" -NoNewline
             Write-Host "$text" 
         }
 
