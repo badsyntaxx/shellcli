@@ -178,7 +178,7 @@ function write-text {
             Write-Host "$text" -ForegroundColor "White" 
         }
         if ($type -eq "label") { Write-Host "    $text" -ForegroundColor "Yellow" }
-        if ($type -eq 'success') { Write-Host "    $text"  -ForegroundColor "Green" }
+        if ($type -eq 'success') { Write-Host "    -----$text-----"  -ForegroundColor "Green" }
         if ($type -eq 'error') { Write-Host "  X $text" -ForegroundColor "Red" }
         if ($type -eq 'notice') { Write-Host "    $text" -ForegroundColor "Yellow" }
         if ($type -eq 'plain') { Write-Host "    $text" -ForegroundColor $Color }
