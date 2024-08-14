@@ -8,7 +8,7 @@ function remove-user {
             write-text -type "error" -text "Could not remove user."
         } 
 
-        write-text -type 'success' -text "The user account has been removed from the system." -lineBefore
+        write-text -type 'success' -text "The user account has been removed from the system."
 
         $choice = read-option -options $([ordered]@{
                 "Delete" = "Also delete the users data."
@@ -24,9 +24,9 @@ function remove-user {
         }
 
         if ($null -eq $dir) { 
-            write-text -type 'success' -text "The user data has been deleted." -lineBefore -lineAfter 
+            write-text -type 'success' -text "The user data has been deleted." -lineAfter 
         } else {
-            write-text -type 'error' -text "Unable to delete user data." -lineBefore -lineAfter
+            write-text -type 'error' -text "Unable to delete user data." -lineAfter
         }
 
         read-command
