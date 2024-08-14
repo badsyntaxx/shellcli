@@ -20,12 +20,12 @@ function remove-user {
         }
 
         if ($null -eq $dir) { 
-            write-text -type 'success' -text "User data deleted." 
+            write-text -type 'success' -text "The user data has been deleted." 
         } else {
             write-text -type 'error' -text "Unable to delete user data."
         }
 
-        exit-script -type 'success' -text "User removed." -lineAfter
+        exit-script
     } catch {
         # Display error message and exit this script
         exit-script -type "error" -text "remove-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter

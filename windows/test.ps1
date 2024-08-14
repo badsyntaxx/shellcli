@@ -1,3 +1,38 @@
+function remove-user {
+    try {
+        $user = select-user -prompt "Select an account to remove." -lineBefore
+        $dir = (Get-CimInstance Win32_UserProfile -Filter "SID = '$((Get-LocalUser $user["Name"]).Sid)'").LocalPath
+
+        Remove-LocalUser -Name $user["Name"] | Out-Null
+        if (Get-LocalUser -Name $user["Name"] -ErrorAction SilentlyContinue | Out-Null) {
+            exit-script -type "error" -text "Could not remove user."
+        } 
+
+        write-text -type 'success' -text "The user account has been removed from the system." -lineBefore
+
+        $choice = read-option -options $([ordered]@{
+                "Delete" = "Also delete the users data."
+                "Keep"   = "Do not delete the users data."
+            }) -prompt "Do you also want to delete the users data?" -lineBefore
+
+        if ($choice -eq 0) { 
+            if ($null -ne $dir) { Remove-Item -Path $dir -Recurse -Force }
+        }
+
+        if ($null -eq $dir) { 
+            write-text -type 'success' -text "User data deleted." 
+        } else {
+            write-text -type 'error' -text "Unable to delete user data."
+        }
+
+        exit-script -type 'success' -text "User removed." -lineAfter
+    } catch {
+        # Display error message and exit this script
+        exit-script -type "error" -text "remove-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+    }
+}
+
+
 function invoke-script {
     param (
         [parameter(Mandatory = $true)]
@@ -33,6 +68,7 @@ function invoke-script {
         exit-script -type "error" -text "invoke-script-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
+
 function read-command {
     param (
         [Parameter(Mandatory = $false)]
@@ -97,6 +133,7 @@ function read-command {
         read-command
     }
 }
+
 function add-script {
     param (
         [Parameter(Mandatory)]
@@ -120,6 +157,7 @@ function add-script {
     # Remove the script file
     Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\$script.ps1" | Remove-Item -ErrorAction SilentlyContinue
 }
+
 function write-help {
     param (
         [Parameter(Mandatory = $false)]
@@ -147,6 +185,7 @@ function write-help {
 
     read-command # Recursively call itself to prompt for a new command
 }
+
 function write-text {
     param (
         [parameter(Mandatory = $false)]
@@ -224,6 +263,7 @@ function write-text {
         exit-script -type "error" -text "write-text-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
+
 function write-compare() {
     param (
         [parameter(Mandatory)]
@@ -236,6 +276,7 @@ function write-compare() {
     Write-Host " $([char]0x2192) " -ForegroundColor "Magenta" -NoNewline
     Write-Host $newData -ForegroundColor "Gray"
 }
+
 function write-box {
     param (
         [parameter(Mandatory = $false)]
@@ -263,6 +304,7 @@ function write-box {
 
     Write-Host " $bottomLeft$($horizontalLine * ($count + 2))$bottomRight" -ForegroundColor Cyan
 }
+
 function write-welcome {
     param (
         [parameter(Mandatory = $false)]
@@ -283,6 +325,7 @@ function write-welcome {
     # Add a new line after output if specified
     if ($lineAfter) { Write-Host }
 }
+
 function exit-script {
     param (
         [parameter(Mandatory = $false)]
@@ -302,6 +345,7 @@ function exit-script {
     if ($lineAfter) { Write-Host }
     read-command 
 }
+
 function get-download {
     param (
         [Parameter(Mandatory)]
@@ -449,6 +493,7 @@ function get-download {
         }   
     }
 }
+
 function read-input {
     param (
         [parameter(Mandatory = $false)]
@@ -523,6 +568,7 @@ function read-input {
         write-text -type "error" -text "Input Error: $($_.Exception.Message)"
     }
 }
+
 function read-option {
     param (
         [parameter(Mandatory = $true)]
@@ -633,6 +679,7 @@ function read-option {
         write-text -type "error" -text "Error | read-option-$($_.InvocationInfo.ScriptLineNumber)"
     }
 }
+
 function get-closing {
     param (
         [parameter(Mandatory = $false)]
@@ -653,6 +700,7 @@ function get-closing {
     }
     if ($choice -eq 2) { read-command }
 }
+
 function get-userdata {
     param (
         [parameter(Mandatory = $true)]
@@ -680,6 +728,7 @@ function get-userdata {
         write-text -type "error" -text "Error getting account info: $($_.Exception.Message)"
     }
 }
+
 function select-user {
     param (
         [parameter(Mandatory = $false)]
@@ -687,9 +736,7 @@ function select-user {
         [parameter(Mandatory = $false)]
         [switch]$lineBefore = $false,
         [parameter(Mandatory = $false)]
-        [switch]$lineAfter = $false,
-        [parameter(Mandatory = $false)]
-        [switch]$writeResult = $false
+        [switch]$lineAfter = $false
     )
 
     try {
@@ -735,13 +782,11 @@ function select-user {
         # Prompt user to select a user from the list and return the key (username)
         $choice = read-option -options $accounts -prompt $prompt -returnKey -lineAfter
 
-        if ($writeResult) {
-            # Get user data using the selected username
-            $data = get-userdata -Username $choice
+        # Get user data using the selected username
+        $data = get-userdata -Username $choice
 
-            # Display user data as a list
-            write-text -type "list" -List $data
-        }
+        # Display user data as a list
+        write-text -type "list" -List $data
 
         # Add a line break after the menu if lineAfter is specified
         if ($lineAfter) { Write-Host }
@@ -753,3 +798,5 @@ function select-user {
         write-text -type "error" -text "Select user error: $($_.Exception.Message)"
     }
 }
+
+invoke-script 'remove-user'
