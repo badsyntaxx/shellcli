@@ -131,7 +131,7 @@ function write-help {
 
     switch ($type) {
         "" { 
-            write-text -type "header" -text "DOCS:" -lineBefore 
+            write-text -type "header" -text "DOCS:"
             write-text -type "plain" -text "https://guided.chaste.pro/dev/chaste-scripts" -Color "DarkGray"
             write-text -type "header" -text "COMMANDS:" -lineBefore
             write-text -type "plain" -text "toggle admin                     - Toggle the Windows built-in administrator account." -Color "DarkGray"
