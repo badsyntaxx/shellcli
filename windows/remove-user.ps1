@@ -1,6 +1,7 @@
 function remove-user {
     try {
         $user = select-user -prompt "Select an account to remove."
+        $dir = (Get-CimInstance Win32_UserProfile -Filter "SID = '$((Get-LocalUser $user["Name"]).Sid)'").LocalPath
 
         Remove-LocalUser -Name $user["Name"] | Out-Null
         if (Get-LocalUser -Name $user["Name"] -ErrorAction SilentlyContinue | Out-Null) {
@@ -15,7 +16,6 @@ function remove-user {
             }) -prompt "Do you also want to delete the users data?" -lineBefore
 
         if ($choice -eq 0) { 
-            $dir = (Get-CimInstance Win32_UserProfile -Filter "SID = '$((Get-LocalUser $user["Name"]).Sid)'").LocalPath
             if ($null -ne $dir) { Remove-Item -Path $dir -Recurse -Force }
         }
 
