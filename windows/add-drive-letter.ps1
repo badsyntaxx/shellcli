@@ -18,10 +18,12 @@ function add-drive-letter {
             $message = 'Drive removed.'
         } 
 
-        exit-script -type "success" -text $message -lineAfter
+        write-text -type "success" -text $message -lineAfter
+        read-command
     } catch {
         # Display error message and exit this script
-        exit-script -type "error" -text "add-drive-letter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "add-drive-letter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        read-command
     }
 }
 

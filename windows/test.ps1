@@ -5,7 +5,7 @@ function remove-user {
 
         Remove-LocalUser -Name $user["Name"] | Out-Null
         if (Get-LocalUser -Name $user["Name"] -ErrorAction SilentlyContinue | Out-Null) {
-            exit-script -type "error" -text "Could not remove user."
+            write-text -type "error" -text "Could not remove user."
         } 
 
         write-text -type 'success' -text "The user account has been removed from the system." -lineBefore
@@ -19,21 +19,28 @@ function remove-user {
             if ($null -ne $dir) { Remove-Item -Path $dir -Recurse -Force }
         }
 
+        if ($choice -eq 1) { 
+            read-command
+        }
+
         if ($null -eq $dir) { 
             write-text -type 'success' -text "The user data has been deleted." -lineBefore  
         } else {
             write-text -type 'error' -text "Unable to delete user data." -lineBefore 
         }
 
-        exit-script
+        read-command
     } catch {
         # Display error message and exit this script
-        exit-script -type "error" -text "remove-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "remove-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        read-command
     }
 }
 <# #################################################################################################################################### #>
 <# #################################################################################################################################### #>
 <# #################################################################################################################################### #>
+
+
 
 function invoke-script {
     param (
@@ -67,7 +74,8 @@ function invoke-script {
         Invoke-Expression $script
     } catch {
         # Display error message and exit this script
-        exit-script -type "error" -text "invoke-script-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "invoke-script-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        read-command
     }
 }
 function read-command {
@@ -258,7 +266,8 @@ function write-text {
         if ($lineAfter) { Write-Host }
     } catch {
         # Display error message and exit this script
-        exit-script -type "error" -text "write-text-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "write-text-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        read-command
     }
 }
 function write-compare() {
@@ -319,25 +328,6 @@ function write-welcome {
 
     # Add a new line after output if specified
     if ($lineAfter) { Write-Host }
-}
-function exit-script {
-    param (
-        [parameter(Mandatory = $false)]
-        [string]$text = "",
-        [parameter(Mandatory = $false)]
-        [string]$type = "plain",
-        [parameter(Mandatory = $false)]
-        [switch]$lineBefore = $false, # Add a new line before output if specified
-        [parameter(Mandatory = $false)]
-        [switch]$lineAfter = $false # Add a new line after output if specified
-    )
-
-    # Add a new line before output if specified
-    if ($lineBefore) { Write-Host }
-    write-text -type $Type -text $Text
-    # Add a new line after output if specified
-    if ($lineAfter) { Write-Host }
-    read-command 
 }
 function get-download {
     param (

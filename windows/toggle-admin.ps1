@@ -26,10 +26,11 @@ function toggle-admin {
         if ($admin.Enabled) { Write-Host "enabled" -ForegroundColor Magenta } 
         else { Write-Host "disabled" -ForegroundColor Magenta }
 
-        exit-script
+        read-command
     } catch {
         # Display error message and exit this script
-        exit-script -type "error" -text "enable-admin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "enable-admin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        read-command
     }
 }
 

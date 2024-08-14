@@ -16,9 +16,10 @@ function toggle-context-menu {
         Stop-Process -Name explorer -force
         Start-Process explorer
 
-        exit-script
+        read-command
     } catch {
         # Display error message and exit this script
-        exit-script -type "error" -text "enable-admin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "enable-admin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        read-command
     }
 }

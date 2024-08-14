@@ -8,7 +8,7 @@ function add-local-user {
         $newUser = Get-LocalUser -Name $name
         if ($null -eq $newUser) {
             # User creation failed, exit with error
-            exit-script -type 'error' -text "Failed to create user $name. Please check the logs for details."
+            write-text -type 'error' -text "Failed to create user $name. Please check the logs for details."
         }
         write-text -type 'success' -text "User $name created successfully." -lineBefore
 
@@ -23,7 +23,7 @@ function add-local-user {
         <# if ((Get-LocalGroupMember -Group $group -Name $name).Count -gt 0) {
             write-text -type "success" -text "$name has been assigned to the $group group." -lineAfter
         } else {
-            exit-script -type 'error' -text  "$($_.Exception.Message)" -lineAfter
+            write-text -type 'error' -text  "$($_.Exception.Message)" -lineAfter
         } #>
 
         # Because of the bug listed above we just assume success if the script is still executing at this point.
@@ -34,10 +34,11 @@ function add-local-user {
         $data = get-userdata $username
         write-text -type "list" -List $data
 
-        exit-script 
+        read-command
     } catch {
         # Display error message and exit this script
-        exit-script -type "error" -text "add-local-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "add-local-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        read-command
     }
 }
 <# #################################################################################################################################### #>

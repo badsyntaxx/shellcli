@@ -5,7 +5,8 @@ function edit-user-name {
         if ($user["Source"] -eq "Local") { Edit-LocalUserName -User $user } else { Edit-ADUserName }
     } catch {
         # Display error message and exit this script
-        exit-script -type "error" -text "edit-user-name-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "edit-user-name-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        read-command
     }
 }
 
@@ -27,13 +28,16 @@ function Edit-LocalUserName {
         if ($null -ne $newUser) { 
             # $newData = get-userdata -Username $newUser
             write-compare -oldData "$($user['name'])" -newData $newUser
-            exit-script -type "success" -text "Account name successfully changed." -lineBefore -lineAfter
+            write-text -type "success" -text "Account name successfully changed." -lineBefore -lineAfter
+            read-command
         } else {
-            exit-script -type "error" -text "There was an unknown error when trying to rename this user." -lineBefore -lineAfter
+            write-text -type "error" -text "There was an unknown error when trying to rename this user." -lineBefore -lineAfter
+            read-command
         }
     } catch {
         # Display error message and exit this script
-        exit-script -type "error" -text "Edit-LocalUserName-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "Edit-LocalUserName-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        read-command
     }
 }
 

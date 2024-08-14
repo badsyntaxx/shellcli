@@ -5,7 +5,8 @@ function edit-user-password {
         if ($user["Source"] -eq "Local") { Edit-LocalUserPassword -username $user["Name"] } else { Edit-ADUserPassword }
     } catch {
         # Display error message and exit this script
-        exit-script -type "error" -text "edit-user-password-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "edit-user-password-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        read-command
     }
 }
 
@@ -25,13 +26,16 @@ function Edit-LocalUserPassword {
 
         Get-LocalUser -Name $username | Set-LocalUser -Password $password
 
-        exit-script -Type "success" -text "Password settings for $username successfully updated." -lineAfter
+        write-text -Type "success" -text "Password settings for $username successfully updated." -lineAfter
+        read-command
     } catch {
         # Display error message and exit this script
-        exit-script -type "error" -text "Edit-LocalUserPassword-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "Edit-LocalUserPassword-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        read-command
     }
 }
 
 function Edit-ADUserPassword {
-    exit-script -Type "fail" -text "Editing domain users doesn't work yet."
+    write-text -Type "fail" -text "Editing domain users doesn't work yet."
+    read-command
 }

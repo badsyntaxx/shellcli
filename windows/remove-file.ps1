@@ -14,10 +14,14 @@ function remove-file {
         } while (!$file)
 
         $file = Get-Item $filepath -ErrorAction SilentlyContinue
-        if (!$file) { exit-script -type "success" -text "File successfully deleted." -lineAfter }
+        if (!$file) { 
+            write-text -type "success" -text "File successfully deleted." -lineAfter 
+            read-command
+        }
     } catch {
         # Display error message and exit this script
-        exit-script -type "error" -text "remove-file-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "remove-file-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        read-command
     }
 }
 

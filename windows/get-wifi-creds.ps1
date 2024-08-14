@@ -1,17 +1,20 @@
 function get-wifi-creds {
     $wifiProfiles = netsh wlan show profiles
     if ($wifiProfiles -match "There is no wireless interface on the system.") {
-        exit-script -type "error" -text "There is no wireless interface on the system." -lineBefore -lineAfter
+        write-text -type "error" -text "There is no wireless interface on the system." -lineBefore -lineAfter
+        read-command
     }
 
     if ((Get-Service wlansvc).Status -ne "Running") {
-        exit-script -type "notice" -text "The wlansvc service is not running or the wireless adapter is disabled." -lineBefore -lineAfter
+        write-text -type "notice" -text "The wlansvc service is not running or the wireless adapter is disabled." -lineBefore -lineAfter
+        read-command
     }
 
     if ($wifiProfiles.Count -gt 0) {
         $wifiList = ($wifiProfiles | Select-String -Pattern "\w*All User Profile.*: (.*)" -AllMatches).Matches | ForEach-Object { $_.Groups[1].Value }
     } else {
-        exit-script -type "error" -text "No WiFi profiles found." -lineBefore -lineAfter
+        write-text -type "error" -text "No WiFi profiles found." -lineBefore -lineAfter
+        read-command
     }
 
     write-text -type 'label' -text "Found $($wifiList.Count) Wi-Fi Connection settings stored on the system:" -lineBefore -lineAfter

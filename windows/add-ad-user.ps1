@@ -1,7 +1,7 @@
 function add-ad-user {
     try {
         write-text -type "fail" -text "Editing domain users doesn't work yet."
-        exit-script
+        read-command
 
         Get-Item -ErrorAction SilentlyContinue "$path\add-ad-user.ps1" | Remove-Item -ErrorAction SilentlyContinue
         Write-Host " Chaste Scripts: Add Domain User v0321240710"
@@ -47,10 +47,12 @@ function add-ad-user {
 
         write-text -type "list" -List $data -lineAfter
 
-        exit-script -type "success" -text "The user account was created."
+        write-text -type "success" -text "The user account was created."
+        read-command
     } catch {
         # Display error message and exit this script
-        exit-script -type "error" -text "add-domain-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "add-domain-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        read-command
     }
 }
 
