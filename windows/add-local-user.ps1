@@ -8,7 +8,7 @@ function add-local-user {
         $group = read-option -options $([ordered]@{
                 "Administrators" = "Set this user's group membership to administrators."
                 "Users"          = "Set this user's group membership to standard users."
-            }) -returnKey
+            }) -prompt "What group should this account be in." -returnKey
         
         get-closing -script "add-local-user"
 
