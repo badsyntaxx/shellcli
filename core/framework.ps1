@@ -657,7 +657,7 @@ function get-closing {
             "Submit" = "Submit and apply your changes." 
             "Rest"   = "Discard changes and start this task over at the beginning."
             "Exit"   = "Exit this task but remain in the CHASTE Scripts CLI." 
-        }) -lineAfter -prompt $customText
+        }) -lineAfter -lineBefore -prompt $customText
 
     if ($choice -eq 1) { 
         if ($script -ne "") { invoke-script $script } 
