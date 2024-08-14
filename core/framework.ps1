@@ -737,11 +737,8 @@ function select-user {
             $accounts["$username"] = "$source | $groupString"
         }
 
-        # Display prompt with a diamond symbol (optional secure input for passwords)
-        Write-Host "    $prompt" -ForegroundColor "Yellow"
-
         # Prompt user to select a user from the list and return the key (username)
-        $choice = read-option -options $accounts -returnKey -lineAfter
+        $choice = read-option -options $accounts -prompt $prompt -returnKey -lineAfter
 
         # Get user data using the selected username
         $data = get-userdata -Username $choice
