@@ -484,7 +484,7 @@ function read-input {
         if ($lineBefore) { Write-Host }
 
         # Display prompt with a diamond symbol (optional secure input for passwords)
-        Write-Host "  ? $prompt" -ForegroundColor "Yellow"
+        Write-Host "    $prompt" -ForegroundColor "Yellow"
 
         # Get current cursor position
         $currPos = $host.UI.RawUI.CursorPosition
@@ -539,6 +539,8 @@ function read-option {
         [parameter(Mandatory = $true)]
         [System.Collections.Specialized.OrderedDictionary]$options,
         [parameter(Mandatory = $false)]
+        [string]$prompt, # Provide a specific prompt in necessary
+        [parameter(Mandatory = $false)]
         [switch]$returnKey = $false,
         [parameter(Mandatory = $false)]
         [switch]$ReturnValue = $false,
@@ -551,6 +553,9 @@ function read-option {
     try {
         # Add a line break before the menu if lineBefore is specified
         if ($lineBefore) { Write-Host }
+
+        # Display prompt with a diamond symbol (optional secure input for passwords)
+        Write-Host "    $prompt" -ForegroundColor "Yellow"
 
         # Initialize variables for user input handling
         $vkeycode = 0
