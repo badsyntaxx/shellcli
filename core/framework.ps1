@@ -227,26 +227,6 @@ function write-text {
         read-command
     }
 }
-function write-welcome {
-    param (
-        [parameter(Mandatory = $false)]
-        [string]$command,
-        [switch]$lineBefore = $false, # Add a new line before output if specified
-        [parameter(Mandatory = $false)]
-        [switch]$lineAfter = $false # Add a new line after output if specified
-    )
-
-    # Add a new line before output if specified
-    if ($lineBefore) { Write-Host }
-
-    Write-Host
-    Write-Host " ::" -ForegroundColor "DarkCyan" -NoNewline
-    Write-Host " Running command:" -NoNewline -ForegroundColor "DarkGray"
-    Write-Host " $command" -ForegroundColor "Gray"
-
-    # Add a new line after output if specified
-    if ($lineAfter) { Write-Host }
-}
 function get-download {
     param (
         [Parameter(Mandatory)]

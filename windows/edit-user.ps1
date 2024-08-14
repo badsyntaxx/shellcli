@@ -12,7 +12,10 @@ function edit-user {
             2 { $command = "edit user group" }
         }
 
-        write-welcome -command $command
+        Write-Host
+        Write-Host " ::"  -ForegroundColor "DarkCyan" -NoNewline
+        Write-Host " Running command:" -NoNewline -ForegroundColor "DarkGray"
+        Write-Host " $command" -ForegroundColor "Gray"
 
         read-command -command $command
     } catch {

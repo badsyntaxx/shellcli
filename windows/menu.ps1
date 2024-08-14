@@ -22,7 +22,10 @@ function menu {
         if ($choice -eq 6) { $command = "get wifi creds" }
         if ($choice -eq 7) { $command = "toggle context menu" }
 
-        write-welcome -command $command
+        Write-Host
+        Write-Host " ::"  -ForegroundColor "DarkCyan" -NoNewline
+        Write-Host " Running command:" -NoNewline -ForegroundColor "DarkGray"
+        Write-Host " $command" -ForegroundColor "Gray"
 
         read-command -command $command
     } catch {
