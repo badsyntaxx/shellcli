@@ -528,7 +528,7 @@ function read-option {
                 Write-Host "    $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $($options[$orderedKeys[$oldPos]])" -ForegroundColor "Gray"
                 $host.UI.RawUI.CursorPosition = $menuNewPos
                 Write-Host "  $([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline
-                Write-Host " $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($options[$orderedKeys[$pos]])" -ForegroundColor "Cyan"
+                Write-Host " $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($options[$orderedKeys[$pos]])" -ForegroundColor "DarkCyan"
                 $host.UI.RawUI.CursorPosition = $currPos
             }
         }
@@ -541,10 +541,10 @@ function read-option {
 
         if ($orderedKeys.Count -ne 1) {
             Write-Host "  $([char]0x2713)" -ForegroundColor "Green" -NoNewline
-            Write-Host " $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($options[$orderedKeys[$pos]])" -ForegroundColor "Cyan"
+            Write-Host " $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($options[$orderedKeys[$pos]])" -ForegroundColor "DarkCyan"
         } else {
             Write-Host "  $([char]0x2713)" -ForegroundColor "Green" -NoNewline
-            Write-Host " $($orderedKeys[$pos])" -ForegroundColor "Cyan"
+            Write-Host " $($orderedKeys[$pos])" -ForegroundColor "DarkCyan"
         }
         
         $host.UI.RawUI.CursorPosition = $currPos
@@ -559,6 +559,7 @@ function read-option {
     } catch {
         # Display error message and exit this script
         write-text -type "error" -text "Error | read-option-$($_.InvocationInfo.ScriptLineNumber)"
+        read-command
     }
 }
 function read-closing {
