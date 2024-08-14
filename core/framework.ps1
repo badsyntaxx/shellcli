@@ -543,7 +543,7 @@ function read-option {
         [parameter(Mandatory = $false)]
         [switch]$ReturnValue = $false,
         [parameter(Mandatory = $false)]
-        [boolean]$lineBefore = $false,
+        [switch]$lineBefore = $false,
         [parameter(Mandatory = $false)]
         [switch]$lineAfter = $false
     )
