@@ -42,7 +42,7 @@ function read-command {
 
     try {
         if ($command -eq "") { 
-            Write-Host " :: " -ForegroundColor "DarkCyan" -NoNewline
+            Write-Host " > " -NoNewline
             $command = Read-Host 
         }
 
@@ -402,7 +402,7 @@ function read-input {
         $currPos = $host.UI.RawUI.CursorPosition
 
         Write-Host "  ? " -NoNewline -ForegroundColor "Green"
-        Write-Host $prompt
+        Write-Host "$prompt\: " -NoNewline
 
         if ($IsSecure) { $userInput = Read-Host -AsSecureString } 
         else { $userInput = Read-Host }
@@ -438,7 +438,7 @@ function read-input {
             Write-Host "$prompt\:                                                       " 
         } else { 
             Write-Host "$prompt\: " -NoNewline
-            Write-Host "$userInput                                             " -NoNewline -ForegroundColor "Cyan"
+            Write-Host "$userInput                                             " -NoNewline -ForegroundColor "DarkCyan"
         }
 
         # Add a new line after prompt if specified
