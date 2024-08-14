@@ -16,7 +16,7 @@ function edit-hostname {
             }
         }
 
-        $description = read-input -prompt "Enter a desired description. (Optional)" -Validate "^(\s*|[a-zA-Z0-9 |_\-]{1,64})$" -Value $currentDescription -lineBefore
+        $description = read-input -prompt "Enter a desired description. (Optional)" -Validate "^(\s*|[a-zA-Z0-9 |_\-]{1,64})$" -Value $currentDescription
         if ($description -eq "") { 
             $description = $currentDescription 
         } 
@@ -39,9 +39,9 @@ function edit-hostname {
 
         if ((Get-WmiObject -Class Win32_OperatingSystem).Description -eq $description) {
             if ($description -eq $currentDescription) {
-                write-text -type "success" -text "The description will remain $description" -lineAfter -lineBefore
+                write-text -type "success" -text "The description will remain $description" -lineAfter
             } else {
-                write-text -type "success" -text "The description has been changed to $description" -lineAfter -lineBefore
+                write-text -type "success" -text "The description has been changed to $description" -lineAfter
             }
         }
 
