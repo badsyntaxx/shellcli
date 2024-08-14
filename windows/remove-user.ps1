@@ -1,21 +1,20 @@
 function remove-user {
     try {
-        $user = select-user
+        $user = select-user -prompt "Select an account to remove."
+
+        Remove-LocalUser -Name $user["Name"] | Out-Null
+        if (Get-LocalUser -Name $user["Name"] -ErrorAction SilentlyContinue | Out-Null) {
+            exit-script -type "error" -text "Could not remove user."
+        } 
+
+        write-text -type 'success' -text "The user account has been removed from the system." -lineBefore
 
         $choice = read-option -options $([ordered]@{
                 "Delete" = "Also delete the users data."
                 "Keep"   = "Do not delete the users data."
-            })
+            }) -prompt "Do you also want to delete the users data?" -lineBefore
 
-        if ($choice -eq 0) { $deleteData = $true }
-        if ($choice -eq 1) { $deleteData = $false }
-
-        if ($deleteData) { $alert = "Delete this account and its data?" } 
-        else { $alert = "Delete this account?" }
-        
-        get-closing -Script "remove-user" -customText $alert
-
-        if ($deleteData) {
+        if ($choice -eq 0) { 
             $dir = (Get-CimInstance Win32_UserProfile -Filter "SID = '$((Get-LocalUser $user["Name"]).Sid)'").LocalPath
             if ($null -ne $dir) { Remove-Item -Path $dir -Recurse -Force }
         }
@@ -25,11 +24,6 @@ function remove-user {
         } else {
             write-text -type 'error' -text "Unable to delete user data."
         }
-
-        Remove-LocalUser -Name $user["Name"] | Out-Null
-        if (Get-LocalUser -Name $user["Name"] -ErrorAction SilentlyContinue | Out-Null) {
-            exit-script -type "error" -text "Could not remove user."
-        } 
 
         exit-script -type 'success' -text "User removed." -lineAfter
     } catch {

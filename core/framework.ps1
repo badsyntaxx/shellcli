@@ -695,6 +695,11 @@ function get-userdata {
 }
 
 function select-user {
+    param (
+        [parameter(Mandatory = $false)]
+        [string]$prompt = "Select an account."
+    )
+
     try {
         # Initialize empty array to store user names
         $userNames = @()
@@ -731,6 +736,9 @@ function select-user {
             # Add username and group string to the dictionary
             $accounts["$username"] = "$source | $groupString"
         }
+
+        # Display prompt with a diamond symbol (optional secure input for passwords)
+        Write-Host "    $prompt" -ForegroundColor "Yellow"
 
         # Prompt user to select a user from the list and return the key (username)
         $choice = read-option -options $accounts -returnKey -lineAfter
