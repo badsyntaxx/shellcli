@@ -472,7 +472,7 @@ function read-option {
         if ($lineBefore) { Write-Host }
 
         # Display prompt with a diamond symbol (optional secure input for passwords)
-        Write-Host "    $prompt" -ForegroundColor "Yellow"
+        Write-Host "    $prompt"
 
         # Initialize variables for user input handling
         $vkeycode = 0
@@ -527,7 +527,7 @@ function read-option {
                 $host.UI.RawUI.CursorPosition = $menuOldPos
                 Write-Host "    $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $($options[$orderedKeys[$oldPos]])" -ForegroundColor "Gray"
                 $host.UI.RawUI.CursorPosition = $menuNewPos
-                Write-Host "  $([char]0x2192)" -ForegroundColor "Gray" -NoNewline
+                Write-Host "  $([char]0x2192)" -ForegroundColor "Cyan" -NoNewline
                 Write-Host " $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($options[$orderedKeys[$pos]])" -ForegroundColor "Cyan"
                 $host.UI.RawUI.CursorPosition = $currPos
             }
