@@ -487,16 +487,16 @@ function read-option {
 
         # Display single option if only one exists
         if ($orderedKeys.Count -eq 1) {
-            Write-Host "  $([char]0x2192)" -ForegroundColor "Gray" -NoNewline
-            Write-Host " $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($options[$orderedKeys])" -ForegroundColor "Cyan"
+            Write-Host "  $([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline
+            Write-Host " $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($options[$orderedKeys])" -ForegroundColor "DarkCyan"
         } else {
             # Loop through each option and display with padding and color
             for ($i = 0; $i -lt $orderedKeys.Count; $i++) {
                 $key = $orderedKeys[$i]
                 $padding = " " * ($longestKeyLength - $key.Length)
                 if ($i -eq $pos) { 
-                    Write-Host "  $([char]0x2192)" -ForegroundColor "Gray" -NoNewline  
-                    Write-Host " $key $padding - $($options[$key])" -ForegroundColor "Cyan"
+                    Write-Host "  $([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline  
+                    Write-Host " $key $padding - $($options[$key])" -ForegroundColor "DarkCyan"
                 } else { Write-Host "    $key $padding - $($options[$key])" -ForegroundColor "Gray" }
             }
         }
@@ -527,7 +527,7 @@ function read-option {
                 $host.UI.RawUI.CursorPosition = $menuOldPos
                 Write-Host "    $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $($options[$orderedKeys[$oldPos]])" -ForegroundColor "Gray"
                 $host.UI.RawUI.CursorPosition = $menuNewPos
-                Write-Host "  $([char]0x2192)" -ForegroundColor "Cyan" -NoNewline
+                Write-Host "  $([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline
                 Write-Host " $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($options[$orderedKeys[$pos]])" -ForegroundColor "Cyan"
                 $host.UI.RawUI.CursorPosition = $currPos
             }
