@@ -1,7 +1,7 @@
 function add-local-user {
     try {
         $name = read-input -prompt "What name would you like for the account?" -Validate "^([a-zA-Z0-9 ._\-]{1,64})$" -CheckExistingUser -lineBefore
-        $password = read-input -prompt "Enter password or leave blank." -IsSecure
+        $password = read-input -prompt "Enter password or leave blank:" -IsSecure
 
         # Create the new local user and add to the specified group
         New-LocalUser $name -Password $password -description "Local User" -AccountNeverExpires -PasswordNeverExpires -ErrorAction Stop | Out-Null
@@ -9,7 +9,7 @@ function add-local-user {
         $group = read-option -options $([ordered]@{
                 "Administrators" = "Set this user's group membership to administrators."
                 "Users"          = "Set this user's group membership to standard users."
-            }) -prompt "What group should this account be in?" -returnKey -lineBefore
+            }) -prompt "What group should this account be in?" -returnKey
           
         Add-LocalGroupMember -Group $group -Member $name -ErrorAction Stop | Out-Null
 
@@ -19,7 +19,6 @@ function add-local-user {
             # User creation failed, exit with error
             write-text -type 'error' -text "Failed to create user $name. Please check the logs for details."
         }
-        write-text -type 'success' -text "User $name created successfully." -lineBefore
 
         # There is a powershell bug with Get-LocalGroupMember So we can't do a manual check.
         <# if ((Get-LocalGroupMember -Group $group -Name $name).Count -gt 0) {
@@ -29,9 +28,7 @@ function add-local-user {
         } #>
 
         # Because of the bug listed above we just assume success if the script is still executing at this point.
-        write-text -type "success" -text "$name has been assigned to the $group group." -lineBefore
-
-
+        write-text -type "success" -text "Local user added" -lineBefore
         write-text -label "Account name" -text "$name" -lineBefore
         write-text -label "Account group" -text "$group"
 
@@ -240,7 +237,7 @@ function write-text {
                 $Color = 'DarkCyan'
             }
             if ($label -ne "") { 
-                Write-Host "    $label`: "
+                Write-Host "    $label`: " -NoNewline
                 Write-Host "$text" -ForegroundColor $Color 
             } else {
                 Write-Host "    $text" -ForegroundColor $Color 
@@ -463,11 +460,8 @@ function read-input {
         # Add a new line before prompt if specified
         if ($lineBefore) { Write-Host }
 
-        # Get current cursor position
-        $currPos = $host.UI.RawUI.CursorPosition
-
         Write-Host "  ? " -NoNewline -ForegroundColor "Green"
-        Write-Host "$prompt`: " -NoNewline
+        Write-Host "$prompt " -NoNewline
 
         if ($IsSecure) { $userInput = Read-Host -AsSecureString } 
         else { $userInput = Read-Host }
@@ -493,18 +487,6 @@ function read-input {
 
         # Use provided default value if user enters nothing for a non-secure input
         if ($userInput.Length -eq 0 -and $Value -ne "" -and !$IsSecure) { $userInput = $Value }
-
-        # Reset cursor position
-        [Console]::SetCursorPosition($currPos.X, $currPos.Y)
-        
-        # Display checkmark symbol and user input (masked for secure input)
-        Write-Host "  $([char]0x2713) " -ForegroundColor "Green" -NoNewline
-        if ($IsSecure -and ($userInput.Length -eq 0)) { 
-            Write-Host "$prompt`:                                                       " 
-        } else { 
-            Write-Host "$prompt`: " -NoNewline
-            Write-Host "$userInput                                             " -ForegroundColor "DarkCyan"
-        }
 
         # Add a new line after prompt if specified
         if ($lineAfter) { Write-Host }
@@ -536,8 +518,11 @@ function read-option {
         # Add a line break before the menu if lineBefore is specified
         if ($lineBefore) { Write-Host }
 
-        # Display prompt with a diamond symbol (optional secure input for passwords)
-        Write-Host "    $prompt"
+        # Get current cursor position
+        $promptPos = $host.UI.RawUI.CursorPosition
+
+        Write-Host "  ? " -NoNewline -ForegroundColor "Green"
+        Write-Host "$prompt "
 
         # Initialize variables for user input handling
         $vkeycode = 0
@@ -598,7 +583,7 @@ function read-option {
             }
         }
 
-        if ($orderedKeys.Count -ne 1) {
+        <# if ($orderedKeys.Count -ne 1) {
             $host.UI.RawUI.CursorPosition = $menuNewPos
         } else {
             $host.UI.RawUI.CursorPosition = New-Object System.Management.Automation.Host.Coordinates(0, ($currPos.Y - ($menuLen + 1)))
@@ -610,9 +595,15 @@ function read-option {
         } else {
             Write-Host "  $([char]0x2713)" -ForegroundColor "Green" -NoNewline
             Write-Host " $($orderedKeys[$pos])" -ForegroundColor "DarkCyan"
+        } #>
+
+        [Console]::SetCursorPosition($promptPos.X, $promptPos.Y + 1)
+
+        for ($i = 0; $i -lt 3; $i++) {
+            Write-Host "1                                                                                                                                   "
         }
         
-        $host.UI.RawUI.CursorPosition = $currPos
+        [Console]::SetCursorPosition($promptPos.X, $promptPos.Y)
 
         # Add a line break after the menu if lineAfter is specified
         if ($lineAfter) { Write-Host }

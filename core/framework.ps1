@@ -194,7 +194,7 @@ function write-text {
                 $Color = 'DarkCyan'
             }
             if ($label -ne "") { 
-                Write-Host "    $label`: "
+                Write-Host "    $label`: " -NoNewline
                 Write-Host "$text" -ForegroundColor $Color 
             } else {
                 Write-Host "    $text" -ForegroundColor $Color 
@@ -417,9 +417,6 @@ function read-input {
         # Add a new line before prompt if specified
         if ($lineBefore) { Write-Host }
 
-        # Get current cursor position
-        $currPos = $host.UI.RawUI.CursorPosition
-
         Write-Host "  ? " -NoNewline -ForegroundColor "Green"
         Write-Host "$prompt " -NoNewline
 
@@ -447,18 +444,6 @@ function read-input {
 
         # Use provided default value if user enters nothing for a non-secure input
         if ($userInput.Length -eq 0 -and $Value -ne "" -and !$IsSecure) { $userInput = $Value }
-
-        # Reset cursor position
-        [Console]::SetCursorPosition($currPos.X, $currPos.Y)
-        
-        # Display checkmark symbol and user input (masked for secure input)
-        Write-Host "  $([char]0x2713) " -ForegroundColor "Green" -NoNewline
-        if ($IsSecure -and ($userInput.Length -eq 0)) { 
-            Write-Host "$prompt`:                                                       " 
-        } else { 
-            Write-Host "$prompt`: " -NoNewline
-            Write-Host "$userInput                                             " -ForegroundColor "DarkCyan"
-        }
 
         # Add a new line after prompt if specified
         if ($lineAfter) { Write-Host }
@@ -490,8 +475,11 @@ function read-option {
         # Add a line break before the menu if lineBefore is specified
         if ($lineBefore) { Write-Host }
 
-        # Display prompt with a diamond symbol (optional secure input for passwords)
-        Write-Host "    $prompt"
+        # Get current cursor position
+        $promptPos = $host.UI.RawUI.CursorPosition
+
+        Write-Host "  ? " -NoNewline -ForegroundColor "Green"
+        Write-Host "$prompt " -NoNewline
 
         # Initialize variables for user input handling
         $vkeycode = 0
@@ -552,7 +540,7 @@ function read-option {
             }
         }
 
-        if ($orderedKeys.Count -ne 1) {
+        <# if ($orderedKeys.Count -ne 1) {
             $host.UI.RawUI.CursorPosition = $menuNewPos
         } else {
             $host.UI.RawUI.CursorPosition = New-Object System.Management.Automation.Host.Coordinates(0, ($currPos.Y - ($menuLen + 1)))
@@ -564,9 +552,15 @@ function read-option {
         } else {
             Write-Host "  $([char]0x2713)" -ForegroundColor "Green" -NoNewline
             Write-Host " $($orderedKeys[$pos])" -ForegroundColor "DarkCyan"
+        } #>
+
+        [Console]::SetCursorPosition($promptPos.X, $promptPos.Y + 1)
+
+        for ($i = 0; $i -lt $options.Count; $i++) {
+            Write-Host "1                                                                                                                                   "
         }
         
-        $host.UI.RawUI.CursorPosition = $currPos
+        [Console]::SetCursorPosition($promptPos.X, $promptPos.Y)
 
         # Add a line break after the menu if lineAfter is specified
         if ($lineAfter) { Write-Host }

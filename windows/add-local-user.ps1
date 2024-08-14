@@ -9,7 +9,7 @@ function add-local-user {
         $group = read-option -options $([ordered]@{
                 "Administrators" = "Set this user's group membership to administrators."
                 "Users"          = "Set this user's group membership to standard users."
-            }) -prompt "What group should this account be in?" -returnKey -lineBefore
+            }) -prompt "What group should this account be in?" -returnKey
           
         Add-LocalGroupMember -Group $group -Member $name -ErrorAction Stop | Out-Null
 
@@ -19,7 +19,6 @@ function add-local-user {
             # User creation failed, exit with error
             write-text -type 'error' -text "Failed to create user $name. Please check the logs for details."
         }
-        write-text -type 'success' -text "User $name created successfully." -lineBefore
 
         # There is a powershell bug with Get-LocalGroupMember So we can't do a manual check.
         <# if ((Get-LocalGroupMember -Group $group -Name $name).Count -gt 0) {
@@ -29,9 +28,7 @@ function add-local-user {
         } #>
 
         # Because of the bug listed above we just assume success if the script is still executing at this point.
-        write-text -type "success" -text "$name has been assigned to the $group group." -lineBefore
-
-
+        write-text -type "success" -text "Local user added" -lineBefore
         write-text -label "Account name" -text "$name" -lineBefore
         write-text -label "Account group" -text "$group"
 
@@ -42,4 +39,3 @@ function add-local-user {
         read-command
     }
 }
-
