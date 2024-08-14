@@ -398,13 +398,12 @@ function read-input {
         # Add a new line before prompt if specified
         if ($lineBefore) { Write-Host }
 
-        # Display prompt with a diamond symbol (optional secure input for passwords)
-        Write-Host "    $prompt" -ForegroundColor "Yellow"
-
         # Get current cursor position
         $currPos = $host.UI.RawUI.CursorPosition
 
-        Write-Host "  ? " -NoNewline
+        Write-Host "  ? " -NoNewline -ForegroundColor "Green"
+        Write-Host $prompt
+
         if ($IsSecure) { $userInput = Read-Host -AsSecureString } 
         else { $userInput = Read-Host }
 
@@ -435,8 +434,12 @@ function read-input {
         
         # Display checkmark symbol and user input (masked for secure input)
         Write-Host "  $([char]0x2713) " -ForegroundColor "Green" -NoNewline
-        if ($IsSecure -and ($userInput.Length -eq 0)) { Write-Host "$prompt                                                       " } 
-        else { Write-Host "$userInput                                             " }
+        if ($IsSecure -and ($userInput.Length -eq 0)) { 
+            Write-Host "$prompt\:                                                       " 
+        } else { 
+            Write-Host "$prompt\: " -NoNewline
+            Write-Host "$userInput                                             " -NoNewline -ForegroundColor "Cyan"
+        }
 
         # Add a new line after prompt if specified
         if ($lineAfter) { Write-Host }
