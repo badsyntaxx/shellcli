@@ -404,7 +404,7 @@ function read-input {
         # Get current cursor position
         $currPos = $host.UI.RawUI.CursorPosition
 
-        Write-Host "  : " -NoNewline
+        Write-Host "  ? " -NoNewline
         if ($IsSecure) { $userInput = Read-Host -AsSecureString } 
         else { $userInput = Read-Host }
 
