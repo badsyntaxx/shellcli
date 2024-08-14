@@ -772,11 +772,11 @@ function select-user {
         # Prompt user to select a user from the list and return the key (username)
         $choice = read-option -options $accounts -prompt $prompt -returnKey
 
+        # Get user data using the selected username
+        $data = get-userdata -Username $choice
+
         if ($writeResult) {
             Write-Host
-            # Get user data using the selected username
-            $data = get-userdata -Username $choice
-
             # Display user data as a list
             write-text -type "list" -List $data -Color "Green"
         }
