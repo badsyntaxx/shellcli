@@ -151,6 +151,8 @@ function write-help {
 function write-text {
     param (
         [parameter(Mandatory = $false)]
+        [string]$label = "",
+        [parameter(Mandatory = $false)]
         [string]$text = "",
         [parameter(Mandatory = $false)]
         [string]$type = "plain",
@@ -169,7 +171,6 @@ function write-text {
     )
 
     try {
-        Start-Sleep -Milliseconds 100
         # Add a new line before output if specified
         if ($lineBefore) { Write-Host }
 
@@ -178,11 +179,27 @@ function write-text {
             Write-Host " ## " -ForegroundColor "Cyan" -NoNewline
             Write-Host "$text" -ForegroundColor "White" 
         }
-        if ($type -eq "label") { Write-Host "    $text" -ForegroundColor "Yellow" }
-        if ($type -eq 'success') { Write-Host "  $([char]0x2713) $text"  -ForegroundColor "Green" }
-        if ($type -eq 'error') { Write-Host "  X $text" -ForegroundColor "Red" }
-        if ($type -eq 'notice') { Write-Host "    $text" -ForegroundColor "Yellow" }
-        if ($type -eq 'plain') { Write-Host "    $text" -ForegroundColor $Color }
+        
+        if ($type -eq 'success') { 
+            Write-Host "  $([char]0x2713) $text"  -ForegroundColor "Green" 
+        }
+        if ($type -eq 'error') { 
+            Write-Host "  X $text" -ForegroundColor "Red" 
+        }
+        if ($type -eq 'notice') { 
+            Write-Host "    $text" -ForegroundColor "Yellow" 
+        }
+        if ($type -eq 'plain') {
+            if ($Color -eq "Gray") {
+                $Color = 'DarkCyan'
+            }
+            if ($label -ne "") { 
+                Write-Host "    $label`: "
+                Write-Host "$text" -ForegroundColor $Color 
+            } else {
+                Write-Host "    $text" -ForegroundColor $Color 
+            }
+        }
         if ($type -eq 'list') { 
             # Get a list of keys from the options dictionary
             $orderedKeys = $List.Keys | ForEach-Object { $_ }
@@ -212,7 +229,9 @@ function write-text {
         if ($type -eq 'compare') { 
             foreach ($data in $oldData.Keys) {
                 if ($oldData["$data"] -ne $newData["$data"]) {
-                    write-compare -oldData $oldData["$data"] -newData $newData["$data"]
+                    Write-Host "    $oldData[`"$data`"]" -ForegroundColor "DarkGray" -NoNewline
+                    Write-Host " $([char]0x2192) " -ForegroundColor "Magenta" -NoNewline
+                    Write-Host $newData["$data"] -ForegroundColor "Gray"
                 } else {
                     Write-Host "    $($oldData["$data"])"
                 }

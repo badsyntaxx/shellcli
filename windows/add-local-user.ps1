@@ -13,13 +13,7 @@ function add-local-user {
           
         Add-LocalGroupMember -Group $group -Member $name -ErrorAction Stop | Out-Null
 
-        # There is a powershell bug with Get-LocalGroupMember So we can't do a manual check.
-        <# if ((Get-LocalGroupMember -Group $group -Name $name).Count -gt 0) {
-            write-text -type "success" -text "$name has been assigned to the $group group." -lineAfter
-        } else {
-            write-text -type 'error' -text  "$($_.Exception.Message)" -lineAfter
-        } #>
-
+        
         $newUser = Get-LocalUser -Name $name
         if ($null -eq $newUser) {
             # User creation failed, exit with error
@@ -27,8 +21,19 @@ function add-local-user {
         }
         write-text -type 'success' -text "User $name created successfully." -lineBefore
 
+        # There is a powershell bug with Get-LocalGroupMember So we can't do a manual check.
+        <# if ((Get-LocalGroupMember -Group $group -Name $name).Count -gt 0) {
+            write-text -type "success" -text "$name has been assigned to the $group group." -lineAfter
+        } else {
+            write-text -type 'error' -text  "$($_.Exception.Message)" -lineAfter
+        } #>
+
         # Because of the bug listed above we just assume success if the script is still executing at this point.
-        write-text -type "success" -text "$name has been assigned to the $group group." -lineAfter -lineBefore
+        write-text -type "success" -text "$name has been assigned to the $group group." -lineBefore
+
+
+        write-text -label "Account name" -text "$name" -lineBefore
+        write-text -label "Account group" -text "$group"
 
         read-command
     } catch {

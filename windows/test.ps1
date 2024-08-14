@@ -2,23 +2,14 @@ function add-local-user {
     try {
         $name = read-input -prompt "What name would you like for the account?" -Validate "^([a-zA-Z0-9 ._\-]{1,64})$" -CheckExistingUser -lineBefore
         $password = read-input -prompt "Enter password or leave blank." -IsSecure -lineBefore
-
-        # Create the new local user and add to the specified group
-        New-LocalUser $name -Password $password -description "Local User" -AccountNeverExpires -PasswordNeverExpires -ErrorAction Stop | Out-Null
-        $newUser = Get-LocalUser -Name $name
-        if ($null -eq $newUser) {
-            # User creation failed, exit with error
-            write-text -type 'error' -text "Failed to create user $name. Please check the logs for details."
-        }
-        write-text -type 'success' -text "User $name created successfully."
-
         $group = read-option -options $([ordered]@{
                 "Administrators" = "Set this user's group membership to administrators."
                 "Users"          = "Set this user's group membership to standard users."
             }) -prompt "What group should this account be in?" -returnKey -lineBefore
-          
-        Add-LocalGroupMember -Group $group -Member $name -ErrorAction Stop | Out-Null
 
+        # Create the new local user and add to the specified group
+        New-LocalUser $name -Password $password -description "Local User" -AccountNeverExpires -PasswordNeverExpires -ErrorAction Stop | Out-Null
+        
         # There is a powershell bug with Get-LocalGroupMember So we can't do a manual check.
         <# if ((Get-LocalGroupMember -Group $group -Name $name).Count -gt 0) {
             write-text -type "success" -text "$name has been assigned to the $group group." -lineAfter
@@ -26,8 +17,17 @@ function add-local-user {
             write-text -type 'error' -text  "$($_.Exception.Message)" -lineAfter
         } #>
 
+        $newUser = Get-LocalUser -Name $name
+        if ($null -eq $newUser) {
+            # User creation failed, exit with error
+            write-text -type 'error' -text "Failed to create user $name." -lineBefore -lineAfter
+            read-command
+        }
+
+        Add-LocalGroupMember -Group $group -Member $name -ErrorAction Stop | Out-Null
+
         # Because of the bug listed above we just assume success if the script is still executing at this point.
-        write-text -type "success" -text "$name has been assigned to the $group group." -lineAfter
+        write-text -type "success" -text "Local user added." -lineAfter
 
         read-command
     } catch {
@@ -36,10 +36,6 @@ function add-local-user {
         read-command
     }
 }
-
-
-
-
 
 
 function invoke-script {
@@ -86,7 +82,7 @@ function read-command {
 
     try {
         if ($command -eq "") { 
-            Write-Host "  : " -NoNewline 
+            Write-Host "  $([char]0x203A) " -NoNewline
             $command = Read-Host 
         }
 
@@ -213,6 +209,7 @@ function write-text {
     )
 
     try {
+        Start-Sleep -Milliseconds 100
         # Add a new line before output if specified
         if ($lineBefore) { Write-Host }
 
@@ -222,7 +219,7 @@ function write-text {
             Write-Host "$text" -ForegroundColor "White" 
         }
         if ($type -eq "label") { Write-Host "    $text" -ForegroundColor "Yellow" }
-        if ($type -eq 'success') { Write-Host "    $text"  -ForegroundColor "Green" }
+        if ($type -eq 'success') { Write-Host "  $([char]0x2713) $text"  -ForegroundColor "Green" }
         if ($type -eq 'error') { Write-Host "  X $text" -ForegroundColor "Red" }
         if ($type -eq 'notice') { Write-Host "    $text" -ForegroundColor "Yellow" }
         if ($type -eq 'plain') { Write-Host "    $text" -ForegroundColor $Color }
@@ -441,13 +438,12 @@ function read-input {
         # Add a new line before prompt if specified
         if ($lineBefore) { Write-Host }
 
-        # Display prompt with a diamond symbol (optional secure input for passwords)
-        Write-Host "    $prompt" -ForegroundColor "Yellow"
-
         # Get current cursor position
         $currPos = $host.UI.RawUI.CursorPosition
 
-        Write-Host "  : " -NoNewline
+        Write-Host "  ? " -NoNewline -ForegroundColor "Green"
+        Write-Host "$prompt`: " -NoNewline
+
         if ($IsSecure) { $userInput = Read-Host -AsSecureString } 
         else { $userInput = Read-Host }
 
@@ -478,8 +474,12 @@ function read-input {
         
         # Display checkmark symbol and user input (masked for secure input)
         Write-Host "  $([char]0x2713) " -ForegroundColor "Green" -NoNewline
-        if ($IsSecure -and ($userInput.Length -eq 0)) { Write-Host "$prompt                                                       " } 
-        else { Write-Host "$userInput                                             " }
+        if ($IsSecure -and ($userInput.Length -eq 0)) { 
+            Write-Host "$prompt`:                                                       " 
+        } else { 
+            Write-Host "$prompt`: " -NoNewline
+            Write-Host "$userInput                                             " -ForegroundColor "DarkCyan"
+        }
 
         # Add a new line after prompt if specified
         if ($lineAfter) { Write-Host }
@@ -512,7 +512,7 @@ function read-option {
         if ($lineBefore) { Write-Host }
 
         # Display prompt with a diamond symbol (optional secure input for passwords)
-        Write-Host "    $prompt" -ForegroundColor "Yellow"
+        Write-Host "    $prompt"
 
         # Initialize variables for user input handling
         $vkeycode = 0
@@ -527,16 +527,16 @@ function read-option {
 
         # Display single option if only one exists
         if ($orderedKeys.Count -eq 1) {
-            Write-Host "  $([char]0x2192)" -ForegroundColor "Gray" -NoNewline
-            Write-Host " $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($options[$orderedKeys])" -ForegroundColor "Cyan"
+            Write-Host "  $([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline
+            Write-Host " $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($options[$orderedKeys])" -ForegroundColor "DarkCyan"
         } else {
             # Loop through each option and display with padding and color
             for ($i = 0; $i -lt $orderedKeys.Count; $i++) {
                 $key = $orderedKeys[$i]
                 $padding = " " * ($longestKeyLength - $key.Length)
                 if ($i -eq $pos) { 
-                    Write-Host "  $([char]0x2192)" -ForegroundColor "Gray" -NoNewline  
-                    Write-Host " $key $padding - $($options[$key])" -ForegroundColor "Cyan"
+                    Write-Host "  $([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline  
+                    Write-Host " $key $padding - $($options[$key])" -ForegroundColor "DarkCyan"
                 } else { Write-Host "    $key $padding - $($options[$key])" -ForegroundColor "Gray" }
             }
         }
@@ -567,8 +567,8 @@ function read-option {
                 $host.UI.RawUI.CursorPosition = $menuOldPos
                 Write-Host "    $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $($options[$orderedKeys[$oldPos]])" -ForegroundColor "Gray"
                 $host.UI.RawUI.CursorPosition = $menuNewPos
-                Write-Host "  $([char]0x2192)" -ForegroundColor "Gray" -NoNewline
-                Write-Host " $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($options[$orderedKeys[$pos]])" -ForegroundColor "Cyan"
+                Write-Host "  $([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline
+                Write-Host " $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($options[$orderedKeys[$pos]])" -ForegroundColor "DarkCyan"
                 $host.UI.RawUI.CursorPosition = $currPos
             }
         }
@@ -581,10 +581,10 @@ function read-option {
 
         if ($orderedKeys.Count -ne 1) {
             Write-Host "  $([char]0x2713)" -ForegroundColor "Green" -NoNewline
-            Write-Host " $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($options[$orderedKeys[$pos]])" -ForegroundColor "Cyan"
+            Write-Host " $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($options[$orderedKeys[$pos]])" -ForegroundColor "DarkCyan"
         } else {
             Write-Host "  $([char]0x2713)" -ForegroundColor "Green" -NoNewline
-            Write-Host " $($orderedKeys[$pos])" -ForegroundColor "Cyan"
+            Write-Host " $($orderedKeys[$pos])" -ForegroundColor "DarkCyan"
         }
         
         $host.UI.RawUI.CursorPosition = $currPos
@@ -599,6 +599,7 @@ function read-option {
     } catch {
         # Display error message and exit this script
         write-text -type "error" -text "Error | read-option-$($_.InvocationInfo.ScriptLineNumber)"
+        read-command
     }
 }
 function read-closing {

@@ -1,5 +1,5 @@
 function reclaim {
-    write-text -type "label" -text "Making Windows 11 less sucky"  -lineAfter
+    write-text "Making Windows 11 less sucky" -lineAfter
 
     $tweaks = @(    
         ### Privacy Settings ###
