@@ -402,7 +402,7 @@ function read-input {
         $currPos = $host.UI.RawUI.CursorPosition
 
         Write-Host "  ? " -NoNewline -ForegroundColor "Green"
-        Write-Host "$prompt\: " -NoNewline
+        Write-Host "$prompt`: " -NoNewline
 
         if ($IsSecure) { $userInput = Read-Host -AsSecureString } 
         else { $userInput = Read-Host }
@@ -435,10 +435,10 @@ function read-input {
         # Display checkmark symbol and user input (masked for secure input)
         Write-Host "  $([char]0x2713) " -ForegroundColor "Green" -NoNewline
         if ($IsSecure -and ($userInput.Length -eq 0)) { 
-            Write-Host "$prompt\:                                                       " 
+            Write-Host "$prompt`:                                                       " 
         } else { 
-            Write-Host "$prompt\: " -NoNewline
-            Write-Host "$userInput                                             " -NoNewline -ForegroundColor "DarkCyan"
+            Write-Host "$prompt`: " -NoNewline
+            Write-Host "$userInput                                             " -ForegroundColor "DarkCyan"
         }
 
         # Add a new line after prompt if specified
