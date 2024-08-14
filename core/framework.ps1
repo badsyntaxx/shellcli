@@ -653,13 +653,11 @@ function get-closing {
         [string]$customText = "Are you sure?"
     ) 
 
-    write-text -type "label" -text $customText
-
     $choice = read-option -options $([ordered]@{
             "Submit" = "Submit and apply your changes." 
             "Rest"   = "Discard changes and start this task over at the beginning."
             "Exit"   = "Exit this task but remain in the CHASTE Scripts CLI." 
-        }) -lineAfter
+        }) -lineAfter -prompt $customText
 
     if ($choice -eq 1) { 
         if ($script -ne "") { invoke-script $script } 
