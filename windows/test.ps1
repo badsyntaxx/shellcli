@@ -1,15 +1,26 @@
 function add-local-user {
     try {
         $name = read-input -prompt "What name would you like for the account?" -Validate "^([a-zA-Z0-9 ._\-]{1,64})$" -CheckExistingUser -lineBefore
-        $password = read-input -prompt "Enter password or leave blank." -IsSecure -lineBefore
+        $password = read-input -prompt "Enter password or leave blank." -IsSecure
+
+        # Create the new local user and add to the specified group
+        New-LocalUser $name -Password $password -description "Local User" -AccountNeverExpires -PasswordNeverExpires -ErrorAction Stop | Out-Null
+
         $group = read-option -options $([ordered]@{
                 "Administrators" = "Set this user's group membership to administrators."
                 "Users"          = "Set this user's group membership to standard users."
             }) -prompt "What group should this account be in?" -returnKey -lineBefore
+          
+        Add-LocalGroupMember -Group $group -Member $name -ErrorAction Stop | Out-Null
 
-        # Create the new local user and add to the specified group
-        New-LocalUser $name -Password $password -description "Local User" -AccountNeverExpires -PasswordNeverExpires -ErrorAction Stop | Out-Null
         
+        $newUser = Get-LocalUser -Name $name
+        if ($null -eq $newUser) {
+            # User creation failed, exit with error
+            write-text -type 'error' -text "Failed to create user $name. Please check the logs for details."
+        }
+        write-text -type 'success' -text "User $name created successfully." -lineBefore
+
         # There is a powershell bug with Get-LocalGroupMember So we can't do a manual check.
         <# if ((Get-LocalGroupMember -Group $group -Name $name).Count -gt 0) {
             write-text -type "success" -text "$name has been assigned to the $group group." -lineAfter
@@ -17,17 +28,12 @@ function add-local-user {
             write-text -type 'error' -text  "$($_.Exception.Message)" -lineAfter
         } #>
 
-        $newUser = Get-LocalUser -Name $name
-        if ($null -eq $newUser) {
-            # User creation failed, exit with error
-            write-text -type 'error' -text "Failed to create user $name." -lineBefore -lineAfter
-            read-command
-        }
-
-        Add-LocalGroupMember -Group $group -Member $name -ErrorAction Stop | Out-Null
-
         # Because of the bug listed above we just assume success if the script is still executing at this point.
-        write-text -type "success" -text "Local user added." -lineAfter
+        write-text -type "success" -text "$name has been assigned to the $group group." -lineBefore
+
+
+        write-text -label "Account name" -text "$name" -lineBefore
+        write-text -label "Account group" -text "$group"
 
         read-command
     } catch {
@@ -191,6 +197,8 @@ function write-help {
 function write-text {
     param (
         [parameter(Mandatory = $false)]
+        [string]$label = "",
+        [parameter(Mandatory = $false)]
         [string]$text = "",
         [parameter(Mandatory = $false)]
         [string]$type = "plain",
@@ -209,7 +217,6 @@ function write-text {
     )
 
     try {
-        Start-Sleep -Milliseconds 100
         # Add a new line before output if specified
         if ($lineBefore) { Write-Host }
 
@@ -218,11 +225,27 @@ function write-text {
             Write-Host " ## " -ForegroundColor "Cyan" -NoNewline
             Write-Host "$text" -ForegroundColor "White" 
         }
-        if ($type -eq "label") { Write-Host "    $text" -ForegroundColor "Yellow" }
-        if ($type -eq 'success') { Write-Host "  $([char]0x2713) $text"  -ForegroundColor "Green" }
-        if ($type -eq 'error') { Write-Host "  X $text" -ForegroundColor "Red" }
-        if ($type -eq 'notice') { Write-Host "    $text" -ForegroundColor "Yellow" }
-        if ($type -eq 'plain') { Write-Host "    $text" -ForegroundColor $Color }
+        
+        if ($type -eq 'success') { 
+            Write-Host "  $([char]0x2713) $text"  -ForegroundColor "Green" 
+        }
+        if ($type -eq 'error') { 
+            Write-Host "  X $text" -ForegroundColor "Red" 
+        }
+        if ($type -eq 'notice') { 
+            Write-Host "    $text" -ForegroundColor "Yellow" 
+        }
+        if ($type -eq 'plain') {
+            if ($Color -eq "Gray") {
+                $Color = 'DarkCyan'
+            }
+            if ($label -ne "") { 
+                Write-Host "    $label`: "
+                Write-Host "$text" -ForegroundColor $Color 
+            } else {
+                Write-Host "    $text" -ForegroundColor $Color 
+            }
+        }
         if ($type -eq 'list') { 
             # Get a list of keys from the options dictionary
             $orderedKeys = $List.Keys | ForEach-Object { $_ }
@@ -252,7 +275,9 @@ function write-text {
         if ($type -eq 'compare') { 
             foreach ($data in $oldData.Keys) {
                 if ($oldData["$data"] -ne $newData["$data"]) {
-                    write-compare -oldData $oldData["$data"] -newData $newData["$data"]
+                    Write-Host "    $oldData[`"$data`"]" -ForegroundColor "DarkGray" -NoNewline
+                    Write-Host " $([char]0x2192) " -ForegroundColor "Magenta" -NoNewline
+                    Write-Host $newData["$data"] -ForegroundColor "Gray"
                 } else {
                     Write-Host "    $($oldData["$data"])"
                 }
