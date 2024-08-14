@@ -697,7 +697,11 @@ function get-userdata {
 function select-user {
     param (
         [parameter(Mandatory = $false)]
-        [string]$prompt = "Select an account."
+        [string]$prompt = "Select an account.",
+        [parameter(Mandatory = $false)]
+        [switch]$lineBefore = $false,
+        [parameter(Mandatory = $false)]
+        [switch]$lineAfter = $false
     )
 
     try {
