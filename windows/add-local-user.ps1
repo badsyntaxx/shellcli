@@ -1,6 +1,6 @@
 function add-local-user {
     try {
-        $name = read-input -prompt "What name would you like for the account?" -Validate "^([a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser -lineBefore
+        $name = read-input -prompt "What name would you like for the account?" -Validate "^([a-zA-Z0-9 ._\-]{1,64})$" -CheckExistingUser -lineBefore
         $password = read-input -prompt "Enter password or leave blank." -IsSecure -lineBefore
 
         # Create the new local user and add to the specified group
