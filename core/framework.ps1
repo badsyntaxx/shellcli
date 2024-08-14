@@ -543,7 +543,7 @@ function read-option {
         [parameter(Mandatory = $false)]
         [switch]$ReturnValue = $false,
         [parameter(Mandatory = $false)]
-        [boolean]$lineBefore = $true,
+        [boolean]$lineBefore = $false,
         [parameter(Mandatory = $false)]
         [switch]$lineAfter = $false
     )
@@ -648,7 +648,7 @@ function get-closing {
         [string]$customText = "Are you sure?"
     ) 
 
-    write-text -type "label" -text $customText -lineBefore
+    write-text -type "label" -text $customText
 
     $choice = read-option -options $([ordered]@{
             "Submit" = "Submit and apply your changes." 
