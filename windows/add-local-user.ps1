@@ -29,11 +29,6 @@ function add-local-user {
         # Because of the bug listed above we just assume success if the script is still executing at this point.
         write-text -type "success" -text "$name has been assigned to the $group group." -lineAfter -lineBefore
 
-        # Retrieve user information and display it in a list
-        $username = Get-LocalUser -Name $name -ErrorAction Stop | Select-Object -ExpandProperty Name
-        $data = get-userdata $username
-        write-text -type "list" -List $data -Color "Green" -lineAfter
-
         read-command
     } catch {
         # Display error message and exit this script
