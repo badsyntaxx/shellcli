@@ -7,7 +7,6 @@ function edit-hostname {
         if ($hostname -eq "") { 
             $hostname = $currentHostname 
         } 
-
         if ($hostname -ne "") {
             Remove-ItemProperty -path "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" -name "Hostname" 
             Remove-ItemProperty -path "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" -name "NV Hostname" 
@@ -19,7 +18,6 @@ function edit-hostname {
             Set-ItemProperty -path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultDomainName" -value $hostname
             $env:COMPUTERNAME = $hostname
         } 
-
         if ($env:COMPUTERNAME -eq $hostname) {
             if ($hostname -eq $currentHostname) {
                 write-text -type "success" -text "The hostname will remain $hostname"
@@ -28,15 +26,13 @@ function edit-hostname {
             }
         }
 
-        $description = read-input -prompt "Enter a desired description. (Optional)" -Validate "^(\s*|[a-zA-Z0-9 |_\-]{1,64})$" -Value $currentDescription
+        $description = read-input -prompt "Enter a desired description. (Optional)" -Validate "^(\s*|[a-zA-Z0-9 |_\-]{1,64})$" -Value $currentDescription -lineBefore
         if ($description -eq "") { 
             $description = $currentDescription 
         } 
-
         if ($description -ne "") {
             Set-CimInstance -Query 'Select * From Win32_OperatingSystem' -Property @{Description = $description }
         } 
-
         if ((Get-WmiObject -Class Win32_OperatingSystem).Description -eq $description) {
             if ($description -eq $currentDescription) {
                 write-text -type "success" -text "The description will remain $description" -lineAfter
