@@ -6,15 +6,16 @@ function add-drive-letter {
                 "Disable" = "Disable volume 1"
             }) -lineAfter 
 
-        $volume = Get-Partition -DiskNumber 1
+        $volume = Get-Partition -DiskNumber 1 | Out-Null
 
         if ($choice -eq 0) { 
-            Set-Partition -InputObject $volume -NewDriveLetter 'P' 
+            Set-Partition -InputObject $volume -NewDriveLetter 'P' | Out-Null
+            $message = 'Drive added.'
         }
 
         if ($choice -eq 1) { 
-            $volume | Remove-PartitionAccessPath -AccessPath "P:\"
-
+            $volume | Remove-PartitionAccessPath -AccessPath "P:\" | Out-Null
+            $message = 'Drive removed.'
         } 
 
         exit-script -type "success" -text $message -lineAfter
