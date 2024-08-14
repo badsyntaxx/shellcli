@@ -42,7 +42,7 @@ function read-command {
 
     try {
         if ($command -eq "") { 
-            Write-Host "  : " -NoNewline 
+            Write-Host " :: " -ForegroundColor "DarkCyan" -NoNewline
             $command = Read-Host 
         }
 
@@ -239,7 +239,7 @@ function write-welcome {
     if ($lineBefore) { Write-Host }
 
     Write-Host
-    Write-Host " ::"  -ForegroundColor "DarkCyan" -NoNewline
+    Write-Host " ::" -ForegroundColor "DarkCyan" -NoNewline
     Write-Host " Running command:" -NoNewline -ForegroundColor "DarkGray"
     Write-Host " $command" -ForegroundColor "Gray"
 
