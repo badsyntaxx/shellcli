@@ -701,6 +701,9 @@ function select-user {
     )
 
     try {
+        # Add a line break before the menu if lineBefore is specified
+        if ($lineBefore) { Write-Host }
+         
         # Initialize empty array to store user names
         $userNames = @()
 
@@ -745,6 +748,9 @@ function select-user {
 
         # Display user data as a list
         write-text -type "list" -List $data
+
+        # Add a line break after the menu if lineAfter is specified
+        if ($lineAfter) { Write-Host }
 
         # Return the user data dictionary
         return $data
