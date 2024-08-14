@@ -1,44 +1,50 @@
-function remove-user {
+function add-local-user {
     try {
-        $user = select-user -prompt "Select an account to remove." -lineBefore
-        $dir = (Get-CimInstance Win32_UserProfile -Filter "SID = '$((Get-LocalUser $user["Name"]).Sid)'").LocalPath
+        $name = read-input -prompt "What name would you like for the account?" -Validate "^([a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser -lineBefore
+        $password = read-input -prompt "Enter password or leave blank." -IsSecure -lineBefore
 
-        Remove-LocalUser -Name $user["Name"] | Out-Null
-        if (Get-LocalUser -Name $user["Name"] -ErrorAction SilentlyContinue | Out-Null) {
-            write-text -type "error" -text "Could not remove user."
-        } 
-
-        write-text -type 'success' -text "The user account has been removed from the system." -lineBefore
-
-        $choice = read-option -options $([ordered]@{
-                "Delete" = "Also delete the users data."
-                "Keep"   = "Do not delete the users data."
-            }) -prompt "Do you also want to delete the users data?" -lineBefore
-
-        if ($choice -eq 0) { 
-            if ($null -ne $dir) { Remove-Item -Path $dir -Recurse -Force }
+        # Create the new local user and add to the specified group
+        New-LocalUser $name -Password $password -description "Local User" -AccountNeverExpires -PasswordNeverExpires -ErrorAction Stop | Out-Null
+        $newUser = Get-LocalUser -Name $name
+        if ($null -eq $newUser) {
+            # User creation failed, exit with error
+            write-text -type 'error' -text "Failed to create user $name. Please check the logs for details."
         }
+        write-text -type 'success' -text "User $name created successfully." -lineBefore
 
-        if ($choice -eq 1) { 
-            read-command
-        }
+        $group = read-option -options $([ordered]@{
+                "Administrators" = "Set this user's group membership to administrators."
+                "Users"          = "Set this user's group membership to standard users."
+            }) -prompt "What group should this account be in?" -returnKey -lineBefore
+          
+        Add-LocalGroupMember -Group $group -Member $name -ErrorAction Stop | Out-Null
 
-        if ($null -eq $dir) { 
-            write-text -type 'success' -text "The user data has been deleted." -lineBefore  
+        # There is a powershell bug with Get-LocalGroupMember So we can't do a manual check.
+        <# if ((Get-LocalGroupMember -Group $group -Name $name).Count -gt 0) {
+            write-text -type "success" -text "$name has been assigned to the $group group." -lineAfter
         } else {
-            write-text -type 'error' -text "Unable to delete user data." -lineBefore 
-        }
+            write-text -type 'error' -text  "$($_.Exception.Message)" -lineAfter
+        } #>
+
+        # Because of the bug listed above we just assume success if the script is still executing at this point.
+        write-text -type "success" -text "$name has been assigned to the $group group." -lineAfter -lineBefore
+
+        # Retrieve user information and display it in a list
+        $username = Get-LocalUser -Name $name -ErrorAction Stop | Select-Object -ExpandProperty Name
+        $data = get-userdata $username
+        write-text -type "list" -List $data -Color "Green"
 
         read-command
     } catch {
         # Display error message and exit this script
-        write-text -type "error" -text "remove-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "add-local-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
         read-command
     }
 }
 <# #################################################################################################################################### #>
 <# #################################################################################################################################### #>
 <# #################################################################################################################################### #>
+
 
 
 
@@ -743,4 +749,4 @@ function select-user {
     }
 }
 
-invoke-script "remove-user"
+invoke-script "add-local-user"
