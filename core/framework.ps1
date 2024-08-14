@@ -169,6 +169,7 @@ function write-text {
     )
 
     try {
+        Start-Sleep 1
         # Add a new line before output if specified
         if ($lineBefore) { Write-Host }
 
