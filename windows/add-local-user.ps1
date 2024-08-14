@@ -3,12 +3,12 @@ function add-local-user {
         # Prompt for user name with validation, and check for existing users
         $name = read-input -prompt "What name would you like for the account?" -Validate "^([a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser -lineBefore
         # Prompt for password securely
-        $password = read-input -prompt "Enter password or leave blank." -IsSecure
+        $password = read-input -prompt "Enter password or leave blank." -IsSecure -lineBefore
 
         $group = read-option -options $([ordered]@{
                 "Administrators" = "Set this user's group membership to administrators."
                 "Users"          = "Set this user's group membership to standard users."
-            }) -prompt "What group should this account be in." -returnKey
+            }) -prompt "What group should this account be in." -returnKey -lineBefore
         
         get-closing -script "add-local-user"
 
