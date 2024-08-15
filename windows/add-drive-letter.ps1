@@ -4,7 +4,7 @@ function add-drive-letter {
         $choice = read-option -options $([ordered]@{
                 "Enable"  = "Enable volume 1"
                 "Disable" = "Disable volume 1"
-            }) -lineAfter 
+            }) -prompt "Choose"
 
         $volume = Get-Partition -DiskNumber 1 | Out-Null
 
