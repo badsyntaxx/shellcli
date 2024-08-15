@@ -417,6 +417,9 @@ function read-input {
         # Add a new line before prompt if specified
         if ($lineBefore) { Write-Host }
 
+        # Get current cursor position
+        $currPos = $host.UI.RawUI.CursorPosition
+
         Write-Host "  ? " -NoNewline -ForegroundColor "Green"
         Write-Host "$prompt " -NoNewline
 
@@ -444,6 +447,18 @@ function read-input {
 
         # Use provided default value if user enters nothing for a non-secure input
         if ($userInput.Length -eq 0 -and $Value -ne "" -and !$IsSecure) { $userInput = $Value }
+
+        # Reset cursor position
+        [Console]::SetCursorPosition($currPos.X, $currPos.Y)
+        
+        # Display checkmark symbol and user input (masked for secure input)
+        Write-Host "  ? " -ForegroundColor "Green" -NoNewline
+        if ($IsSecure -and ($userInput.Length -eq 0)) { 
+            Write-Host "$prompt                                                "
+        } else { 
+            Write-Host "$prompt " -NoNewline
+            Write-Host "$userInput                                             " -ForegroundColor "DarkCyan"
+        }
 
         # Add a new line after prompt if specified
         if ($lineAfter) { Write-Host }
@@ -479,7 +494,7 @@ function read-option {
         $promptPos = $host.UI.RawUI.CursorPosition
 
         Write-Host "  ? " -NoNewline -ForegroundColor "Green"
-        Write-Host "$prompt " -NoNewline
+        Write-Host "$prompt "
 
         # Initialize variables for user input handling
         $vkeycode = 0
@@ -554,13 +569,23 @@ function read-option {
             Write-Host " $($orderedKeys[$pos])" -ForegroundColor "DarkCyan"
         } #>
 
-        [Console]::SetCursorPosition($promptPos.X, $promptPos.Y + 1)
+        [Console]::SetCursorPosition($promptPos.X, $promptPos.Y)
+
+        if ($orderedKeys.Count -ne 1) {
+            Write-Host "  ?" -ForegroundColor "Green" -NoNewline
+            Write-Host " $prompt" -NoNewline
+            Write-Host " $($orderedKeys[$pos])" -ForegroundColor "DarkCyan"
+        } else {
+            Write-Host "  $([char]0x2713)" -ForegroundColor "Green" -NoNewline
+            Write-Host " $($orderedKeys[$pos])" -ForegroundColor "DarkCyan"
+        }
 
         for ($i = 0; $i -lt $options.Count; $i++) {
-            Write-Host "1                                                                                                                                   "
+            Write-Host " $(" " * ($longestKeyLength * $options[$orderedKeys[$pos]].Length)) "
         }
         
         [Console]::SetCursorPosition($promptPos.X, $promptPos.Y)
+        Write-Host
 
         # Add a line break after the menu if lineAfter is specified
         if ($lineAfter) { Write-Host }
