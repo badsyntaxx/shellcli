@@ -1,45 +1,31 @@
-function add-local-user {
-    try {
-        $name = read-input -prompt "What name would you like for the account?" -Validate "^([a-zA-Z0-9 ._\-]{1,64})$" -CheckExistingUser -lineBefore
-        $password = read-input -prompt "Enter password or leave blank:" -IsSecure
-
-        # Create the new local user and add to the specified group
-        New-LocalUser $name -Password $password -description "Local User" -AccountNeverExpires -PasswordNeverExpires -ErrorAction Stop | Out-Null
-
-        $group = read-option -options $([ordered]@{
-                "Administrators" = "Set this user's group membership to administrators."
-                "Users"          = "Set this user's group membership to standard users."
-            }) -prompt "What group should this account be in?" -returnKey
-          
-        Add-LocalGroupMember -Group $group -Member $name -ErrorAction Stop | Out-Null
-
+function add-drive-letter {
+    try { 
         
-        $newUser = Get-LocalUser -Name $name
-        if ($null -eq $newUser) {
-            # User creation failed, exit with error
-            write-text -type 'error' -text "Failed to create user $name. Please check the logs for details."
+        $choice = read-option -options $([ordered]@{
+                "Enable"  = "Enable volume 1"
+                "Disable" = "Disable volume 1"
+            }) -prompt "Choose"
+
+        $volume = Get-Partition -DiskNumber 1
+
+        if ($choice -eq 0) { 
+            Set-Partition -InputObject $volume -NewDriveLetter 'P'
+            $message = 'Drive added.'
         }
 
-        # There is a powershell bug with Get-LocalGroupMember So we can't do a manual check.
-        <# if ((Get-LocalGroupMember -Group $group -Name $name).Count -gt 0) {
-            write-text -type "success" -text "$name has been assigned to the $group group." -lineAfter
-        } else {
-            write-text -type 'error' -text  "$($_.Exception.Message)" -lineAfter
-        } #>
+        if ($choice -eq 1) { 
+            $volume | Remove-PartitionAccessPath -AccessPath "P:\"
+            $message = 'Drive removed.'
+        } 
 
-        # Because of the bug listed above we just assume success if the script is still executing at this point.
-        write-text -type "success" -text "Local user added" -lineBefore
-        write-text -label "Account name" -text "$name" -lineBefore
-        write-text -label "Account group" -text "$group"
-
+        write-text -type "success" -text $message -lineAfter
         read-command
     } catch {
         # Display error message and exit this script
-        write-text -type "error" -text "add-local-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "add-drive-letter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
         read-command
     }
 }
-
 
 function invoke-script {
     param (
@@ -181,7 +167,7 @@ function write-help {
             write-text -type "plain" -text "edit net adapter                 - Edit network adapter settings like IP and DNS." -Color "DarkGray"
             write-text -type "plain" -text "get wifi creds                   - View WiFi credentials saved on the system." -Color "DarkGray"
             write-text -type "header" -text "PLUGINS:" -lineBefore
-            write-text -type "plain" -text "plugins [plugin name]  - Useful scripts made by others. Try the 'help plugins' command." -Color "DarkGray"
+            write-text -type "plain" -text "plugins [plugin name]  - Useful scripts made by others. Try the 'plugins help' command." -Color "DarkGray"
             Write-Host
         }
         "plugins" {
@@ -693,7 +679,7 @@ function get-userdata {
 function select-user {
     param (
         [parameter(Mandatory = $false)]
-        [string]$prompt = "Select an account.",
+        [string]$prompt = "Select a user account:",
         [parameter(Mandatory = $false)]
         [switch]$lineBefore = $false,
         [parameter(Mandatory = $false)]
@@ -765,4 +751,4 @@ function select-user {
     }
 }
 
-invoke-script "add-local-user"
+invoke-script "add-drive-letter"
