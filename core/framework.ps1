@@ -138,7 +138,7 @@ function write-help {
             write-text -type "plain" -text "edit net adapter                 - Edit network adapter settings like IP and DNS." -Color "DarkGray"
             write-text -type "plain" -text "get wifi creds                   - View WiFi credentials saved on the system." -Color "DarkGray"
             write-text -type "header" -text "PLUGINS:" -lineBefore
-            write-text -type "plain" -text "plugins [plugin name]  - Useful scripts made by others. Try the 'help plugins' command." -Color "DarkGray"
+            write-text -type "plain" -text "plugins [plugin name]  - Useful scripts made by others. Try the 'plugins help' command." -Color "DarkGray"
             Write-Host
         }
         "plugins" {
@@ -650,7 +650,7 @@ function get-userdata {
 function select-user {
     param (
         [parameter(Mandatory = $false)]
-        [string]$prompt = "Select an account.",
+        [string]$prompt = "Select a user account:",
         [parameter(Mandatory = $false)]
         [switch]$lineBefore = $false,
         [parameter(Mandatory = $false)]

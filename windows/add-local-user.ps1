@@ -1,7 +1,7 @@
 function add-local-user {
     try {
-        $name = read-input -prompt "What name would you like for the account?" -Validate "^([a-zA-Z0-9 ._\-]{1,64})$" -CheckExistingUser -lineBefore
-        $password = read-input -prompt "Enter password or leave blank:" -IsSecure
+        $name = read-input -prompt "Enter a user name:" -Validate "^([a-zA-Z0-9 ._\-]{1,64})$" -CheckExistingUser -lineBefore
+        $password = read-input -prompt "Enter a password or leave blank:" -IsSecure
 
         # Create the new local user and add to the specified group
         New-LocalUser $name -Password $password -description "Local User" -AccountNeverExpires -PasswordNeverExpires -ErrorAction Stop | Out-Null
@@ -9,7 +9,7 @@ function add-local-user {
         $group = read-option -options $([ordered]@{
                 "Administrators" = "Set this user's group membership to administrators."
                 "Users"          = "Set this user's group membership to standard users."
-            }) -prompt "What group should this account be in?" -returnKey
+            }) -prompt "Select a user group:" -returnKey
           
         Add-LocalGroupMember -Group $group -Member $name -ErrorAction Stop | Out-Null
 

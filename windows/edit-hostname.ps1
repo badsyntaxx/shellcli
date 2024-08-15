@@ -2,11 +2,16 @@ function edit-hostname {
     try {
         $currentHostname = $env:COMPUTERNAME
         $currentDescription = (Get-WmiObject -Class Win32_OperatingSystem).Description
-
-        $hostname = read-input -prompt "Enter the desired hostname. Leaving the blank will keep the current hostname." -Validate "^(\s*|[a-zA-Z0-9 _\-]{1,15})$" -Value $currentHostname -lineBefore
+        $hostname = read-input -prompt "Enter the desired hostname." -Validate "^(\s*|[a-zA-Z0-9 _\-]{1,15})$" -Value $currentHostname -lineBefore
+        $description = read-input -prompt "Enter a desired description. (Optional)" -Validate "^(\s*|[a-zA-Z0-9 |_\-]{1,64})$" -Value $currentDescription
+        
         if ($hostname -eq "") { 
             $hostname = $currentHostname 
         } 
+        if ($description -eq "") { 
+            $description = $currentDescription 
+        } 
+
         if ($hostname -ne "") {
             Remove-ItemProperty -path "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" -name "Hostname" 
             Remove-ItemProperty -path "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" -name "NV Hostname" 
@@ -18,28 +23,17 @@ function edit-hostname {
             Set-ItemProperty -path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultDomainName" -value $hostname
             $env:COMPUTERNAME = $hostname
         } 
-        if ($env:COMPUTERNAME -eq $hostname) {
-            if ($hostname -eq $currentHostname) {
-                write-text -type "success" -text "The hostname will remain $hostname"
-            } else {
-                write-text -type "success" -text "The hostname has been changed to $hostname"
-            }
-        }
 
-        $description = read-input -prompt "Enter a desired description. (Optional)" -Validate "^(\s*|[a-zA-Z0-9 |_\-]{1,64})$" -Value $currentDescription -lineBefore
-        if ($description -eq "") { 
-            $description = $currentDescription 
-        } 
         if ($description -ne "") {
             Set-CimInstance -Query 'Select * From Win32_OperatingSystem' -Property @{Description = $description }
         } 
-        if ((Get-WmiObject -Class Win32_OperatingSystem).Description -eq $description) {
-            if ($description -eq $currentDescription) {
-                write-text -type "success" -text "The description will remain $description" -lineAfter
-            } else {
-                write-text -type "success" -text "The description has been changed to $description" -lineAfter
-            }
+
+        if ($env:COMPUTERNAME -eq $hostname -and (Get-WmiObject -Class Win32_OperatingSystem).Description -eq $description) {
+            write-text -type "success" -text "Hostname & description changed" -lineBefore
         }
+        
+        write-text -label "Hostname" -text $env:COMPUTERNAME -lineBefore
+        write-text -label "Description" -text (Get-WmiObject -Class Win32_OperatingSystem).Description -lineAfter
 
         read-command
     } catch {
@@ -48,4 +42,3 @@ function edit-hostname {
         read-command
     }
 }
-

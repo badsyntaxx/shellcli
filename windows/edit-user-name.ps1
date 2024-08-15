@@ -1,6 +1,6 @@
 function edit-user-name {
     try {
-        $user = select-user
+        $user = select-user -lineBefore
 
         if ($user["Source"] -eq "Local") { Edit-LocalUserName -User $user } else { Edit-ADUserName }
     } catch {
