@@ -42,7 +42,7 @@ function read-command {
 
     try {
         if ($command -eq "") { 
-            Write-Host "  $([char]0x203A) " -NoNewline
+            Write-Host " $([char]0x203A) " -NoNewline
             $command = Read-Host 
         }
 
