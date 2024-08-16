@@ -439,7 +439,7 @@ function read-input {
         [Console]::SetCursorPosition($currPos.X, $currPos.Y)
         
         # Display checkmark symbol and user input (masked for secure input)
-        Write-Host "  ? " -ForegroundColor "Green" -NoNewline
+        Write-Host "  ? " -ForegroundColor "Yellow" -NoNewline
         if ($IsSecure -and ($userInput.Length -eq 0)) { 
             Write-Host "$prompt                                                "
         } else { 
@@ -542,28 +542,14 @@ function read-option {
             }
         }
 
-        <# if ($orderedKeys.Count -ne 1) {
-            $host.UI.RawUI.CursorPosition = $menuNewPos
-        } else {
-            $host.UI.RawUI.CursorPosition = New-Object System.Management.Automation.Host.Coordinates(0, ($currPos.Y - ($menuLen + 1)))
-        }
-
-        if ($orderedKeys.Count -ne 1) {
-            Write-Host "  $([char]0x2713)" -ForegroundColor "Green" -NoNewline
-            Write-Host " $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($options[$orderedKeys[$pos]])" -ForegroundColor "DarkCyan"
-        } else {
-            Write-Host "  $([char]0x2713)" -ForegroundColor "Green" -NoNewline
-            Write-Host " $($orderedKeys[$pos])" -ForegroundColor "DarkCyan"
-        } #>
-
         [Console]::SetCursorPosition($promptPos.X, $promptPos.Y)
 
         if ($orderedKeys.Count -ne 1) {
-            Write-Host "  ?" -ForegroundColor "Green" -NoNewline
+            Write-Host "  ?" -ForegroundColor "Yellow" -NoNewline
             Write-Host " $prompt" -NoNewline
             Write-Host " $($orderedKeys[$pos])" -ForegroundColor "DarkCyan"
         } else {
-            Write-Host "  $([char]0x2713)" -ForegroundColor "Green" -NoNewline
+            Write-Host "  $([char]0x2713)" -ForegroundColor "Yellow" -NoNewline
             Write-Host " $($orderedKeys[$pos])" -ForegroundColor "DarkCyan"
         }
 
