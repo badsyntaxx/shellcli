@@ -44,6 +44,8 @@ function edit-hostname {
 
         $response += " updated."
 
+        write-text -type "success" -text $response
+
         read-command
     } catch {
         # Display error message and exit this script
