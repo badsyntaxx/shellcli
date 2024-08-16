@@ -407,8 +407,8 @@ function read-input {
         # Get current cursor position
         $currPos = $host.UI.RawUI.CursorPosition
 
-        Write-Host "  ? " -NoNewline -ForegroundColor "Green"
-        Write-Host "$prompt " -NoNewline
+        Write-Host "  ? " -NoNewline -ForegroundColor "Yellow"
+        Write-Host "    $prompt " -NoNewline
 
         if ($IsSecure) { $userInput = Read-Host -AsSecureString } 
         else { $userInput = Read-Host }

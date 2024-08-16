@@ -32,7 +32,7 @@ function remove-user {
             write-text -type 'error' -text "Unable to delete user data for unknown reasons." -lineAfter
         }
 
-        write-text -type 'success' -text $response -lineAfter 
+        write-text -type 'success' -text $response -lineBefore -lineAfter 
 
         read-command
     } catch {
