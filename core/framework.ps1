@@ -480,7 +480,7 @@ function read-option {
         # Get current cursor position
         $promptPos = $host.UI.RawUI.CursorPosition
 
-        Write-Host "  ? " -NoNewline -ForegroundColor "Green"
+        Write-Host "  ? " -NoNewline -ForegroundColor "Yellow"
         Write-Host "$prompt "
 
         # Initialize variables for user input handling
