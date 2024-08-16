@@ -254,19 +254,6 @@ function write-text {
             Write-Host "$text" 
         }
 
-        # Format output for data comparison
-        if ($type -eq 'compare') { 
-            foreach ($data in $oldData.Keys) {
-                if ($oldData["$data"] -ne $newData["$data"]) {
-                    Write-Host "    $oldData[`"$data`"]" -ForegroundColor "DarkGray" -NoNewline
-                    Write-Host " $([char]0x2192) " -ForegroundColor "Magenta" -NoNewline
-                    Write-Host $newData["$data"] -ForegroundColor "Gray"
-                } else {
-                    Write-Host "    $($oldData["$data"])"
-                }
-            }
-        }
-
         # Add a new line after output if specified
         if ($lineAfter) { Write-Host }
     } catch {
@@ -449,7 +436,7 @@ function read-input {
         # Get current cursor position
         $currPos = $host.UI.RawUI.CursorPosition
 
-        Write-Host "  ? " -NoNewline -ForegroundColor "Green"
+        Write-Host "  ? " -NoNewline -ForegroundColor "Yellow"
         Write-Host "$prompt " -NoNewline
 
         if ($IsSecure) { $userInput = Read-Host -AsSecureString } 
