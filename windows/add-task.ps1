@@ -1,4 +1,4 @@
-function schedule-task {
+function add-task {
     try {
         # Prompt the user for task settings
         $taskName = Read-Host "Enter a name for your scheduled task"
@@ -42,8 +42,6 @@ function schedule-task {
         Register-ScheduledTask -Action $actionObj -Trigger $triggerObj -TaskName $taskName -User 'NT AUTHORITY\SYSTEM' -RunLevel Highest
 
         Write-Host "Task '$taskName' has been scheduled successfully!"
-
-
 
         read-command
     } catch {

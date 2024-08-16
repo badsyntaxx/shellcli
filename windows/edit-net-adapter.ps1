@@ -14,7 +14,7 @@ function select-adapter {
         Get-NetAdapter | ForEach-Object { $adapters[$_.Name] = $_.MediaConnectionState }
         $adapterList = [ordered]@{}
         foreach ($al in $adapters) { $adapterList = $al }
-        $choice = read-option -options $adapterList -lineAfter -returnKey
+        $choice = read-option -options $adapterList -prompt "Select an network adapter:" -returnKey
         $netAdapter = Get-NetAdapter -Name $choice
         $adapterIndex = $netAdapter.InterfaceIndex
         $ipData = Get-NetIPAddress -InterfaceIndex $adapterIndex -AddressFamily IPv4 | Where-Object { $_.PrefixOrigin -ne "WellKnown" -and $_.SuffixOrigin -ne "Link" -and ($_.AddressState -eq "Preferred" -or $_.AddressState -eq "Tentative") } | Select-Object -First 1
