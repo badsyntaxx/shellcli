@@ -3,7 +3,7 @@ function edit-net-adapter {
         select-adapter
     } catch {
         # Display error message and exit this script
-        write-text -type "error" -text "edit-net-adapter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "edit-net-adapter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
         read-command
     }
 }
@@ -36,7 +36,7 @@ function select-adapter {
         get-desiredsettings -Adapter $adapter
     } catch {
         # Display error message and exit this script
-        write-text -type "error" -text "select-adapter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "select-adapter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
         read-command
     }
 }
@@ -64,7 +64,7 @@ function get-desiredsettings {
         confirm-edits -Adapter $Adapter -Original $Original
     } catch {
         # Display error message and exit this script
-        write-text -type "error" -text "get-desired-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "get-desired-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
         read-command
     }
 }
@@ -105,7 +105,7 @@ function read-ipsettings {
         return $desiredSettings 
     } catch {
         # Display error message and exit this script
-        write-text -type "error" -text "read-ipsettings-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "read-ipsettings-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
         read-command
     }
 }
@@ -140,7 +140,7 @@ function read-dnssettings {
         return $Adapter
     } catch {
         # Display error message and exit this script
-        write-text -type "error" -text "read-dnssettings-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "read-dnssettings-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
         read-command
     }
 }
@@ -238,7 +238,7 @@ function confirm-edits {
         read-command
     } catch {
         # Display error message and exit this script
-        write-text -type "error" -text "confirm-edits-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "confirm-edits-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
         read-command
     }
 }
@@ -288,7 +288,7 @@ function get-adapter-info {
         }
     } catch {
         # Display error message and exit this script
-        write-text -type "error" -text "get-adapter-info-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "get-adapter-info-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
         read-command
     }
 }
@@ -339,7 +339,7 @@ function show-adapters {
         select-adapter
     } catch {
         # Display error message and exit this script
-        write-text -type "error" -text "show-adapters-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "show-adapters-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
         read-command
     }
     

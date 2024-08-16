@@ -5,7 +5,7 @@ function edit-user-name {
         if ($user["Source"] -eq "Local") { Edit-LocalUserName -User $user } else { Edit-ADUserName }
     } catch {
         # Display error message and exit this script
-        write-text -type "error" -text "edit-user-name-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "edit-user-name-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
         read-command
     }
 }
@@ -34,7 +34,7 @@ function Edit-LocalUserName {
         read-command
     } catch {
         # Display error message and exit this script
-        write-text -type "error" -text "Edit-LocalUserName-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "Edit-LocalUserName-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
         read-command
     }
 }

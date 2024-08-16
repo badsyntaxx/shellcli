@@ -48,7 +48,7 @@ function schedule-task {
         read-command
     } catch {
         # Display error message and exit this script
-        write-text -type "error" -text "schedule-task-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "schedule-task-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
         read-command
     }
 }

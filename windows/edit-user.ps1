@@ -4,7 +4,7 @@ function edit-user {
                 "Edit user name"     = "Edit an existing users name."
                 "Edit user password" = "Edit an existing users password."
                 "Edit user group"    = "Edit an existing users group membership."
-            }) -prompt "What would you like to edit?" -lineBefore
+            }) -prompt "What would you like to edit?"
 
         switch ($choice) {
             0 { $command = "edit user name" }
@@ -12,7 +12,6 @@ function edit-user {
             2 { $command = "edit user group" }
         }
 
-        Write-Host
         Write-Host " ::"  -ForegroundColor "DarkCyan" -NoNewline
         Write-Host " Running command:" -NoNewline -ForegroundColor "DarkGray"
         Write-Host " $command" -ForegroundColor "Gray"
@@ -20,7 +19,7 @@ function edit-user {
         read-command -command $command
     } catch {
         # Display error message and exit this script
-        write-text -type "error" -text "edit-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "edit-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
         read-command
     }
 }

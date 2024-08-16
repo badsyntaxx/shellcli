@@ -51,7 +51,7 @@ function add-ad-user {
         read-command
     } catch {
         # Display error message and exit this script
-        write-text -type "error" -text "add-domain-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "add-domain-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
         read-command
     }
 }

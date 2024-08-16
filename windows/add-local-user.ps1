@@ -24,7 +24,7 @@ function add-local-user {
         <# if ((Get-LocalGroupMember -Group $group -Name $name).Count -gt 0) {
             write-text -type "success" -text "$name has been assigned to the $group group." -lineAfter
         } else {
-            write-text -type 'error' -text  "$($_.Exception.Message)" -lineAfter
+            write-text -type 'error' -text  "$($_.Exception.Message)"
         } #>
 
         # Because of the bug listed above we just assume success if the script is still executing at this point.

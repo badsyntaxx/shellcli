@@ -30,7 +30,7 @@ function invoke-script {
         Invoke-Expression $script
     } catch {
         # Display error message and exit this script
-        write-text -type "error" -text "invoke-script-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "invoke-script-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
         read-command
     }
 }
@@ -229,7 +229,7 @@ function write-text {
         if ($lineAfter) { Write-Host }
     } catch {
         # Display error message and exit this script
-        write-text -type "error" -text "write-text-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+        write-text -type "error" -text "write-text-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
         read-command
     }
 }
