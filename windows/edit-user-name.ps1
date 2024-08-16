@@ -24,14 +24,14 @@ function Edit-LocalUserName {
         $newUser = Get-LocalUser -Name $newName
 
         if ($null -ne $newUser) { 
-            # $newData = get-userdata -Username $newUser
-            write-compare -oldData "$($user['name'])" -newData $newUser
-            write-text -type "success" -text "Account name successfully changed." -lineBefore -lineAfter
-            read-command
+            write-text -type "success" -text "Account name changed" -lineBefore 
         } else {
-            write-text -type "error" -text "There was an unknown error when trying to rename this user." -lineBefore -lineAfter
-            read-command
+            write-text -type "error" -text "Unknown error" -lineBefore 
         }
+
+        write-text -label "Account name" -text $newUser -lineBefore -lineAfter
+
+        read-command
     } catch {
         # Display error message and exit this script
         write-text -type "error" -text "Edit-LocalUserName-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
