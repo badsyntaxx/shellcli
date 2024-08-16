@@ -3,7 +3,7 @@ function toggle-context-menu {
         $choice = read-option -options $([ordered]@{
                 "Enable"  = "Enable the stupid pointless menu that nobody wants or asked for."
                 "Disable" = "Disable the stupid pointless menu that nobody wants or asked for."
-            })
+            }) -prompt "Would you like to enable or disable the W11 context menu?"
 
         if ($choice -eq 0) { 
             reg delete "HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}" /f | Out-Null
