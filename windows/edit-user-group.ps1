@@ -1,6 +1,6 @@
 function edit-user-group {
     try {
-        $user = select-user
+        $user = select-user -lineBefore
 
         if ($user["Source"] -eq "Local") { Edit-LocalUserGroup -User $user } else { Edit-ADUserGroup }
     } catch {
@@ -20,7 +20,7 @@ function Edit-LocalUserGroup {
         $addOrRemove = read-option -options $([ordered]@{
                 "Add"    = "Add this user to more groups"
                 "Remove" = "Remove this user from certain groups"
-            }) -returnKey
+            }) -prompt "Do you want to add or remove this user from groups?" -returnKey
 
         $default = Get-LocalGroup | ForEach-Object {
             $description = $_.Description
