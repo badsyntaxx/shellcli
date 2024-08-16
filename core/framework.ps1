@@ -496,7 +496,7 @@ function read-option {
 
         # Display single option if only one exists
         if ($orderedKeys.Count -eq 1) {
-            Write-Host "  $([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline
+            Write-Host " $([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline
             Write-Host " $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($options[$orderedKeys])" -ForegroundColor "DarkCyan"
         } else {
             # Loop through each option and display with padding and color
@@ -504,9 +504,9 @@ function read-option {
                 $key = $orderedKeys[$i]
                 $padding = " " * ($longestKeyLength - $key.Length)
                 if ($i -eq $pos) { 
-                    Write-Host "  $([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline  
+                    Write-Host " $([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline  
                     Write-Host " $key $padding - $($options[$key])" -ForegroundColor "DarkCyan"
-                } else { Write-Host "    $key $padding - $($options[$key])" -ForegroundColor "Gray" }
+                } else { Write-Host "   $key $padding - $($options[$key])" -ForegroundColor "Gray" }
             }
         }
 
@@ -534,9 +534,9 @@ function read-option {
             
                 # Re-draw the previously selected and newly selected options
                 $host.UI.RawUI.CursorPosition = $menuOldPos
-                Write-Host "    $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $($options[$orderedKeys[$oldPos]])" -ForegroundColor "Gray"
+                Write-Host "   $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $($options[$orderedKeys[$oldPos]])" -ForegroundColor "Gray"
                 $host.UI.RawUI.CursorPosition = $menuNewPos
-                Write-Host "  $([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline
+                Write-Host " $([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline
                 Write-Host " $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($options[$orderedKeys[$pos]])" -ForegroundColor "DarkCyan"
                 $host.UI.RawUI.CursorPosition = $currPos
             }
@@ -549,7 +549,7 @@ function read-option {
             Write-Host $prompt -NoNewline
             Write-Host " $($orderedKeys[$pos])" -ForegroundColor "DarkCyan"
         } else {
-            Write-Host "  $([char]0x2713)" -ForegroundColor "Yellow" -NoNewline
+            Write-Host " $([char]0x2713)" -ForegroundColor "Yellow" -NoNewline
             Write-Host " $($orderedKeys[$pos])" -ForegroundColor "DarkCyan"
         }
 
