@@ -1,33 +1,38 @@
 function remove-user {
     try {
-        $user = select-user -prompt "Select an account to remove." -lineBefore
+        $user = select-user -prompt "Select an account to remove:" -lineBefore
         $dir = (Get-CimInstance Win32_UserProfile -Filter "SID = '$((Get-LocalUser $user["Name"]).Sid)'").LocalPath
-
-        Remove-LocalUser -Name $user["Name"] | Out-Null
-        if (Get-LocalUser -Name $user["Name"] -ErrorAction SilentlyContinue | Out-Null) {
-            write-text -type "error" -text "Could not remove user."
-        } 
-
-        write-text -type 'success' -text "The user account has been removed from the system."
-
         $choice = read-option -options $([ordered]@{
                 "Delete" = "Also delete the users data."
                 "Keep"   = "Do not delete the users data."
-            }) -prompt "Do you also want to delete the users data?" -lineBefore
+            }) -prompt "Do you also want to delete the users data?"
 
+        Remove-LocalUser -Name $user["Name"] | Out-Null
         if ($choice -eq 0) { 
-            if ($null -ne $dir) { Remove-Item -Path $dir -Recurse -Force }
+            if ($null -ne $dir) { 
+                Remove-Item -Path $dir -Recurse -Force 
+            }
         }
 
-        if ($choice -eq 1) { 
-            read-command
-        }
+        $response = ""
+
+        $u = Get-LocalUser -Name $user["Name"] -ErrorAction SilentlyContinue
+
+        if (!$u) {
+            $response = "The user has been removed "
+        } 
 
         if ($null -eq $dir) { 
-            write-text -type 'success' -text "The user data has been deleted." -lineAfter 
+            if ($choice -eq 0) { 
+                $response += "as well as their data."
+            } else {
+                $response += "but not their data."
+            }
         } else {
-            write-text -type 'error' -text "Unable to delete user data." -lineAfter
+            write-text -type 'error' -text "Unable to delete user data for unknown reasons." -lineAfter
         }
+
+        write-text -type 'success' -text $response -lineAfter 
 
         read-command
     } catch {
@@ -36,4 +41,3 @@ function remove-user {
         read-command
     }
 }
-
