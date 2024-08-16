@@ -1,6 +1,6 @@
 function edit-user-password {
     try {
-        $user = select-user
+        $user = select-user -lineBefore
 
         if ($user["Source"] -eq "Local") { Edit-LocalUserPassword -username $user["Name"] } else { Edit-ADUserPassword }
     } catch {
@@ -17,16 +17,15 @@ function Edit-LocalUserPassword {
     )
 
     try {
-        $password = read-input -prompt "Enter password or leave blank:" -IsSecure $true -lineBefore
+        $password = read-input -prompt "Enter password or leave blank:" -IsSecure $true
 
-        if ($password.Length -eq 0) { $alert = "Removing password. Are you sure?" } 
-        else { $alert = "Changing password. Are you sure?" }
-
-        read-closing -script "edit-user-password" -customText $alert
+        if ($password.Length -eq 0) { $message = "Password removed" } 
+        else { $message = "Password changed" }
 
         Get-LocalUser -Name $username | Set-LocalUser -Password $password
 
-        write-text -Type "success" -text "Password settings for $username successfully updated." -lineAfter
+        write-text -Type "success" -text $message -lineBefore -lineAfter
+
         read-command
     } catch {
         # Display error message and exit this script

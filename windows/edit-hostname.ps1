@@ -2,8 +2,8 @@ function edit-hostname {
     try {
         $currentHostname = $env:COMPUTERNAME
         $currentDescription = (Get-WmiObject -Class Win32_OperatingSystem).Description
-        $hostname = read-input -prompt "Enter the desired hostname." -Validate "^(\s*|[a-zA-Z0-9 _\-]{1,15})$" -Value $currentHostname -lineBefore
-        $description = read-input -prompt "Enter a desired description. (Optional)" -Validate "^(\s*|[a-zA-Z0-9 |_\-]{1,64})$" -Value $currentDescription
+        $hostname = read-input -prompt "Enter the desired hostname:" -Validate "^(\s*|[a-zA-Z0-9 _\-]{1,15})$" -Value $currentHostname -lineBefore
+        $description = read-input -prompt "Enter a desired description:" -Validate "^(\s*|[a-zA-Z0-9 |_\-]{1,64})$" -Value $currentDescription
         
         if ($hostname -eq "") { 
             $hostname = $currentHostname 
