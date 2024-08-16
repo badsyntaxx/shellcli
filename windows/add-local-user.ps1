@@ -1,6 +1,6 @@
 function add-local-user {
     try {
-        $name = read-input -prompt "Enter a user name:" -Validate "^([a-zA-Z0-9 ._\-]{1,64})$" -CheckExistingUser -lineBefore
+        $name = read-input -prompt "Enter a user name:" -Validate "^([a-zA-Z0-9 ._\-]{1,64})$" -CheckExistingUser
         $password = read-input -prompt "Enter a password or leave blank:" -IsSecure
 
         # Create the new local user and add to the specified group
@@ -28,9 +28,7 @@ function add-local-user {
         } #>
 
         # Because of the bug listed above we just assume success if the script is still executing at this point.
-        write-text -type "success" -text "Local user added" -lineBefore
-        write-text -label "Account name" -text "$name" -lineBefore
-        write-text -label "Account group" -text "$group" -lineAfter
+        write-text -type "success" -text "Local user added" -lineAfter
 
         read-command
     } catch {

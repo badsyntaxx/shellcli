@@ -41,6 +41,7 @@ function read-command {
     )
 
     try {
+        Write-Host
         if ($command -eq "") { 
             Write-Host " $([char]0x203A) " -NoNewline
             $command = Read-Host 
@@ -139,7 +140,6 @@ function write-help {
             write-text -type "plain" -text "get wifi creds                   - View WiFi credentials saved on the system." -Color "DarkGray"
             write-text -type "header" -text "PLUGINS:" -lineBefore
             write-text -type "plain" -text "plugins [plugin name]  - Useful scripts made by others. Try the 'plugins help' command." -Color "DarkGray"
-            Write-Host
         }
         "plugins" {
             write-text "plugins help unwritten"
