@@ -176,28 +176,28 @@ function write-text {
 
         # Format output based on the specified Type
         if ($type -eq "header") {
-            Write-Host " ## " -ForegroundColor "Cyan" -NoNewline
+            Write-Host "## " -ForegroundColor "Cyan" -NoNewline
             Write-Host "$text" -ForegroundColor "White" 
         }
         
         if ($type -eq 'success') { 
-            Write-Host "  $([char]0x2713) $text"  -ForegroundColor "Green" 
+            Write-Host " $([char]0x2713) $text"  -ForegroundColor "Green" 
         }
         if ($type -eq 'error') { 
-            Write-Host "  X $text" -ForegroundColor "Red" 
+            Write-Host " X $text" -ForegroundColor "Red" 
         }
         if ($type -eq 'notice') { 
-            Write-Host "    $text" -ForegroundColor "Yellow" 
+            Write-Host "   $text" -ForegroundColor "Yellow" 
         }
         if ($type -eq 'plain') {
             if ($Color -eq "Gray") {
                 $Color = 'DarkCyan'
             }
             if ($label -ne "") { 
-                Write-Host "    $label`: " -NoNewline
+                Write-Host "   $label`: " -NoNewline
                 Write-Host "$text" -ForegroundColor $Color 
             } else {
-                Write-Host "    $text" -ForegroundColor $Color 
+                Write-Host "   $text" -ForegroundColor $Color 
             }
         }
         if ($type -eq 'list') { 
@@ -221,8 +221,8 @@ function write-text {
         }
 
         if ($type -eq 'fail') { 
-            Write-Host "    " -ForegroundColor "Red" -NoNewline
-            Write-Host "$text" 
+            Write-Host "   " -ForegroundColor "Red" -NoNewline
+            Write-Host $text
         }
 
         # Add a new line after output if specified
@@ -407,7 +407,7 @@ function read-input {
         # Get current cursor position
         $currPos = $host.UI.RawUI.CursorPosition
 
-        Write-Host "  ? " -NoNewline -ForegroundColor "Yellow"
+        Write-Host " ? " -NoNewline -ForegroundColor "Yellow"
         Write-Host "$prompt " -NoNewline
 
         if ($IsSecure) { $userInput = Read-Host -AsSecureString } 
@@ -439,7 +439,7 @@ function read-input {
         [Console]::SetCursorPosition($currPos.X, $currPos.Y)
         
         # Display checkmark symbol and user input (masked for secure input)
-        Write-Host "  ? " -ForegroundColor "Yellow" -NoNewline
+        Write-Host " ? " -ForegroundColor "Yellow" -NoNewline
         if ($IsSecure -and ($userInput.Length -eq 0)) { 
             Write-Host "$prompt                                                "
         } else { 
@@ -480,7 +480,7 @@ function read-option {
         # Get current cursor position
         $promptPos = $host.UI.RawUI.CursorPosition
 
-        Write-Host "  ? " -NoNewline -ForegroundColor "Yellow"
+        Write-Host " ? " -NoNewline -ForegroundColor "Yellow"
         Write-Host "$prompt "
 
         # Initialize variables for user input handling
@@ -545,8 +545,8 @@ function read-option {
         [Console]::SetCursorPosition($promptPos.X, $promptPos.Y)
 
         if ($orderedKeys.Count -ne 1) {
-            Write-Host "  ?" -ForegroundColor "Yellow" -NoNewline
-            Write-Host " $prompt" -NoNewline
+            Write-Host " ? " -ForegroundColor "Yellow" -NoNewline
+            Write-Host $prompt -NoNewline
             Write-Host " $($orderedKeys[$pos])" -ForegroundColor "DarkCyan"
         } else {
             Write-Host "  $([char]0x2713)" -ForegroundColor "Yellow" -NoNewline
