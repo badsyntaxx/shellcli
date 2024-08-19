@@ -24,12 +24,10 @@ function Edit-LocalUserName {
         $newUser = Get-LocalUser -Name $newName
 
         if ($null -ne $newUser) { 
-            write-text -type "success" -text "Account name changed" -lineBefore 
+            write-text -type "success" -text "Account name changed"
         } else {
-            write-text -type "error" -text "Unknown error" -lineBefore 
+            write-text -type "error" -text "Unknown error"
         }
-
-        write-text -label "Account name" -text $newUser -lineBefore -lineAfter
 
         read-command
     } catch {

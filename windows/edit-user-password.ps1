@@ -24,7 +24,7 @@ function Edit-LocalUserPassword {
 
         Get-LocalUser -Name $username | Set-LocalUser -Password $password
 
-        write-text -Type "success" -text $message -lineBefore -lineAfter
+        write-text -Type "success" -text $message
 
         read-command
     } catch {
