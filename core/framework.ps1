@@ -397,9 +397,15 @@ function read-option {
 
         [Console]::SetCursorPosition($promptPos.X, $promptPos.Y)
 
-        Write-Host " ? " -ForegroundColor "Yellow" -NoNewline
-        Write-Host $prompt -NoNewline
-        Write-Host " $($orderedKeys[$pos])" -ForegroundColor "DarkCyan"
+        if ($orderedKeys.Count -ne 1) {
+            Write-Host " ? " -ForegroundColor "Yellow" -NoNewline
+            Write-Host $prompt -NoNewline
+            Write-Host " $($orderedKeys[$pos])" -ForegroundColor "DarkCyan"
+        } else {
+            Write-Host " ? " -ForegroundColor "Yellow" -NoNewline
+            Write-Host $prompt -NoNewline
+            Write-Host " $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length))" -ForegroundColor "DarkCyan"
+        }
 
         for ($i = 0; $i -lt $options.Count; $i++) {
             Write-Host " $(" " * ($longestKeyLength * $options[$orderedKeys[$pos]].Length)) "
