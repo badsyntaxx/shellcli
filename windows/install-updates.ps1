@@ -16,10 +16,10 @@ function install-updates {
 
         switch ($choice) {
             0 { 
-                Get-WindowsUpdate -Install -Verbose 
+                Get-WindowsUpdate -Install
             }
             1 {
-                Get-WindowsUpdate -Severity Important -Install -Verbose
+                Get-WindowsUpdate -Severity Important -Install
             }
         }
 
