@@ -1,28 +1,34 @@
-function add-drive-letter {
+function install-updates {
     try { 
-        
+        write-text -type "plain" -text "Loading update module."
+
+        Install-Module -Name PSWindowsUpdate -Force
+        Import-Module PSWindowsUpdate -Force
+
+        write-text -type "plain" -text "Update module loaded."
+
+        Get-WindowsUpdate
+
         $choice = read-option -options $([ordered]@{
-                "Enable"  = "Enable volume 1"
-                "Disable" = "Disable volume 1"
-            }) -prompt "Choose"
+                "All"    = "Install all updates."
+                "Severe" = "Install only severe updates."
+            })
 
-        $volume = Get-Partition -DiskNumber 1
-
-        if ($choice -eq 0) { 
-            Set-Partition -InputObject $volume -NewDriveLetter 'P'
-            $message = 'Drive added.'
+        switch ($choice) {
+            0 { 
+                Get-WindowsUpdate -Install -Verbose 
+            }
+            1 {
+                Get-WindowsUpdate -Severity Important -Install -Verbose
+            }
         }
 
-        if ($choice -eq 1) { 
-            $volume | Remove-PartitionAccessPath -AccessPath "P:\"
-            $message = 'Drive removed.'
-        } 
+        write-text -type "success" -text "Updates complete."
 
-        write-text -type "success" -text $message -lineAfter
         read-command
     } catch {
         # Display error message and exit this script
-        write-text -type "error" -text "add-drive-letter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        write-text -type "error" -text "install-updates-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
         read-command
     }
 }
@@ -724,4 +730,4 @@ function select-user {
     }
 }
 
-invoke-script "add-drive-letter"
+invoke-script "install-updates"
