@@ -12,7 +12,7 @@ function install-updates {
         $choice = read-option -options $([ordered]@{
                 "All"    = "Install all updates."
                 "Severe" = "Install only severe updates."
-            }) -prompt "Select which updates to install:"
+            }) -prompt "Select which updates to install:" -lineBefore
 
         switch ($choice) {
             0 { 
