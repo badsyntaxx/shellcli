@@ -409,10 +409,10 @@ function read-option {
         }
 
         for ($i = 0; $i -lt $options.Count; $i++) {
-            Write-Host "  $(" " * ($longestKeyLength * $options[$orderedKeys[$pos]].Length))  "
+            Write-Host "1  $(" " * ($longestKeyLength * $options[$orderedKeys[$pos]].Length))  "
         }
         
-        Write-Host "  $(" " * ($longestKeyLength * $options[$orderedKeys[$pos]].Length))  "
+        Write-Host "2  $(" " * ($longestKeyLength * $options[$orderedKeys[$pos]].Length))  "
         
         [Console]::SetCursorPosition($promptPos.X, $promptPos.Y)
         Write-Host
