@@ -12,14 +12,14 @@ function install-updates {
         $choice = read-option -options $([ordered]@{
                 "All"    = "Install all updates."
                 "Severe" = "Install only severe updates."
-            })
+            }) -prompt "Select which updates to install:" -lineBefore
 
         switch ($choice) {
             0 { 
-                Get-WindowsUpdate -Install -Verbose 
+                Get-WindowsUpdate -Install -AcceptAll
             }
             1 {
-                Get-WindowsUpdate -Severity Important -Install -Verbose
+                Get-WindowsUpdate -Severity "Important" -Install
             }
         }
 
@@ -584,12 +584,13 @@ function read-option {
             Write-Host $prompt -NoNewline
             Write-Host " $($orderedKeys[$pos])" -ForegroundColor "DarkCyan"
         } else {
-            Write-Host " $([char]0x2713)" -ForegroundColor "Yellow" -NoNewline
-            Write-Host " $($orderedKeys[$pos])" -ForegroundColor "DarkCyan"
+            Write-Host " ? " -ForegroundColor "Yellow" -NoNewline
+            Write-Host $prompt -NoNewline
+            Write-Host " $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length))" -ForegroundColor "DarkCyan"
         }
 
         for ($i = 0; $i -lt $options.Count; $i++) {
-            Write-Host " $(" " * ($longestKeyLength * $options[$orderedKeys[$pos]].Length)) "
+            Write-Host "     $(" " * ($longestKeyLength + $options[$orderedKeys[$pos]].Length))"
         }
         
         [Console]::SetCursorPosition($promptPos.X, $promptPos.Y)

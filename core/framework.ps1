@@ -409,7 +409,7 @@ function read-option {
         }
 
         for ($i = 0; $i -lt $options.Count; $i++) {
-            Write-Host "1  $(" " * ($longestKeyLength * $options[$orderedKeys[$pos]].Length))  "
+            Write-Host "1 $(" " * ($longestKeyLength + $options[$orderedKeys[$pos]].Length))"
         }
         
         Write-Host "2  $(" " * ($longestKeyLength * $options[$orderedKeys[$pos]].Length))  "
