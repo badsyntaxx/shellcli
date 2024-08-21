@@ -1,11 +1,11 @@
 function install-updates {
     try { 
-        write-text -type "plain" -text "Loading update module."
+        write-text -type "plain" -text "Loading update module..."
 
         Install-Module -Name PSWindowsUpdate -Force
         Import-Module PSWindowsUpdate -Force
 
-        write-text -type "plain" -text "Update module loaded."
+        write-text -type "plain" -text "Getting updates..."
 
         Get-WindowsUpdate
 
@@ -16,10 +16,10 @@ function install-updates {
 
         switch ($choice) {
             0 { 
-                Get-WindowsUpdate -Install -AcceptAll
+                Get-WindowsUpdate -Install -AcceptAll | Out-Null
             }
             1 {
-                Get-WindowsUpdate -Severity "Important" -Install
+                Get-WindowsUpdate -Severity "Important" -Install | Out-Null
             }
         }
 
