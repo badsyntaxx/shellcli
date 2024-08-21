@@ -345,8 +345,14 @@ function read-option {
         # Get a list of keys from the options dictionary
         $orderedKeys = $options.Keys | ForEach-Object { $_ }
 
+        # Get an array of all values
+        $values = $options.Values
+
         # Find the length of the longest key for padding
         $longestKeyLength = ($orderedKeys | Measure-Object -Property Length -Maximum).Maximum
+
+        # Find the length of the longest value
+        $longestValueLength = ($values | Measure-Object -Property Length -Maximum).Maximum
 
         # Display single option if only one exists
         if ($orderedKeys.Count -eq 1) {
@@ -409,7 +415,7 @@ function read-option {
         }
 
         for ($i = 0; $i -lt $options.Count; $i++) {
-            Write-Host "     $(" " * ($longestKeyLength + $options[$orderedKeys[$pos]].Length))"
+            Write-Host "      $(" " * ($longestKeyLength + $longestValueLength))"
         }
         
         [Console]::SetCursorPosition($promptPos.X, $promptPos.Y)
