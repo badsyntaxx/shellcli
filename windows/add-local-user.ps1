@@ -29,11 +29,8 @@ function add-local-user {
 
         # Because of the bug listed above we just assume success if the script is still executing at this point.
         write-text -type "success" -text "Local user added."
-
-        read-command
     } catch {
         # Display error message and exit this script
         write-text -type "error" -text "add-local-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-        read-command
     }
 }
