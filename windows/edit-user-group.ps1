@@ -104,5 +104,5 @@ function Edit-LocalUserGroup {
 }
 
 function Edit-ADUserGroup {
-    write-text -type "fail" -text "Editing domain users doesn't work yet."
+    write-text -type "plain" -text "Editing domain users doesn't work yet."
 }

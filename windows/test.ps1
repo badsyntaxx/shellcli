@@ -593,8 +593,8 @@ function get-download {
                 
                 if ($downloadComplete) { return $true } else { return $false }
             } catch {
-                # write-text -type "fail" -text "$($_.Exception.Message)"
-                write-text -type "fail" -text $failText
+                # write-text -type "plain" -text "$($_.Exception.Message)"
+                write-text -type "plain" -text $failText
                 
                 $downloadComplete = $false
             

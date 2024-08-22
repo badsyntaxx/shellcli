@@ -35,6 +35,6 @@ function Edit-LocalUserPassword {
 }
 
 function Edit-ADUserPassword {
-    write-text -Type "fail" -text "Editing domain users doesn't work yet."
+    write-text -type "plain" -text "Editing domain users doesn't work yet."
     read-command
 }

@@ -38,6 +38,5 @@ function Edit-LocalUserName {
 }
 
 function Edit-ADUserName {
-    write-text -type "fail" -text "Editing domain users doesn't work yet."
-    write-text
+    write-text -type "plain" -text "Editing domain users doesn't work yet."
 }
