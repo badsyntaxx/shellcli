@@ -190,15 +190,14 @@ function write-text {
             Write-Host "  $text" -ForegroundColor "Yellow" 
         }
         if ($type -eq 'plain') {
-            
             if ($label -ne "") { 
                 if ($Color -eq "Gray") {
                     $Color = 'DarkCyan'
                 }
-                Write-Host " $label`: " -NoNewline -ForegroundColor "Gray"
+                Write-Host "  $label`: " -NoNewline -ForegroundColor "Gray"
                 Write-Host "$text" -ForegroundColor $Color 
             } else {
-                Write-Host " $text" -ForegroundColor $Color 
+                Write-Host "  $text" -ForegroundColor $Color 
             }
         }
         if ($type -eq 'list') { 
