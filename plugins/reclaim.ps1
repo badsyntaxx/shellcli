@@ -1,5 +1,5 @@
 function reclaim {
-    write-text "Making Windows 11 less sucky" -lineAfter
+    write-text "Debloating Windows"
 
     $tweaks = @(    
         ### Privacy Settings ###
