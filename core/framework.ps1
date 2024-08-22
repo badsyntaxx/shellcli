@@ -356,7 +356,7 @@ function read-option {
         # Display single option if only one exists
         if ($orderedKeys.Count -eq 1) {
             Write-Host "$([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline
-            Write-Host " $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($options[$orderedKeys])" -ForegroundColor "DarkCyan"
+            Write-Host "  $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($options[$orderedKeys])" -ForegroundColor "DarkCyan"
         } else {
             # Loop through each option and display with padding and color
             for ($i = 0; $i -lt $orderedKeys.Count; $i++) {
@@ -365,7 +365,9 @@ function read-option {
                 if ($i -eq $pos) { 
                     Write-Host "$([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline  
                     Write-Host " $key $padding - $($options[$key])" -ForegroundColor "DarkCyan"
-                } else { Write-Host "   $key $padding - $($options[$key])" -ForegroundColor "Gray" }
+                } else { 
+                    Write-Host "  $key $padding - $($options[$key])" -ForegroundColor "Gray" 
+                }
             }
         }
 
@@ -414,7 +416,7 @@ function read-option {
         }
 
         for ($i = 0; $i -lt $options.Count; $i++) {
-            Write-Host "     $(" " * ($longestKeyLength + $longestValueLength))"
+            Write-Host "       $(" " * ($longestKeyLength + $longestValueLength))"
         }
         
         [Console]::SetCursorPosition($promptPos.X, $promptPos.Y)
