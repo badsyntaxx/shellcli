@@ -97,7 +97,6 @@ function read-command {
     } catch {
         # Error handling: display an error message and prompt for a new command
         Write-Host "    $($_.Exception.Message) | init-$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor Red
-        read-command
     }
 }
 function add-script {
@@ -114,7 +113,9 @@ function add-script {
 
     # Download the script
     $download = get-download -Url "$url/$subPath/$script.ps1" -Target "$env:SystemRoot\Temp\$script.ps1" -failText "Could not acquire components..."
-    if (!$download) { read-command }
+    if (!$download) { 
+        read-command 
+    }
 
     # Append the script to the main script
     $rawScript = Get-Content -Path "$env:SystemRoot\Temp\$script.ps1" -Raw -ErrorAction SilentlyContinue

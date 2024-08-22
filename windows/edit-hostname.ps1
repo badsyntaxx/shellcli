@@ -44,6 +44,10 @@ function edit-hostname {
 
         $response += " updated."
 
+        if ($currentHostname -eq $env:COMPUTERNAME -and $description -eq (Get-WmiObject -Class Win32_OperatingSystem).Description) {
+            $response += "Hostname and description unchanged."
+        }
+
         write-text -type "success" -text $response
     } catch {
         # Display error message and exit this script
