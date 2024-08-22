@@ -8,8 +8,8 @@ function add-user {
         if ($choice -eq 0) { $command = "add local user" }
         if ($choice -eq 1) { $command = "add ad user" }
 
-        Write-Host " ::"  -ForegroundColor "DarkCyan" -NoNewline
-        Write-Host " Running command:" -NoNewline -ForegroundColor "DarkGray"
+        Write-Host ": "  -ForegroundColor "DarkCyan" -NoNewline
+        Write-Host "Running command:" -NoNewline -ForegroundColor "DarkGray"
         Write-Host " $command" -ForegroundColor "Gray"
 
         read-command -command $command

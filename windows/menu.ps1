@@ -23,8 +23,8 @@ function menu {
         if ($choice -eq 7) { $command = "toggle context menu" }
 
         Write-Host
-        Write-Host " ::"  -ForegroundColor "DarkCyan" -NoNewline
-        Write-Host " Running command:" -NoNewline -ForegroundColor "DarkGray"
+        Write-Host ": "  -ForegroundColor "DarkCyan" -NoNewline
+        Write-Host "Running command:" -NoNewline -ForegroundColor "DarkGray"
         Write-Host " $command" -ForegroundColor "Gray"
 
         read-command -command $command
