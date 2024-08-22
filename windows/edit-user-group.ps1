@@ -6,7 +6,6 @@ function edit-user-group {
     } catch {
         # Display error message and exit this script
         write-text -type "error" -text "edit-user-group-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-        read-command
     }
 } 
 
@@ -95,11 +94,9 @@ function Edit-LocalUserGroup {
         $updatedUser = get-userdata -username $user["Name"]
         write-text -type "list" -list $updatedUser -lineAfter
         write-text -type "success" -text "The group membership for $($user["Name"]) has been changed to $group." -lineAfter
-        read-command
     } catch {
         # Display error message and exit this script
         write-text -type "error" -text "Edit-LocalUserGroup-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-        read-command
     }
 }
 

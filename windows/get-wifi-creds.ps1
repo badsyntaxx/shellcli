@@ -26,10 +26,9 @@ function get-wifi-creds {
             $password = "N/A"
         }
 
-        Write-Host "    ${ssid}: " -NoNewLine  -ForegroundColor DarkGray
+        Write-Host "  ${ssid}: " -NoNewLine  -ForegroundColor DarkGray
         Write-Host "$password"
     }
    
     Write-Host
-    read-command
 }

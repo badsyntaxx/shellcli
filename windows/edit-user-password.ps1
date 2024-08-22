@@ -6,7 +6,6 @@ function edit-user-password {
     } catch {
         # Display error message and exit this script
         write-text -type "error" -text "edit-user-password-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-        read-command
     }
 }
 
@@ -25,16 +24,12 @@ function Edit-LocalUserPassword {
         Get-LocalUser -Name $username | Set-LocalUser -Password $password
 
         write-text -Type "success" -text $message
-
-        read-command
     } catch {
         # Display error message and exit this script
         write-text -type "error" -text "Edit-LocalUserPassword-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-        read-command
     }
 }
 
 function Edit-ADUserPassword {
     write-text -type "plain" -text "Editing domain users doesn't work yet."
-    read-command
 }

@@ -28,12 +28,9 @@ function Edit-LocalUserName {
         } else {
             write-text -type "error" -text "Unknown error"
         }
-
-        read-command
     } catch {
         # Display error message and exit this script
         write-text -type "error" -text "Edit-LocalUserName-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-        read-command
     }
 }
 

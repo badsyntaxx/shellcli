@@ -48,11 +48,9 @@ function add-ad-user {
         write-text -type "list" -List $data -lineAfter
 
         write-text -type "success" -text "The user account was created."
-        read-command
     } catch {
         # Display error message and exit this script
         write-text -type "error" -text "add-domain-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-        read-command
     }
 }
 

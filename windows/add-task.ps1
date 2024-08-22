@@ -42,11 +42,8 @@ function add-task {
         Register-ScheduledTask -Action $actionObj -Trigger $triggerObj -TaskName $taskName -User 'NT AUTHORITY\SYSTEM' -RunLevel Highest
 
         Write-Host "Task '$taskName' has been scheduled successfully!"
-
-        read-command
     } catch {
         # Display error message and exit this script
         write-text -type "error" -text "schedule-task-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-        read-command
     }
 }
