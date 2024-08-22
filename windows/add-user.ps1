@@ -16,7 +16,6 @@ function add-user {
     } catch {
         # Display error message and exit this script
         write-text -type "error" -text "add-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-        read-command
     }
 }
 
