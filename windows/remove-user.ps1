@@ -5,7 +5,12 @@ function remove-user {
         $choice = read-option -options $([ordered]@{
                 "Delete" = "Also delete the users data."
                 "Keep"   = "Do not delete the users data."
+                "Cancel" = "Do not delete anything and exit this function."
             }) -prompt "Do you also want to delete the users data?"
+
+        if ($choice -eq 2) {
+            read-command
+        }
 
         Remove-LocalUser -Name $user["Name"] | Out-Null
         if ($choice -eq 0) { 
