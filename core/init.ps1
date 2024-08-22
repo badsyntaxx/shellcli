@@ -31,7 +31,7 @@ function initialize-chasteScripts {
         Invoke-Expression $chasteScript
     } catch {
         # Error handling: display an error message and prompt for a new command
-        Write-Host "    Connection Error: $($_.Exception.Message) | init-$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor "Red"
+        Write-Host "  Connection Error: $($_.Exception.Message) | init-$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor "Red"
     }
 }
 
