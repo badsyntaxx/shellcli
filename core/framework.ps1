@@ -363,7 +363,7 @@ function read-option {
                 $key = $orderedKeys[$i]
                 $padding = " " * ($longestKeyLength - $key.Length)
                 if ($i -eq $pos) { 
-                    Write-Host " $([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline  
+                    Write-Host "$([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline  
                     Write-Host " $key $padding - $($options[$key])" -ForegroundColor "DarkCyan"
                 } else { Write-Host "   $key $padding - $($options[$key])" -ForegroundColor "Gray" }
             }
