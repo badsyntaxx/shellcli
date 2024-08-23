@@ -12,7 +12,6 @@ function edit-user-group {
         write-text -type "error" -text "edit-user-group-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 } 
-
 function Edit-LocalUserGroup {
     param (
         [Parameter(Mandatory)]
@@ -23,7 +22,12 @@ function Edit-LocalUserGroup {
         $addOrRemove = read-option -options $([ordered]@{
                 "Add"    = "Add this user to more groups"
                 "Remove" = "Remove this user from certain groups"
+                "Cancel" = "Choose neither and exit this function."
             }) -prompt "Do you want to add or remove this user from groups?" -returnKey
+
+        if ($addOrRemove -eq "Cancel") {
+            read-command
+        }
 
         $default = Get-LocalGroup | ForEach-Object {
             $description = $_.Description
@@ -57,9 +61,15 @@ function Edit-LocalUserGroup {
                 "Distributed COM Users" { $groups["$($group.Keys)"] = "Authorized for Distributed Component Object Model (DCOM) operations." }
             }
         }
+
+        $groups["Cancel"] = "Select nothing and exit this function."
     
         $selectedGroups = @()
         $selectedGroups += read-option -options $groups -prompt "Select a group:" -returnKey
+
+        if ($selectedGroups -eq "Cancel") {
+            read-command
+        }
 
         $groupsList = [ordered]@{}
         $groupsList["Done"] = "Stop selecting groups and move to the next step."
@@ -67,11 +77,6 @@ function Edit-LocalUserGroup {
 
         while ($selectedGroups -notcontains 'Done') {
             $availableGroups = [ordered]@{}
-
-            write-text -text "    Selected groups:" -lineBefore
-            foreach ($selectedGroup in $selectedGroups) {
-                Write-Host "            $selectedGroup" -ForegroundColor "DarkGray"
-            }
 
             # Iterate through the keys in the hashtable
             foreach ($key in $groupsList.Keys) {
@@ -82,10 +87,12 @@ function Edit-LocalUserGroup {
             }
 
             # $availableGroups
-            $selectedGroups += read-option -options $availableGroups -ReturnKey
-        }
+            $selectedGroups += read-option -options $availableGroups -prompt "Select another group or 'Done':" -ReturnKey
 
-        read-closing -Script "Edit-LocalUserGroup"
+            if ($selectedGroups -eq "Cancel") {
+                read-command
+            }
+        }
 
         foreach ($group in $selectedGroups) {
             if ($addOrRemove -eq "Add" -and $group -ne "Done") {
@@ -95,15 +102,12 @@ function Edit-LocalUserGroup {
             }
         }
 
-        $updatedUser = get-userdata -username $user["Name"]
-        write-text -type "list" -list $updatedUser -lineAfter
-        write-text -type "success" -text "The group membership for $($user["Name"]) has been changed to $group." -lineAfter
+        write-text -type "success" -text "Group membership updated."
     } catch {
         # Display error message and exit this script
         write-text -type "error" -text "Edit-LocalUserGroup-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-
 function Edit-ADUserGroup {
     write-text -type "plain" -text "Editing domain users doesn't work yet."
 }
