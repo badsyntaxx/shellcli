@@ -2,17 +2,17 @@ function menu {
     try {
         # Create a menu with options and descriptions using an ordered hashtable
         $choice = read-option -options $([ordered]@{
-                "Toggle administrator"    = "Toggle the Windows built in administrator account."
-                "Add user"                = "Add a user to the system."
-                "Remove user"             = "Remove a user from the system."
-                "Edit user"               = "Edit a users."
-                "Edit hostname"           = "Edit this computers name and description."
-                "Edit network adapter"    = "Edit a network adapter.(BETA)"
-                "Get WiFi credentials"    = "View all saved WiFi credentials on the system."
-                "Toggle W11 Context Menu" = "Enable or Disable the Windows 11 context menu."
-                "Install updates"         = "Install Windows updates silently."
-                "Schedule task"           = "Schedule a new task."
-                "Cancel"                  = "Select nothing and exit this menu."
+                "Toggle administrator"         = "Toggle the Windows built in administrator account."
+                "Add user"                     = "Add a user to the system."
+                "Remove user"                  = "Remove a user from the system."
+                "Edit user"                    = "Edit a users."
+                "Edit hostname"                = "Edit this computers name and description."
+                "Edit network adapter (Alpha)" = "Edit a network adapter.(BETA)"
+                "Get WiFi credentials"         = "View all saved WiFi credentials on the system."
+                "Toggle W11 Context Menu"      = "Enable or Disable the Windows 11 context menu."
+                "Install updates (Alpha)"      = "Install Windows updates silently."
+                "Schedule task (Alpha)"        = "Schedule a new task."
+                "Cancel"                       = "Select nothing and exit this menu."
             })
 
         switch ($choice) {
