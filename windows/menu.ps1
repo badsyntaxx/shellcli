@@ -10,6 +10,8 @@ function menu {
                 "Edit network adapter"    = "Edit a network adapter.(BETA)"
                 "Get WiFi credentials"    = "View all saved WiFi credentials on the system."
                 "Toggle W11 Context Menu" = "Enable or Disable the Windows 11 context menu."
+                "Install updates"         = "Install Windows updates silently."
+                "Schedule task"           = "Schedule a new task."
                 "Cancel"                  = "Select nothing and exit this menu."
             })
 
@@ -22,7 +24,9 @@ function menu {
             5 { $command = "edit net adapter" }
             6 { $command = "get wifi creds" }
             7 { $command = "toggle context menu" }
-            8 { read-command }
+            8 { $command = "install updates" }
+            9 { $command = "add task" }
+            10 { read-command }
         }
 
         Write-Host
