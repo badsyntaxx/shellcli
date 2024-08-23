@@ -678,6 +678,8 @@ function select-user {
             $accounts["$username"] = "$source | $groupString"
         }
 
+        $accounts["Cancel"] = "Do not select a user and exit this function."
+
         # Prompt user to select a user from the list and return the key (username)
         $choice = read-option -options $accounts -prompt $prompt -returnKey
 
