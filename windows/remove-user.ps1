@@ -39,7 +39,6 @@ function remove-user {
 
         write-text -type 'success' -text $response
     } catch {
-        # Display error message and exit this script
         write-text -type "error" -text "remove-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }

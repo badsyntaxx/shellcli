@@ -13,7 +13,7 @@ function menu {
                 "Install updates (Alpha)"      = "Install Windows updates silently."
                 "Schedule task (Alpha)"        = "Schedule a new task."
                 "Cancel"                       = "Select nothing and exit this menu."
-            })
+            }) -prompt "Select a Chaste Scripts function:"
 
         switch ($choice) {
             0 { $command = "toggle admin" }

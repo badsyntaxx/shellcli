@@ -8,7 +8,6 @@ function edit-user-name {
             Edit-ADUserName 
         }
     } catch {
-        # Display error message and exit this script
         write-text -type "error" -text "edit-user-name-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
@@ -32,7 +31,6 @@ function Edit-LocalUserName {
             write-text -type "error" -text "Unknown error"
         }
     } catch {
-        # Display error message and exit this script
         write-text -type "error" -text "Edit-LocalUserName-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }

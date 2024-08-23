@@ -8,7 +8,6 @@ function edit-user-password {
             Edit-ADUserPassword 
         }
     } catch {
-        # Display error message and exit this script
         write-text -type "error" -text "edit-user-password-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
@@ -29,7 +28,6 @@ function Edit-LocalUserPassword {
 
         write-text -Type "success" -text $message
     } catch {
-        # Display error message and exit this script
         write-text -type "error" -text "Edit-LocalUserPassword-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }

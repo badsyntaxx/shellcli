@@ -45,7 +45,6 @@ function edit-hostname {
 
         write-text -type "success" -text $response
     } catch {
-        # Display error message and exit this script
         write-text -type "error" -text "edit-hostname-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
