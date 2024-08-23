@@ -1,12 +1,15 @@
 function edit-user-name {
     try {
-        $user = select-user -lineBefore
+        $user = select-user
 
-        if ($user["Source"] -eq "Local") { Edit-LocalUserName -User $user } else { Edit-ADUserName }
+        if ($user["Source"] -eq "Local") { 
+            Edit-LocalUserName -User $user 
+        } else { 
+            Edit-ADUserName 
+        }
     } catch {
         # Display error message and exit this script
         write-text -type "error" -text "edit-user-name-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-        read-command
     }
 }
 

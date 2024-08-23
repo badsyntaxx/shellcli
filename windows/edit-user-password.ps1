@@ -1,8 +1,12 @@
 function edit-user-password {
     try {
-        $user = select-user -lineBefore
+        $user = select-user
 
-        if ($user["Source"] -eq "Local") { Edit-LocalUserPassword -username $user["Name"] } else { Edit-ADUserPassword }
+        if ($user["Source"] -eq "Local") { 
+            Edit-LocalUserPassword -username $user["Name"] 
+        } else { 
+            Edit-ADUserPassword 
+        }
     } catch {
         # Display error message and exit this script
         write-text -type "error" -text "edit-user-password-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"

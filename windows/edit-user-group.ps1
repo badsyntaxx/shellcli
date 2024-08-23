@@ -1,8 +1,12 @@
 function edit-user-group {
     try {
-        $user = select-user -lineBefore
+        $user = select-user
 
-        if ($user["Source"] -eq "Local") { Edit-LocalUserGroup -User $user } else { Edit-ADUserGroup }
+        if ($user["Source"] -eq "Local") { 
+            Edit-LocalUserGroup -User $user 
+        } else { 
+            Edit-ADUserGroup 
+        }
     } catch {
         # Display error message and exit this script
         write-text -type "error" -text "edit-user-group-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
