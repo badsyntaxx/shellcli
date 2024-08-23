@@ -59,7 +59,7 @@ function Edit-LocalUserGroup {
         }
     
         $selectedGroups = @()
-        $selectedGroups += read-option -options $groups -returnKey
+        $selectedGroups += read-option -options $groups -prompt "Select a group:" -returnKey
 
         $groupsList = [ordered]@{}
         $groupsList["Done"] = "Stop selecting groups and move to the next step."
