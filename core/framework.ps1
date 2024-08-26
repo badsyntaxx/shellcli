@@ -488,7 +488,6 @@ function get-download {
         }
     }
     Process {
-        $downloadComplete = $true 
         for ($retryCount = 1; $retryCount -le $MaxRetries; $retryCount++) {
             try {
                 $storeEAP = $ErrorActionPreference
@@ -556,8 +555,6 @@ function get-download {
                 }
             } catch {
                 write-text -type "plain" -text $failText
-                
-                $downloadComplete = $false
             
                 if ($retryCount -lt $MaxRetries) {
                     write-text "Retrying..."
