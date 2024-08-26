@@ -67,19 +67,17 @@ function read-command {
             read-command
         }
 
-        $lowercaseCommand = $command.ToLower()
-
         # Adjust command and paths
         $subCommands = @("plugins");
         $subPath = "windows"
         foreach ($sub in $subCommands) {
             if ($firstWord -eq $sub -and $firstWord -ne 'menu') { 
-                $lowercaseCommand = $lowercaseCommand -replace "^$firstWord \s*", "" 
+                $command = $command -replace "^$firstWord \s*", "" 
                 $subPath = $sub
             }
         }
         
-        $fileFunc = $lowercaseCommand -replace ' ', '-'
+        $fileFunc = $command -replace ' ', '-'
 
         # Create the main script file
         New-Item -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -ItemType File -Force | Out-Null
