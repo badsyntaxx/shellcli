@@ -554,10 +554,7 @@ function get-download {
                 if ($visible) {
                     Write-Host 
                 }
-                
-                if ($downloadComplete) { return $true } else { return $false }
             } catch {
-                # write-text -type "plain" -text "$($_.Exception.Message)"
                 write-text -type "plain" -text $failText
                 
                 $downloadComplete = $false
@@ -567,6 +564,7 @@ function get-download {
                     Start-Sleep -Seconds $Interval
                 } else {
                     write-text -type "error" -text "Maximum retries reached." 
+                    read-command
                 }
             } finally {
                 # cleanup
