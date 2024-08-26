@@ -76,7 +76,7 @@ function reclaim {
 
     $tweaks | ForEach-Object { Invoke-Expression $_ }
 
-    write-text -type "success" -text "Windows 11 has been made semi-normal again." -lineAfter
+    write-text -type "success" -text "Windows 11 debloated."
     read-command
 }
 
