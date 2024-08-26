@@ -475,7 +475,7 @@ function get-download {
         }
     }
     Process {
-
+        $downloadComplete = $true 
         for ($retryCount = 1; $retryCount -le $MaxRetries; $retryCount++) {
             try {
                 $storeEAP = $ErrorActionPreference
@@ -541,15 +541,23 @@ function get-download {
                 if ($visible) {
                     Write-Host 
                 }
+                
+                if ($downloadComplete) { 
+                    return $true 
+                } else { 
+                    return $false 
+                }
             } catch {
+                # write-text -type "plain" -text "$($_.Exception.Message)"
                 write-text -type "plain" -text $failText
+                
+                $downloadComplete = $false
             
                 if ($retryCount -lt $MaxRetries) {
                     write-text "Retrying..."
                     Start-Sleep -Seconds $Interval
                 } else {
-                    write-text -type "error" -text "Maximum retries reached." 
-                    read-command
+                    write-text -type "error" -text "Load failed. Exiting function." 
                 }
             } finally {
                 # cleanup
