@@ -67,18 +67,18 @@ function read-command {
             read-command
         }
 
+        $lowercaseCommand = $command.ToLower()
+
         # Adjust command and paths
         $subCommands = @("plugins");
         $subPath = "windows"
         foreach ($sub in $subCommands) {
             if ($firstWord -eq $sub -and $firstWord -ne 'menu') { 
-                $command = $command -replace "^$firstWord \s*", "" 
+                $lowercaseCommand = $lowercaseCommand -replace "^$firstWord \s*", "" 
                 $subPath = $sub
             }
         }
-
-        # Convert command to title case and replace the first spaces with a dash and the second space with no space
-        $lowercaseCommand = $command.ToLower()
+        
         $fileFunc = $lowercaseCommand -replace ' ', '-'
 
         # Create the main script file
