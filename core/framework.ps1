@@ -54,7 +54,7 @@ function read-command {
             write-help
         }
 
-        if ($command -eq 'help plugins') {
+        if ($command -eq 'plugins help') {
             write-help -type 'plugins'
         }   
 
@@ -67,7 +67,6 @@ function read-command {
             read-command
         }
 
-        # Adjust command and paths
         $subCommands = @("plugins");
         $subPath = "windows"
         foreach ($sub in $subCommands) {
@@ -76,24 +75,17 @@ function read-command {
                 $subPath = $sub
             }
         }
-        
         $fileFunc = $command -replace ' ', '-'
 
-        # Create the main script file
         New-Item -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -ItemType File -Force | Out-Null
-
         add-script -subPath $subPath -script $fileFunc
         add-script -subpath "core" -script "framework"
-
-        # Add a final line that will invoke the desired function
         Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "invoke-script '$fileFunc'"
         Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "read-command"
 
-        # Execute the combined script
         $chasteScript = Get-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Raw
         Invoke-Expression $chasteScript
     } catch {
-        # Error handling: display an error message and prompt for a new command
         Write-Host "    $($_.Exception.Message) | init-$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor Red
     }
 }
@@ -486,6 +478,7 @@ function get-download {
         }
     }
     Process {
+
         for ($retryCount = 1; $retryCount -le $MaxRetries; $retryCount++) {
             try {
                 $storeEAP = $ErrorActionPreference
