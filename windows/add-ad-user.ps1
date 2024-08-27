@@ -43,7 +43,7 @@ function add-ad-user {
 
         Add-LocalGroupMember -Group $group -Member $name -ErrorAction Stop
 
-        $data = get-userdata -Username $name
+        $data = get-userData -Username $name
 
         write-text -type "list" -List $data -lineAfter
 

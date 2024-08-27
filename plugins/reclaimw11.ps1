@@ -1,4 +1,4 @@
-function reclaim {
+function reclaimw11 {
     write-text "Debloating Windows"
 
     $tweaks = @(    

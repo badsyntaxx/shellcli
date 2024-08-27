@@ -1,44 +1,27 @@
-
-function edit-user-password {
+function plugins {
     try {
-        $user = select-user
-        $user
-        if ($user["Source"] -eq "Local") { 
-            Edit-LocalUserPassword -username $user["Name"] 
-        } elseif ($user["Source"] -eq "MicrosoftAccount") {
-            write-text -Type "notice" -text "Cannot change passwords for Microsoft accounts."
-        } else { 
-            Edit-ADUserPassword 
+        # Create a menu with options and descriptions using an ordered hashtable
+        $choice = read-option -options $([ordered]@{
+                "massgravel"   = "https://github.com/massgravel/Microsoft-Activation-Scripts"
+                "reclaimw11"   = "https://gist.github.com/DanielLarsenNZ/edc6dd611418581ef90b02ad8e23b363#file-reclaim-windows-11-ps1"
+                "win11debloat" = "https://github.com/Raphire/Win11Debloat"
+                "Cancel"       = "Select nothing and exit this menu."
+            }) -prompt "Select a plugin:" -returnKey
+
+        if ($choice -eq "Cancel") {
+            read-command
         }
+
+        Write-Host
+        Write-Host ": "  -ForegroundColor "DarkCyan" -NoNewline
+        Write-Host "Running command:" -NoNewline -ForegroundColor "DarkGray"
+        Write-Host " $choice" -ForegroundColor "Gray"
+
+        read-command -command $choice
     } catch {
-        write-text -type "error" -text "edit-user-password-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        write-text -type "error" -text "menu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-
-function Edit-LocalUserPassword {
-    param (
-        [Parameter(Mandatory)]
-        [string]$username
-    )
-
-    try {
-        $password = read-input -prompt "Enter password or leave blank:" -IsSecure $true
-
-        if ($password.Length -eq 0) { $message = "Password removed" } 
-        else { $message = "Password changed" }
-
-        Get-LocalUser -Name $username | Set-LocalUser -Password $password
-
-        write-text -Type "success" -text $message
-    } catch {
-        write-text -type "error" -text "Edit-LocalUserPassword-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-    }
-}
-
-function Edit-ADUserPassword {
-    write-text -type "plain" -text "Editing domain users doesn't work yet."
-}
-
 function invoke-script {
     param (
         [parameter(Mandatory = $true)]
@@ -108,14 +91,16 @@ function read-command {
             read-command
         }
 
-        $subCommands = @("plugins");
         $commandPath = "windows"
-        foreach ($sub in $subCommands) {
-            if ($firstWord -eq $sub -and $firstWord -ne 'menu') { 
+        $potentialPaths = @("plugins");
+
+        foreach ($pp in $potentialPaths) {
+            if ($firstWord -eq $pp -and $firstWord -ne 'menu') { 
                 $command = $command -replace "^$firstWord \s*", "" 
-                $commandPath = $sub
+                $commandPath = $pp
             }
         }
+        
         $fileFunc = $command -replace ' ', '-'
 
         New-Item -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -ItemType File -Force | Out-Null
@@ -142,17 +127,12 @@ function add-script {
 
     $url = "https://raw.githubusercontent.com/badsyntaxx/chaste-scripts/main"
 
-    # Download the script
     get-download -Url "$url/$commandPath/$script.ps1" -Target "$env:SystemRoot\Temp\$script.ps1"
 
-    # Append the script to the main script
     $rawScript = Get-Content -Path "$env:SystemRoot\Temp\$script.ps1" -Raw -ErrorAction SilentlyContinue
     Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value $rawScript
 
-    # Remove the script file
     Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\$script.ps1" | Remove-Item -ErrorAction SilentlyContinue
-    
-   
 }
 function write-help {
     param (
@@ -346,7 +326,7 @@ function read-option {
         [parameter(Mandatory = $false)]
         [switch]$returnKey = $false,
         [parameter(Mandatory = $false)]
-        [switch]$ReturnValue = $false,
+        [switch]$returnValue = $false,
         [parameter(Mandatory = $false)]
         [switch]$lineBefore = $false,
         [parameter(Mandatory = $false)]
@@ -454,7 +434,7 @@ function read-option {
 
         # Handle function return values (key, value, menu position) based on parameters
         if ($returnKey) { if ($orderedKeys.Count -eq 1) { return $orderedKeys } else { return $orderedKeys[$pos] } } 
-        if ($ReturnValue) { if ($orderedKeys.Count -eq 1) { return $options[$pos] } else { return $options[$orderedKeys[$pos]] } }
+        if ($returnValue) { if ($orderedKeys.Count -eq 1) { return $options[$pos] } else { return $options[$orderedKeys[$pos]] } }
         else { return $pos }
     } catch {
         # Display error message and exit this script
@@ -471,7 +451,7 @@ function get-download {
         [Parameter(Mandatory = $false)]
         [string]$ProgressText = 'Loading',
         [Parameter(Mandatory = $false)]
-        [string]$failText = 'Download failed...',
+        [string]$failText = 'Connection failed...',
         [parameter(Mandatory = $false)]
         [int]$MaxRetries = 2,
         [parameter(Mandatory = $false)]
@@ -514,11 +494,9 @@ function get-download {
             } else {
                 Write-Host -NoNewLine "`r  $ProgressText $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%"                    
             }              
-             
         }
     }
     Process {
-
         for ($retryCount = 1; $retryCount -le $MaxRetries; $retryCount++) {
             try {
                 $storeEAP = $ErrorActionPreference
@@ -584,8 +562,6 @@ function get-download {
                 if ($visible) {
                     Write-Host 
                 }
-                
-
             } catch {
                 # write-text -type "plain" -text "$($_.Exception.Message)"
                 write-text -type "plain" -text $failText
@@ -598,8 +574,12 @@ function get-download {
                 }
             } finally {
                 # cleanup
-                if ($reader) { $reader.Close() }
-                if ($writer) { $writer.Flush(); $writer.Close() }
+                if ($reader) { 
+                    $reader.Close() 
+                }
+                if ($writer) { 
+                    $writer.Flush(); $writer.Close() 
+                }
         
                 $ErrorActionPreference = $storeEAP
                 [GC]::Collect()
@@ -627,7 +607,7 @@ function read-closing {
     }
     if ($choice -eq 2) { read-command }
 }
-function get-userdata {
+function get-userData {
     param (
         [parameter(Mandatory = $true)]
         [string]$username
@@ -716,7 +696,7 @@ function select-user {
         }
 
         # Get user data using the selected username
-        $data = get-userdata -Username $choice
+        $data = get-userData -Username $choice
 
         if ($writeResult) {
             Write-Host
@@ -734,5 +714,5 @@ function select-user {
         write-text -type "error" -text "Select user error: $($_.Exception.Message)"
     }
 }
-invoke-script 'edit-user-password'
+invoke-script 'plugins'
 read-command
