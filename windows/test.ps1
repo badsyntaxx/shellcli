@@ -1,4 +1,44 @@
 
+function edit-user-password {
+    try {
+        $user = select-user
+        $user
+        if ($user["Source"] -eq "Local") { 
+            Edit-LocalUserPassword -username $user["Name"] 
+        } elseif ($user["Source"] -eq "MicrosoftAccount") {
+            write-text -Type "notice" -text "Cannot change passwords for Microsoft accounts."
+        } else { 
+            Edit-ADUserPassword 
+        }
+    } catch {
+        write-text -type "error" -text "edit-user-password-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+
+function Edit-LocalUserPassword {
+    param (
+        [Parameter(Mandatory)]
+        [string]$username
+    )
+
+    try {
+        $password = read-input -prompt "Enter password or leave blank:" -IsSecure $true
+
+        if ($password.Length -eq 0) { $message = "Password removed" } 
+        else { $message = "Password changed" }
+
+        Get-LocalUser -Name $username | Set-LocalUser -Password $password
+
+        write-text -Type "success" -text $message
+    } catch {
+        write-text -type "error" -text "Edit-LocalUserPassword-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+
+function Edit-ADUserPassword {
+    write-text -type "plain" -text "Editing domain users doesn't work yet."
+}
+
 function invoke-script {
     param (
         [parameter(Mandatory = $true)]
@@ -694,5 +734,5 @@ function select-user {
         write-text -type "error" -text "Select user error: $($_.Exception.Message)"
     }
 }
-invoke-script 'read-command'
+invoke-script 'edit-user-password'
 read-command
