@@ -67,19 +67,21 @@ function read-command {
             read-command
         }
 
-        $subCommands = @("plugins");
-        $subPath = "windows"
-        foreach ($sub in $subCommands) {
-            if ($firstWord -eq $sub -and $firstWord -ne 'menu') { 
+        $commandPath = "windows"
+        $potentialPaths = @("plugins");
+
+        foreach ($pp in $potentialPaths) {
+            if ($firstWord -eq $pp -and $firstWord -ne 'menu') { 
                 $command = $command -replace "^$firstWord \s*", "" 
-                $subPath = $sub
+                $commandPath = $pp
             }
         }
+        
         $fileFunc = $command -replace ' ', '-'
 
         New-Item -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -ItemType File -Force | Out-Null
-        add-script -subPath $subPath -script $fileFunc
-        add-script -subpath "core" -script "framework"
+        add-script -commandPath $commandPath -script $fileFunc
+        add-script -commandPath "core" -script "framework"
         Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "invoke-script '$fileFunc'"
         Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "read-command"
 
@@ -92,7 +94,7 @@ function read-command {
 function add-script {
     param (
         [Parameter(Mandatory)]
-        [string]$subPath,
+        [string]$commandPath,
         [Parameter(Mandatory)]
         [string]$script,
         [Parameter(Mandatory = $false)]
@@ -101,14 +103,11 @@ function add-script {
 
     $url = "https://raw.githubusercontent.com/badsyntaxx/chaste-scripts/main"
 
-    # Download the script
-    get-download -Url "$url/$subPath/$script.ps1" -Target "$env:SystemRoot\Temp\$script.ps1"
+    get-download -Url "$url/$commandPath/$script.ps1" -Target "$env:SystemRoot\Temp\$script.ps1"
 
-    # Append the script to the main script
     $rawScript = Get-Content -Path "$env:SystemRoot\Temp\$script.ps1" -Raw -ErrorAction SilentlyContinue
     Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value $rawScript
 
-    # Remove the script file
     Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\$script.ps1" | Remove-Item -ErrorAction SilentlyContinue
 }
 function write-help {
@@ -471,11 +470,9 @@ function get-download {
             } else {
                 Write-Host -NoNewLine "`r  $ProgressText $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%"                    
             }              
-             
         }
     }
     Process {
-
         for ($retryCount = 1; $retryCount -le $MaxRetries; $retryCount++) {
             try {
                 $storeEAP = $ErrorActionPreference
@@ -541,8 +538,6 @@ function get-download {
                 if ($visible) {
                     Write-Host 
                 }
-                
-
             } catch {
                 # write-text -type "plain" -text "$($_.Exception.Message)"
                 write-text -type "plain" -text $failText
@@ -555,8 +550,12 @@ function get-download {
                 }
             } finally {
                 # cleanup
-                if ($reader) { $reader.Close() }
-                if ($writer) { $writer.Flush(); $writer.Close() }
+                if ($reader) { 
+                    $reader.Close() 
+                }
+                if ($writer) { 
+                    $writer.Flush(); $writer.Close() 
+                }
         
                 $ErrorActionPreference = $storeEAP
                 [GC]::Collect()

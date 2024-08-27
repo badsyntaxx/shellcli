@@ -109,18 +109,18 @@ function read-command {
         }
 
         $subCommands = @("plugins");
-        $subPath = "windows"
+        $commandPath = "windows"
         foreach ($sub in $subCommands) {
             if ($firstWord -eq $sub -and $firstWord -ne 'menu') { 
                 $command = $command -replace "^$firstWord \s*", "" 
-                $subPath = $sub
+                $commandPath = $sub
             }
         }
         $fileFunc = $command -replace ' ', '-'
 
         New-Item -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -ItemType File -Force | Out-Null
-        add-script -subPath $subPath -script $fileFunc
-        add-script -subpath "core" -script "framework"
+        add-script -commandPath $commandPath -script $fileFunc
+        add-script -commandPath "core" -script "framework"
         Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "invoke-script '$fileFunc'"
         Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "read-command"
 
@@ -133,7 +133,7 @@ function read-command {
 function add-script {
     param (
         [Parameter(Mandatory)]
-        [string]$subPath,
+        [string]$commandPath,
         [Parameter(Mandatory)]
         [string]$script,
         [Parameter(Mandatory = $false)]
@@ -143,7 +143,7 @@ function add-script {
     $url = "https://raw.githubusercontent.com/badsyntaxx/chaste-scripts/main"
 
     # Download the script
-    get-download -Url "$url/$subPath/$script.ps1" -Target "$env:SystemRoot\Temp\$script.ps1"
+    get-download -Url "$url/$commandPath/$script.ps1" -Target "$env:SystemRoot\Temp\$script.ps1"
 
     # Append the script to the main script
     $rawScript = Get-Content -Path "$env:SystemRoot\Temp\$script.ps1" -Raw -ErrorAction SilentlyContinue

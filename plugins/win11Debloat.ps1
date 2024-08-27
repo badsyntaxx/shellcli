@@ -1,0 +1,1 @@
+irm https://win11debloat.raphi.re | iex

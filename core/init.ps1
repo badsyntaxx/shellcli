@@ -14,25 +14,22 @@ function initialize-chasteScripts {
 
         # Download the script
         $download = get-script -Url "$url/core/framework.ps1" -Target "$env:SystemRoot\Temp\framework.ps1"
-        if (!$download) { 
-            throw "Could not acquire dependency." 
+        if ($download) { 
+            # Append the script to the main script
+            $rawScript = Get-Content -Path "$env:SystemRoot\Temp\framework.ps1" -Raw -ErrorAction SilentlyContinue
+            Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value $rawScript
+
+            # Remove the script file
+            Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\framework.ps1" | Remove-Item -ErrorAction SilentlyContinue
+
+            # Add a final line that will invoke the desired function
+            Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value 'invoke-script -script "read-command" -initialize $true'
+
+            # Execute the combined script
+            $chasteScript = Get-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Raw
+            Invoke-Expression $chasteScript
         }
-
-        # Append the script to the main script
-        $rawScript = Get-Content -Path "$env:SystemRoot\Temp\framework.ps1" -Raw -ErrorAction SilentlyContinue
-        Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value $rawScript
-
-        # Remove the script file
-        Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\framework.ps1" | Remove-Item -ErrorAction SilentlyContinue
-
-        # Add a final line that will invoke the desired function
-        Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value 'invoke-script -script "read-command" -initialize $true'
-
-        # Execute the combined script
-        $chasteScript = Get-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Raw
-        Invoke-Expression $chasteScript
     } catch {
-        # Error handling: display an error message and prompt for a new command
         Write-Host "  Connection Error: $($_.Exception.Message) | init-$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor "Red"
     }
 }
