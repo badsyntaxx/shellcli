@@ -20,7 +20,6 @@ function invoke-script {
 
         if ($initialize) {
             Clear-Host
-            write-help
         }
 
         Invoke-Expression $script
