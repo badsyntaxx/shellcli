@@ -20,6 +20,7 @@ function invoke-script {
 
         if ($initialize) {
             Clear-Host
+            read-command -command "help"
         }
 
         Invoke-Expression $script
