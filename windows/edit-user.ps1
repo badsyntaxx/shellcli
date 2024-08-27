@@ -12,15 +12,13 @@ function edit-user {
             2 { $command = "edit user group" }
         }
 
-        Write-Host " ::"  -ForegroundColor "DarkCyan" -NoNewline
-        Write-Host " Running command:" -NoNewline -ForegroundColor "DarkGray"
+        Write-Host ": "  -ForegroundColor "DarkCyan" -NoNewline
+        Write-Host "Running command:" -NoNewline -ForegroundColor "DarkGray"
         Write-Host " $command" -ForegroundColor "Gray"
 
         read-command -command $command
     } catch {
-        # Display error message and exit this script
         write-text -type "error" -text "edit-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-        read-command
     }
 }
 

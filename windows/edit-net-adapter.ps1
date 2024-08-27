@@ -7,7 +7,6 @@ function edit-net-adapter {
         read-command
     }
 }
-
 function select-adapter {
     try {
         $adapters = [ordered]@{}
@@ -40,7 +39,6 @@ function select-adapter {
         read-command
     }
 }
-
 function get-desiredsettings {
     param (
         [parameter(Mandatory = $true)]
@@ -68,7 +66,6 @@ function get-desiredsettings {
         read-command
     }
 }
-
 function read-ipsettings {
     param (
         [parameter(Mandatory = $true)]
@@ -109,7 +106,6 @@ function read-ipsettings {
         read-command
     }
 }
-
 function read-dnssettings {
     param (
         [parameter(Mandatory = $true)]
@@ -144,7 +140,6 @@ function read-dnssettings {
         read-command
     }
 }
-
 function confirm-edits {
     param (
         [parameter(Mandatory = $true)]
@@ -242,7 +237,6 @@ function confirm-edits {
         read-command
     }
 }
-
 function get-adapter-info {
     param (
         [parameter(Mandatory = $false)]
@@ -292,7 +286,6 @@ function get-adapter-info {
         read-command
     }
 }
-
 function convert-cidr-to-mask {
     param (
         [parameter(Mandatory = $false)]
@@ -329,7 +322,6 @@ function convert-cidr-to-mask {
 
     return $mask
 }
-
 function show-adapters {
     try {
         $adapters = @()

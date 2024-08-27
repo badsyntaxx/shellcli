@@ -15,7 +15,6 @@ function toggle-context-menu {
 
         Stop-Process -Name explorer -force
         Start-Process explorer
-
     } catch {
         write-text -type "error" -text "enable-admin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }

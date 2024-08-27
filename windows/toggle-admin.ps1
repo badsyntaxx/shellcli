@@ -1,17 +1,21 @@
 function toggle-admin {
     try { 
         $admin = Get-LocalUser -Name "Administrator"
-        Write-Host
-        Write-Host "    Administrator account is currently: " -NoNewLine
-        if ($admin.Enabled) { Write-Host "enabled" -ForegroundColor Magenta } 
-        else { Write-Host "disabled" -ForegroundColor Magenta }
+        
+        if ($admin.Enabled) { 
+            write-text -label "Administrator account is currently" -text "enabled"
+        } else { 
+            write-text -label "Administrator account is currently" -text "disabled"
+        }
         
         $choice = read-option -options $([ordered]@{
                 "Enable"  = "Enable the Windows built in administrator account."
                 "Disable" = "Disable the built in administrator account."
-            }) -lineAfter 
+            }) -prompt "Turn the account on or off?"
 
-        if ($choice -ne 0 -and $choice -ne 1) { enable-admin }
+        if ($choice -ne 0 -and $choice -ne 1) { 
+            enable-admin 
+        }
 
         if ($choice -eq 0) { 
             Get-LocalUser -Name "Administrator" | Enable-LocalUser 
@@ -22,15 +26,12 @@ function toggle-admin {
         }
 
         $admin = Get-LocalUser -Name "Administrator"
-        Write-Host "    Administrator account is now: " -NoNewLine
-        if ($admin.Enabled) { Write-Host "enabled" -ForegroundColor Magenta } 
-        else { Write-Host "disabled" -ForegroundColor Magenta }
-
-        read-command
+        if ($admin.Enabled) { 
+            write-text -type "success" -text "Account enabled"
+        } else { 
+            write-text -type "success" -text "Account disabled"
+        }
     } catch {
-        # Display error message and exit this script
         write-text -type "error" -text "enable-admin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-        read-command
     }
 }
-

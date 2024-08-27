@@ -1,6 +1,6 @@
 function add-ad-user {
     try {
-        write-text -type "fail" -text "Editing domain users doesn't work yet."
+        write-text -type "plain" -text "Editing domain users doesn't work yet."
         read-command
 
         Get-Item -ErrorAction SilentlyContinue "$path\add-ad-user.ps1" | Remove-Item -ErrorAction SilentlyContinue
@@ -48,11 +48,8 @@ function add-ad-user {
         write-text -type "list" -List $data -lineAfter
 
         write-text -type "success" -text "The user account was created."
-        read-command
     } catch {
-        # Display error message and exit this script
         write-text -type "error" -text "add-domain-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-        read-command
     }
 }
 

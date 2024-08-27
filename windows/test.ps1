@@ -1,38 +1,341 @@
-function install-updates {
-    try { 
-        write-text -type "plain" -text "Loading update module..."
+function edit-net-adapter {
+    try {
+        select-adapter
+    } catch {
+        # Display error message and exit this script
+        write-text -type "error" -text "edit-net-adapter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        read-command
+    }
+}
+function select-adapter {
+    try {
+        $adapters = [ordered]@{}
+        Get-NetAdapter | ForEach-Object { $adapters[$_.Name] = $_.MediaConnectionState }
+        $adapterList = [ordered]@{}
+        foreach ($al in $adapters) { $adapterList = $al }
+        $choice = read-option -options $adapterList -prompt "Select an network adapter:" -returnKey
+        $netAdapter = Get-NetAdapter -Name $choice
+        $adapterIndex = $netAdapter.InterfaceIndex
+        $ipData = Get-NetIPAddress -InterfaceIndex $adapterIndex -AddressFamily IPv4 | Where-Object { $_.PrefixOrigin -ne "WellKnown" -and $_.SuffixOrigin -ne "Link" -and ($_.AddressState -eq "Preferred" -or $_.AddressState -eq "Tentative") } | Select-Object -First 1
+        $interface = Get-NetIPInterface -InterfaceIndex $adapterIndex
 
-        Install-Module -Name PSWindowsUpdate -Force
-        Import-Module PSWindowsUpdate -Force
+        $script:ipv4Regex = "^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){0,4}$"
 
-        write-text -type "plain" -text "Getting updates..."
+        $adapter = [ordered]@{
+            "name"    = $choice
+            "self"    = Get-NetAdapter -Name $choice
+            "index"   = $netAdapter.InterfaceIndex
+            "ip"      = $ipData.IPAddress
+            "gateway" = Get-NetRoute -InterfaceAlias $choice -DestinationPrefix "0.0.0.0/0" | Select-Object -ExpandProperty "NextHop"
+            "subnet"  = convert-cidr-to-mask -CIDR $ipData.PrefixLength
+            "dns"     = Get-DnsClientServerAddress -InterfaceIndex $adapterIndex | Select-Object -ExpandProperty ServerAddresses
+            "IPDHCP"  = if ($interface.Dhcp -eq "Enabled") { $true } else { $false }
+        }
 
-        Get-WindowsUpdate
+        get-desiredsettings -Adapter $adapter
+    } catch {
+        # Display error message and exit this script
+        write-text -type "error" -text "select-adapter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        read-command
+    }
+}
+function get-desiredsettings {
+    param (
+        [parameter(Mandatory = $true)]
+        [System.Collections.Specialized.OrderedDictionary]$Adapter
+    )
 
+    try {
+        get-adapter-info -AdapterName $Adapter["name"]
+
+        # This block of code is just to get the original adapter array.
+        $memoryStream = New-Object System.IO.MemoryStream
+        $binaryFormatter = New-Object System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+        $binaryFormatter.Serialize($memoryStream, $Adapter)
+        $memoryStream.Position = 0
+        $Original = $binaryFormatter.Deserialize($memoryStream)
+        $memoryStream.Close()
+
+        $Adapter = read-ipsettings -Adapter $Adapter
+        $Adapter = read-dnssettings -Adapter $Adapter
+
+        confirm-edits -Adapter $Adapter -Original $Original
+    } catch {
+        # Display error message and exit this script
+        write-text -type "error" -text "get-desired-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        read-command
+    }
+}
+function read-ipsettings {
+    param (
+        [parameter(Mandatory = $true)]
+        [System.Collections.Specialized.OrderedDictionary]$Adapter
+    )
+
+    try {
         $choice = read-option -options $([ordered]@{
-                "All"    = "Install all updates."
-                "Severe" = "Install only severe updates."
-            }) -prompt "Select which updates to install:" -lineBefore
+                "Set IP to static" = "Set this adapter to static and enter IP data manually."
+                "Set IP to DHCP"   = "Set this adapter to DHCP."
+                "Back"             = "Go back to network adapter selection."
+            })
 
-        switch ($choice) {
-            0 { 
-                Get-WindowsUpdate -Install -AcceptAll | Out-Null
+        $desiredSettings = $Adapter
+
+        if ($choice -eq 0) { 
+            $ip = read-input -prompt "IPv4:" -Validate $ipv4Regex -Value $Adapter["ip"]
+            $subnet = read-input -prompt "Subnet mask:" -Validate $ipv4Regex -Value $Adapter["subnet"]  
+            $gateway = read-input -prompt "Gateway:" -Validate $ipv4Regex -Value $Adapter["gateway"] -lineAfter
+        
+            if ($ip -eq "") { $ip = $Adapter["ip"] }
+            if ($subnet -eq "") { $subnet = $Adapter["subnet"] }
+            if ($gateway -eq "") { $gateway = $Adapter["gateway"] }
+
+            $desiredSettings["ip"] = $ip
+            $desiredSettings["subnet"] = $subnet
+            $desiredSettings["gateway"] = $gateway
+            $desiredSettings["IPDHCP"] = $false
+        }
+
+        if (1 -eq $choice) { $desiredSettings["IPDHCP"] = $true }
+        if (2 -eq $choice) { select-adapter }
+
+        return $desiredSettings 
+    } catch {
+        # Display error message and exit this script
+        write-text -type "error" -text "read-ipsettings-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        read-command
+    }
+}
+function read-dnssettings {
+    param (
+        [parameter(Mandatory = $true)]
+        [System.Collections.Specialized.OrderedDictionary]$Adapter
+    )
+
+    try {
+        $choice = read-option -options $([ordered]@{
+                "Set DNS to static"  = "Set this adapter to static and enter DNS data manually."
+                "Set DNS to dynamic" = "Set this adapter to DHCP."
+                "Back"               = "Go back to network adapter selection."
+            })
+
+        $dns = @()
+
+        if ($choice -eq 0) { 
+            $prompt = read-input -prompt "Enter a DNS (Leave blank to skip)" -Validate $ipv4Regex
+            $dns += $prompt
+            while ($prompt.Length -gt 0) {
+                $prompt = read-input -prompt "Enter another DNS (Leave blank to skip)" -Validate $ipv4Regex
+                if ($prompt -ne "") { $dns += $prompt }
             }
-            1 {
-                Get-WindowsUpdate -Severity "Important" -Install | Out-Null
+            $Adapter["dns"] = $dns
+        }
+        if (1 -eq $choice) { $Adapter["DNSDHCP"] = $true }
+        if (2 -eq $choice) { read-ipsettings }
+
+        return $Adapter
+    } catch {
+        # Display error message and exit this script
+        write-text -type "error" -text "read-dnssettings-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        read-command
+    }
+}
+function confirm-edits {
+    param (
+        [parameter(Mandatory = $true)]
+        [System.Collections.Specialized.OrderedDictionary]$Adapter,
+        [parameter(Mandatory = $true)]
+        [System.Collections.Specialized.OrderedDictionary]$Original
+    )
+
+    try {
+        $status = Get-NetAdapter -Name $Adapter["name"] | Select-Object -ExpandProperty Status
+        if ($status -eq "Up") {
+            Write-Host "  $([char]0x2022)" -ForegroundColor "Green" -NoNewline
+            Write-Host " $($Original["name"])" -ForegroundColor "Gray"
+        } else {
+            Write-Host "  $([char]0x25BC)" -ForegroundColor "Red" -NoNewline
+            Write-Host " $($Original["name"])" -ForegroundColor "Gray"
+        }
+
+        if ($Adapter["IPDHCP"]) {
+            write-compare -oldData "IPv4 Address. . . : $($Original["ip"])" -newData "Dynamic"
+            write-compare -oldData "Subnet Mask . . . : $($Original["subnet"])" -newData "Dynamic"
+            write-compare -oldData "Default Gateway . : $($Original["gateway"])" -newData "Dynamic"
+        } else {
+            write-compare -oldData "IPv4 Address. . . : $($Original["ip"])" -newData $($Adapter['ip'])
+            write-compare -oldData "Subnet Mask . . . : $($Original["subnet"])" -newData $($Adapter['subnet'])
+            write-compare -oldData "Default Gateway . : $($Original["gateway"])" -newData $($Adapter['gateway'])
+        }
+
+        $originalDNS = $Original["dns"]
+        $newDNS = $Adapter["dns"]
+        $count = 0
+        if ($originalDNS.Count -gt $newDNS.Count) {
+            $count = $originalDNS.Count
+        } else {
+            $count = $newDNS.Count
+        }
+    
+        if ($Adapter["DNSDHCP"]) {
+            for ($i = 0; $i -lt $count; $i++) {
+                if ($i -eq 0) {
+                    write-compare -oldData "DNS Servers . . . : $($originalDNS[$i])" -newData "Dynamic"
+                } else {
+                    write-compare -oldData "                    $($originalDNS[$i])" -newData "Dynamic"
+                }
+            }
+        } else {
+            for ($i = 0; $i -lt $count; $i++) {
+                if ($i -eq 0) {
+                    write-compare -oldData "DNS Servers . . . : $($originalDNS[$i])" -newData $($newDNS[$i])
+                } else {
+                    write-compare -oldData "                    $($originalDNS[$i])" -newData $($newDNS[$i])
+                }
             }
         }
 
-        write-text -type "success" -text "Updates complete."
+        read-closing -script "edit-net-adapter"
+
+        $dnsString = ""
+    
+        $dns = $Adapter['dns']
+
+        if ($dns.Count -gt 0) { $dnsString = $dns -join ", " } 
+        else { $dnsString = $dns[0] }
+
+        Get-NetAdapter -Name $adapter["name"] | Remove-NetIPAddress -Confirm:$false -ErrorAction SilentlyContinue
+        Remove-NetRoute -InterfaceAlias $adapter["name"] -DestinationPrefix 0.0.0.0 / 0 -Confirm:$false -ErrorAction SilentlyContinue
+
+        if ($Adapter["IPDHCP"]) {
+            Set-NetIPInterface -InterfaceIndex $adapterIndex -Dhcp Enabled  | Out-Null
+            netsh interface ipv4 set address name = "$($adapter["name"])" source = dhcp | Out-Null
+            write-text -type 'success' -text "The network adapters IP settings were set to dynamic"
+        } else {
+            write-text "Disabling DHCP and applying static addresses." 
+            netsh interface ipv4 set address name = "$($adapter["name"])" static $Adapter["ip"] $Adapter["subnet"] $Adapter["gateway"] | Out-Null
+            write-text -type 'success' -text "The network adapters IP, subnet, and gateway were set to static and your addresses were applied."
+        }
+
+        if ($Adapter["DNSDHCP"]) {
+            Set-DnsClientServerAddress -InterfaceAlias $Adapter["name"] -ResetServerAddresses | Out-Null
+            write-text -type 'success' -text "The network adapters DNS settings were set to dynamic"
+        } else {
+            write-text "Disabling DHCP and applying static addresses."
+            Set-DnsClientServerAddress -InterfaceAlias $Adapter["name"] -ServerAddresses $dnsString
+            write-text -type 'success' -text "The network adapters DNS was set to static and your addresses were applied."
+        }
+
+        Disable-NetAdapter -Name $Adapter["name"] -Confirm:$false
+        Start-Sleep 1
+        Enable-NetAdapter -Name $Adapter["name"] -Confirm:$false
 
         read-command
     } catch {
         # Display error message and exit this script
-        write-text -type "error" -text "install-updates-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        write-text -type "error" -text "confirm-edits-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
         read-command
     }
 }
+function get-adapter-info {
+    param (
+        [parameter(Mandatory = $false)]
+        [string]$AdapterName
+    )
+    
+    try {
+        $status = Get-NetAdapter -Name $AdapterName | Select-Object -ExpandProperty Status
+        if ($status -ne "Disabled") {
+            $macAddress = Get-NetAdapter -Name $AdapterName | Select-Object -ExpandProperty MacAddress
+            $name = Get-NetAdapter -Name $AdapterName | Select-Object -ExpandProperty Name
+            $status = Get-NetAdapter -Name $AdapterName | Select-Object -ExpandProperty Status
+            $index = Get-NetAdapter -Name $AdapterName | Select-Object -ExpandProperty InterfaceIndex
+            $gateway = Get-NetIPConfiguration -InterfaceAlias $adapterName | ForEach-Object { $_.IPv4DefaultGateway.NextHop }
+            # $gateway = Get-NetRoute -InterfaceAlias $AdapterName -DestinationPrefix "0.0.0.0/0" | Select-Object -ExpandProperty "NextHop"
+            $interface = Get-NetIPInterface -InterfaceIndex $index 
+            $dhcp = $(if ($interface.Dhcp -eq "Enabled") { "DHCP" } else { "Static" })
+            $ipData = Get-NetIPAddress -InterfaceIndex $index -AddressFamily IPv4 | Where-Object { $_.PrefixOrigin -ne "WellKnown" -and $_.SuffixOrigin -ne "Link" -and ($_.AddressState -eq "Preferred" -or $_.AddressState -eq "Tentative") } | Select-Object -First 1
+            $ipAddress = $ipData.IPAddress
+            $subnet = convert-cidr-to-mask -CIDR $ipData.PrefixLength
+            $dnsServers = Get-DnsClientServerAddress -InterfaceIndex $index | Select-Object -ExpandProperty ServerAddresses
 
+            if ($status -eq "Up") {
+                Write-Host "  $([char]0x2022)" -ForegroundColor "Green" -NoNewline
+                Write-Host " $name | $dhcp" -ForegroundColor "Gray" 
+            } else {
+                Write-Host "  $([char]0x25BC)" -ForegroundColor "Red" -NoNewline
+                Write-Host " $name | $dhcp" -ForegroundColor "Gray"
+            }
+
+            write-text "MAC Address . . . : $macAddress" -Color "Gray"
+            write-text "IPv4 Address. . . : $ipAddress" -Color "Gray"
+            write-text "Subnet Mask . . . : $subnet" -Color "Gray"
+            write-text "Default Gateway . : $gateway" -Color "Gray"
+
+            for ($i = 0; $i -lt $dnsServers.Count; $i++) {
+                if ($i -eq 0) {
+                    write-text "DNS Servers . . . : $($dnsServers[$i])" -Color "Gray"
+                } else {
+                    write-text "                    $($dnsServers[$i])" -Color "Gray"
+                }
+            }
+        }
+    } catch {
+        # Display error message and exit this script
+        write-text -type "error" -text "get-adapter-info-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        read-command
+    }
+}
+function convert-cidr-to-mask {
+    param (
+        [parameter(Mandatory = $false)]
+        [int]$CIDR
+    )
+
+    switch ($CIDR) {
+        8 { $mask = "255.0.0.0" }
+        9 { $mask = "255.128.0.0" }
+        10 { $mask = "255.192.0.0" }
+        11 { $mask = "255.224.0.0" }
+        12 { $mask = "255.240.0.0" }
+        13 { $mask = "255.248.0.0" }
+        14 { $mask = "255.252.0.0" }
+        15 { $mask = "255.254.0.0" }
+        16 { $mask = "255.255.0.0" }
+        17 { $mask = "255.255.128.0" }
+        18 { $mask = "255.255.192.0" }
+        19 { $mask = "255.255.224.0" }
+        20 { $mask = "255.255.240.0" }
+        21 { $mask = "255.255.248.0" }
+        22 { $mask = "255.255.252.0" }
+        23 { $mask = "255.255.254.0" }
+        24 { $mask = "255.255.255.0" }
+        25 { $mask = "255.255.255.128" }
+        26 { $mask = "255.255.255.192" }
+        27 { $mask = "255.255.255.224" }
+        28 { $mask = "255.255.255.240" }
+        29 { $mask = "255.255.255.248" }
+        30 { $mask = "255.255.255.252" }
+        31 { $mask = "255.255.255.254" }
+        32 { $mask = "255.255.255.255" }
+    }
+
+    return $mask
+}
+function show-adapters {
+    try {
+        $adapters = @()
+        foreach ($n in (Get-NetAdapter | Select-Object -ExpandProperty Name)) { $adapters += $n }
+        foreach ($a in $adapters) { get-adapter-info -AdapterName $a }
+
+        select-adapter
+    } catch {
+        # Display error message and exit this script
+        write-text -type "error" -text "show-adapters-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        read-command
+    }
+    
+}
 function invoke-script {
     param (
         [parameter(Mandatory = $true)]
@@ -76,8 +379,9 @@ function read-command {
     )
 
     try {
+        Write-Host
         if ($command -eq "") { 
-            Write-Host "  $([char]0x203A) " -NoNewline
+            Write-Host "$([char]0x203A) " -NoNewline
             $command = Read-Host 
         }
 
@@ -123,6 +427,7 @@ function read-command {
 
         # Add a final line that will invoke the desired function
         Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "invoke-script '$fileFunc'"
+        Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "read-command"
 
         # Execute the combined script
         $chasteScript = Get-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Raw
@@ -130,7 +435,6 @@ function read-command {
     } catch {
         # Error handling: display an error message and prompt for a new command
         Write-Host "    $($_.Exception.Message) | init-$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor Red
-        read-command
     }
 }
 function add-script {
@@ -147,7 +451,9 @@ function add-script {
 
     # Download the script
     $download = get-download -Url "$url/$subPath/$script.ps1" -Target "$env:SystemRoot\Temp\$script.ps1" -failText "Could not acquire components..."
-    if (!$download) { read-command }
+    if (!$download) { 
+        read-command 
+    }
 
     # Append the script to the main script
     $rawScript = Get-Content -Path "$env:SystemRoot\Temp\$script.ps1" -Raw -ErrorAction SilentlyContinue
@@ -210,29 +516,28 @@ function write-text {
 
         # Format output based on the specified Type
         if ($type -eq "header") {
-            Write-Host "## " -ForegroundColor "Cyan" -NoNewline
+            Write-Host "# " -ForegroundColor "Cyan" -NoNewline
             Write-Host "$text" -ForegroundColor "White" 
         }
         
         if ($type -eq 'success') { 
-            Write-Host " $([char]0x2713) $text"  -ForegroundColor "Green" 
+            Write-Host "$([char]0x2713) $text"  -ForegroundColor "Green" 
         }
         if ($type -eq 'error') { 
-            Write-Host " X $text" -ForegroundColor "Red" 
+            Write-Host "X $text" -ForegroundColor "Red" 
         }
         if ($type -eq 'notice') { 
-            Write-Host "   $text" -ForegroundColor "Yellow" 
+            Write-Host "! $text" -ForegroundColor "Yellow" 
         }
         if ($type -eq 'plain') {
-            
             if ($label -ne "") { 
                 if ($Color -eq "Gray") {
                     $Color = 'DarkCyan'
                 }
-                Write-Host "   $label`: " -NoNewline -ForegroundColor "Gray"
+                Write-Host "  $label`: " -NoNewline -ForegroundColor "Gray"
                 Write-Host "$text" -ForegroundColor $Color 
             } else {
-                Write-Host "   $text" -ForegroundColor $Color 
+                Write-Host "  $text" -ForegroundColor $Color 
             }
         }
         if ($type -eq 'list') { 
@@ -253,11 +558,6 @@ function write-text {
                     Write-Host "    $($key): $padding $($List[$key])" -ForegroundColor $Color
                 }
             }
-        }
-
-        if ($type -eq 'fail') { 
-            Write-Host "   " -ForegroundColor "Red" -NoNewline
-            Write-Host $text
         }
 
         # Add a new line after output if specified
@@ -295,7 +595,7 @@ function read-input {
         # Get current cursor position
         $currPos = $host.UI.RawUI.CursorPosition
 
-        Write-Host " ? " -NoNewline -ForegroundColor "Yellow"
+        Write-Host "? " -NoNewline -ForegroundColor "Yellow"
         Write-Host "$prompt " -NoNewline
 
         if ($IsSecure) { $userInput = Read-Host -AsSecureString } 
@@ -327,7 +627,7 @@ function read-input {
         [Console]::SetCursorPosition($currPos.X, $currPos.Y)
         
         # Display checkmark symbol and user input (masked for secure input)
-        Write-Host " ? " -ForegroundColor "Yellow" -NoNewline
+        Write-Host "? " -ForegroundColor "Yellow" -NoNewline
         if ($IsSecure -and ($userInput.Length -eq 0)) { 
             Write-Host "$prompt                                                "
         } else { 
@@ -368,7 +668,7 @@ function read-option {
         # Get current cursor position
         $promptPos = $host.UI.RawUI.CursorPosition
 
-        Write-Host " ? " -NoNewline -ForegroundColor "Yellow"
+        Write-Host "? " -NoNewline -ForegroundColor "Yellow"
         Write-Host "$prompt "
 
         # Initialize variables for user input handling
@@ -390,17 +690,19 @@ function read-option {
 
         # Display single option if only one exists
         if ($orderedKeys.Count -eq 1) {
-            Write-Host " $([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline
-            Write-Host " $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($options[$orderedKeys])" -ForegroundColor "DarkCyan"
+            Write-Host "$([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline
+            Write-Host "  $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($options[$orderedKeys])" -ForegroundColor "DarkCyan"
         } else {
             # Loop through each option and display with padding and color
             for ($i = 0; $i -lt $orderedKeys.Count; $i++) {
                 $key = $orderedKeys[$i]
                 $padding = " " * ($longestKeyLength - $key.Length)
                 if ($i -eq $pos) { 
-                    Write-Host " $([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline  
+                    Write-Host "$([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline  
                     Write-Host " $key $padding - $($options[$key])" -ForegroundColor "DarkCyan"
-                } else { Write-Host "   $key $padding - $($options[$key])" -ForegroundColor "Gray" }
+                } else { 
+                    Write-Host "  $key $padding - $($options[$key])" -ForegroundColor "Gray" 
+                }
             }
         }
 
@@ -428,9 +730,9 @@ function read-option {
             
                 # Re-draw the previously selected and newly selected options
                 $host.UI.RawUI.CursorPosition = $menuOldPos
-                Write-Host "   $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $($options[$orderedKeys[$oldPos]])" -ForegroundColor "Gray"
+                Write-Host "  $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $($options[$orderedKeys[$oldPos]])" -ForegroundColor "Gray"
                 $host.UI.RawUI.CursorPosition = $menuNewPos
-                Write-Host " $([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline
+                Write-Host "$([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline
                 Write-Host " $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($options[$orderedKeys[$pos]])" -ForegroundColor "DarkCyan"
                 $host.UI.RawUI.CursorPosition = $currPos
             }
@@ -439,11 +741,11 @@ function read-option {
         [Console]::SetCursorPosition($promptPos.X, $promptPos.Y)
 
         if ($orderedKeys.Count -ne 1) {
-            Write-Host " ? " -ForegroundColor "Yellow" -NoNewline
+            Write-Host "? " -ForegroundColor "Yellow" -NoNewline
             Write-Host $prompt -NoNewline
             Write-Host " $($orderedKeys[$pos])" -ForegroundColor "DarkCyan"
         } else {
-            Write-Host " ? " -ForegroundColor "Yellow" -NoNewline
+            Write-Host "? " -ForegroundColor "Yellow" -NoNewline
             Write-Host $prompt -NoNewline
             Write-Host " $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length))" -ForegroundColor "DarkCyan"
         }
@@ -516,9 +818,9 @@ function get-download {
             $progbar = $progbar.PadRight($BarSize, [char]9617)
 
             if (!$Complete.IsPresent) {
-                Write-Host -NoNewLine "`r    $ProgressText $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%"
+                Write-Host -NoNewLine "`r  $ProgressText $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%"
             } else {
-                Write-Host -NoNewLine "`r    $ProgressText $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%"                    
+                Write-Host -NoNewLine "`r  $ProgressText $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%"                    
             }              
              
         }
@@ -593,8 +895,8 @@ function get-download {
                 
                 if ($downloadComplete) { return $true } else { return $false }
             } catch {
-                # write-text -type "fail" -text "$($_.Exception.Message)"
-                write-text -type "fail" -text $failText
+                # write-text -type "plain" -text "$($_.Exception.Message)"
+                write-text -type "plain" -text $failText
                 
                 $downloadComplete = $false
             
@@ -714,8 +1016,14 @@ function select-user {
             $accounts["$username"] = "$source | $groupString"
         }
 
+        $accounts["Cancel"] = "Do not select a user and exit this function."
+
         # Prompt user to select a user from the list and return the key (username)
         $choice = read-option -options $accounts -prompt $prompt -returnKey
+
+        if ($choice -eq "Cancel") {
+            read-command
+        }
 
         # Get user data using the selected username
         $data = get-userdata -Username $choice
@@ -736,5 +1044,5 @@ function select-user {
         write-text -type "error" -text "Select user error: $($_.Exception.Message)"
     }
 }
-
-invoke-script "install-updates"
+invoke-script 'edit-net-adapter'
+read-command

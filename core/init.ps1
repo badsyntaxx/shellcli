@@ -14,7 +14,9 @@ function initialize-chasteScripts {
 
         # Download the script
         $download = get-script -Url "$url/core/framework.ps1" -Target "$env:SystemRoot\Temp\framework.ps1"
-        if (!$download) { throw "Could not acquire dependency." }
+        if (!$download) { 
+            throw "Could not acquire dependency." 
+        }
 
         # Append the script to the main script
         $rawScript = Get-Content -Path "$env:SystemRoot\Temp\framework.ps1" -Raw -ErrorAction SilentlyContinue
@@ -31,7 +33,7 @@ function initialize-chasteScripts {
         Invoke-Expression $chasteScript
     } catch {
         # Error handling: display an error message and prompt for a new command
-        Write-Host "    Connection Error: $($_.Exception.Message) | init-$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor "Red"
+        Write-Host "  Connection Error: $($_.Exception.Message) | init-$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor "Red"
     }
 }
 

@@ -43,7 +43,7 @@ function read-command {
     try {
         Write-Host
         if ($command -eq "") { 
-            Write-Host " $([char]0x203A) " -NoNewline
+            Write-Host "$([char]0x203A) " -NoNewline
             $command = Read-Host 
         }
 
@@ -54,7 +54,7 @@ function read-command {
             write-help
         }
 
-        if ($command -eq 'help plugins') {
+        if ($command -eq 'plugins help') {
             write-help -type 'plugins'
         }   
 
@@ -67,7 +67,6 @@ function read-command {
             read-command
         }
 
-        # Adjust command and paths
         $subCommands = @("plugins");
         $subPath = "windows"
         foreach ($sub in $subCommands) {
@@ -76,27 +75,18 @@ function read-command {
                 $subPath = $sub
             }
         }
+        $fileFunc = $command -replace ' ', '-'
 
-        # Convert command to title case and replace the first spaces with a dash and the second space with no space
-        $lowercaseCommand = $command.ToLower()
-        $fileFunc = $lowercaseCommand -replace ' ', '-'
-
-        # Create the main script file
         New-Item -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -ItemType File -Force | Out-Null
-
         add-script -subPath $subPath -script $fileFunc
         add-script -subpath "core" -script "framework"
-
-        # Add a final line that will invoke the desired function
         Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "invoke-script '$fileFunc'"
+        Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "read-command"
 
-        # Execute the combined script
         $chasteScript = Get-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Raw
         Invoke-Expression $chasteScript
     } catch {
-        # Error handling: display an error message and prompt for a new command
         Write-Host "    $($_.Exception.Message) | init-$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor Red
-        read-command
     }
 }
 function add-script {
@@ -112,8 +102,7 @@ function add-script {
     $url = "https://raw.githubusercontent.com/badsyntaxx/chaste-scripts/main"
 
     # Download the script
-    $download = get-download -Url "$url/$subPath/$script.ps1" -Target "$env:SystemRoot\Temp\$script.ps1" -failText "Could not acquire components..."
-    if (!$download) { read-command }
+    get-download -Url "$url/$subPath/$script.ps1" -Target "$env:SystemRoot\Temp\$script.ps1" -failText "Could not acquire components..."
 
     # Append the script to the main script
     $rawScript = Get-Content -Path "$env:SystemRoot\Temp\$script.ps1" -Raw -ErrorAction SilentlyContinue
@@ -176,29 +165,28 @@ function write-text {
 
         # Format output based on the specified Type
         if ($type -eq "header") {
-            Write-Host "## " -ForegroundColor "Cyan" -NoNewline
+            Write-Host "# " -ForegroundColor "Cyan" -NoNewline
             Write-Host "$text" -ForegroundColor "White" 
         }
         
         if ($type -eq 'success') { 
-            Write-Host " $([char]0x2713) $text"  -ForegroundColor "Green" 
+            Write-Host "$([char]0x2713) $text"  -ForegroundColor "Green" 
         }
         if ($type -eq 'error') { 
-            Write-Host " X $text" -ForegroundColor "Red" 
+            Write-Host "X $text" -ForegroundColor "Red" 
         }
         if ($type -eq 'notice') { 
-            Write-Host "   $text" -ForegroundColor "Yellow" 
+            Write-Host "! $text" -ForegroundColor "Yellow" 
         }
         if ($type -eq 'plain') {
-            
             if ($label -ne "") { 
                 if ($Color -eq "Gray") {
                     $Color = 'DarkCyan'
                 }
-                Write-Host "   $label`: " -NoNewline -ForegroundColor "Gray"
+                Write-Host "  $label`: " -NoNewline -ForegroundColor "Gray"
                 Write-Host "$text" -ForegroundColor $Color 
             } else {
-                Write-Host "   $text" -ForegroundColor $Color 
+                Write-Host "  $text" -ForegroundColor $Color 
             }
         }
         if ($type -eq 'list') { 
@@ -219,11 +207,6 @@ function write-text {
                     Write-Host "    $($key): $padding $($List[$key])" -ForegroundColor $Color
                 }
             }
-        }
-
-        if ($type -eq 'fail') { 
-            Write-Host "   " -ForegroundColor "Red" -NoNewline
-            Write-Host $text
         }
 
         # Add a new line after output if specified
@@ -261,7 +244,7 @@ function read-input {
         # Get current cursor position
         $currPos = $host.UI.RawUI.CursorPosition
 
-        Write-Host " ? " -NoNewline -ForegroundColor "Yellow"
+        Write-Host "? " -NoNewline -ForegroundColor "Cyan"
         Write-Host "$prompt " -NoNewline
 
         if ($IsSecure) { $userInput = Read-Host -AsSecureString } 
@@ -293,7 +276,7 @@ function read-input {
         [Console]::SetCursorPosition($currPos.X, $currPos.Y)
         
         # Display checkmark symbol and user input (masked for secure input)
-        Write-Host " ? " -ForegroundColor "Yellow" -NoNewline
+        Write-Host "? " -ForegroundColor "Cyan" -NoNewline
         if ($IsSecure -and ($userInput.Length -eq 0)) { 
             Write-Host "$prompt                                                "
         } else { 
@@ -334,7 +317,7 @@ function read-option {
         # Get current cursor position
         $promptPos = $host.UI.RawUI.CursorPosition
 
-        Write-Host " ? " -NoNewline -ForegroundColor "Yellow"
+        Write-Host "? " -NoNewline -ForegroundColor "Cyan"
         Write-Host "$prompt "
 
         # Initialize variables for user input handling
@@ -356,17 +339,19 @@ function read-option {
 
         # Display single option if only one exists
         if ($orderedKeys.Count -eq 1) {
-            Write-Host " $([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline
-            Write-Host " $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($options[$orderedKeys])" -ForegroundColor "DarkCyan"
+            Write-Host "$([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline
+            Write-Host "  $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($options[$orderedKeys])" -ForegroundColor "DarkCyan"
         } else {
             # Loop through each option and display with padding and color
             for ($i = 0; $i -lt $orderedKeys.Count; $i++) {
                 $key = $orderedKeys[$i]
                 $padding = " " * ($longestKeyLength - $key.Length)
                 if ($i -eq $pos) { 
-                    Write-Host " $([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline  
+                    Write-Host "$([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline  
                     Write-Host " $key $padding - $($options[$key])" -ForegroundColor "DarkCyan"
-                } else { Write-Host "   $key $padding - $($options[$key])" -ForegroundColor "Gray" }
+                } else { 
+                    Write-Host "  $key $padding - $($options[$key])" -ForegroundColor "Gray" 
+                }
             }
         }
 
@@ -394,9 +379,9 @@ function read-option {
             
                 # Re-draw the previously selected and newly selected options
                 $host.UI.RawUI.CursorPosition = $menuOldPos
-                Write-Host "   $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $($options[$orderedKeys[$oldPos]])" -ForegroundColor "Gray"
+                Write-Host "  $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $($options[$orderedKeys[$oldPos]])" -ForegroundColor "Gray"
                 $host.UI.RawUI.CursorPosition = $menuNewPos
-                Write-Host " $([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline
+                Write-Host "$([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline
                 Write-Host " $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($options[$orderedKeys[$pos]])" -ForegroundColor "DarkCyan"
                 $host.UI.RawUI.CursorPosition = $currPos
             }
@@ -405,11 +390,11 @@ function read-option {
         [Console]::SetCursorPosition($promptPos.X, $promptPos.Y)
 
         if ($orderedKeys.Count -ne 1) {
-            Write-Host " ? " -ForegroundColor "Yellow" -NoNewline
+            Write-Host "? " -ForegroundColor "Cyan" -NoNewline
             Write-Host $prompt -NoNewline
             Write-Host " $($orderedKeys[$pos])" -ForegroundColor "DarkCyan"
         } else {
-            Write-Host " ? " -ForegroundColor "Yellow" -NoNewline
+            Write-Host "? " -ForegroundColor "Cyan" -NoNewline
             Write-Host $prompt -NoNewline
             Write-Host " $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length))" -ForegroundColor "DarkCyan"
         }
@@ -482,9 +467,9 @@ function get-download {
             $progbar = $progbar.PadRight($BarSize, [char]9617)
 
             if (!$Complete.IsPresent) {
-                Write-Host -NoNewLine "`r    $ProgressText $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%"
+                Write-Host -NoNewLine "`r  $ProgressText $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%"
             } else {
-                Write-Host -NoNewLine "`r    $ProgressText $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%"                    
+                Write-Host -NoNewLine "`r  $ProgressText $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%"                    
             }              
              
         }
@@ -557,10 +542,14 @@ function get-download {
                     Write-Host 
                 }
                 
-                if ($downloadComplete) { return $true } else { return $false }
+                if ($downloadComplete) { 
+                    return $true 
+                } else { 
+                    return $false 
+                }
             } catch {
-                # write-text -type "fail" -text "$($_.Exception.Message)"
-                write-text -type "fail" -text $failText
+                # write-text -type "plain" -text "$($_.Exception.Message)"
+                write-text -type "plain" -text $failText
                 
                 $downloadComplete = $false
             
@@ -568,7 +557,7 @@ function get-download {
                     write-text "Retrying..."
                     Start-Sleep -Seconds $Interval
                 } else {
-                    write-text -type "error" -text "Maximum retries reached." 
+                    write-text -type "error" -text "Load failed. Exiting function." 
                 }
             } finally {
                 # cleanup
@@ -680,8 +669,14 @@ function select-user {
             $accounts["$username"] = "$source | $groupString"
         }
 
+        $accounts["Cancel"] = "Do not select a user and exit this function."
+
         # Prompt user to select a user from the list and return the key (username)
         $choice = read-option -options $accounts -prompt $prompt -returnKey
+
+        if ($choice -eq "Cancel") {
+            read-command
+        }
 
         # Get user data using the selected username
         $data = get-userdata -Username $choice

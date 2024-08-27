@@ -28,28 +28,23 @@ function edit-hostname {
             Set-CimInstance -Query 'Select * From Win32_OperatingSystem' -Property @{Description = $description }
         } 
 
+        $hostnameChanged = $currentHostname -ne $env:COMPUTERNAME
+        $descriptionChanged = $currentDescription -ne (Get-WmiObject -Class Win32_OperatingSystem).Description
+
         $response = ""
 
-        if ($currentHostname -ne $env:COMPUTERNAME) {
-            $response = "Hostname "
+        if ($hostnameChanged -and $descriptionChanged) {
+            $response = "Hostname and description updated."
+        } elseif ($hostnameChanged) {
+            $response = "Hostname updated."
+        } elseif ($descriptionChanged) {
+            $response = "Description updated."
+        } else {
+            $response = "Hostname and description unchanged."
         }
-
-        if ($description -ne (Get-WmiObject -Class Win32_OperatingSystem).Description) {
-            $response = "Description "
-        }
-
-        if ($currentHostname -ne $env:COMPUTERNAME -and $description -ne (Get-WmiObject -Class Win32_OperatingSystem).Description) {
-            $response += " and description"
-        }
-
-        $response += " updated."
 
         write-text -type "success" -text $response
-
-        read-command
     } catch {
-        # Display error message and exit this script
         write-text -type "error" -text "edit-hostname-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-        read-command
     }
 }

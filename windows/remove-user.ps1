@@ -5,7 +5,12 @@ function remove-user {
         $choice = read-option -options $([ordered]@{
                 "Delete" = "Also delete the users data."
                 "Keep"   = "Do not delete the users data."
+                "Cancel" = "Do not delete anything and exit this function."
             }) -prompt "Do you also want to delete the users data?"
+
+        if ($choice -eq 2) {
+            read-command
+        }
 
         Remove-LocalUser -Name $user["Name"] | Out-Null
         if ($choice -eq 0) { 
@@ -33,11 +38,7 @@ function remove-user {
         }
 
         write-text -type 'success' -text $response
-
-        read-command
     } catch {
-        # Display error message and exit this script
         write-text -type "error" -text "remove-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-        read-command
     }
 }

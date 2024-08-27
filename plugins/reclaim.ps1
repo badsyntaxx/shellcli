@@ -1,5 +1,5 @@
 function reclaim {
-    write-text "Making Windows 11 less sucky" -lineAfter
+    write-text "Debloating Windows"
 
     $tweaks = @(    
         ### Privacy Settings ###
@@ -76,7 +76,7 @@ function reclaim {
 
     $tweaks | ForEach-Object { Invoke-Expression $_ }
 
-    write-text -type "success" -text "Windows 11 has been made semi-normal again." -lineAfter
+    write-text -type "success" -text "Windows 11 debloated."
     read-command
 }
 
