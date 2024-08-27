@@ -102,7 +102,7 @@ function add-script {
     $url = "https://raw.githubusercontent.com/badsyntaxx/chaste-scripts/main"
 
     # Download the script
-    $download = get-download -Url "$url/$subPath/$script.ps1" -Target "$env:SystemRoot\Temp\$script.ps1" -failText "Could not acquire components..."
+    get-downloadv2 -Url "$url/$subPath/$script.ps1" -Target "$env:SystemRoot\Temp\$script.ps1" -failText "Could not acquire components..."
 
     if ($download) {
         # Append the script to the main script
