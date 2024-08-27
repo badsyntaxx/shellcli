@@ -36,7 +36,6 @@ function menu {
 
         read-command -command $command
     } catch {
-        # Display error message and exit this script
         write-text -type "error" -text "menu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }

@@ -2,9 +2,7 @@ function edit-net-adapter {
     try {
         select-adapter
     } catch {
-        # Display error message and exit this script
         write-text -type "error" -text "edit-net-adapter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-        read-command
     }
 }
 function select-adapter {
