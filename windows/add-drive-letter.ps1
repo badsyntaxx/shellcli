@@ -19,11 +19,8 @@ function add-drive-letter {
         } 
 
         write-text -type "success" -text $message -lineAfter
-        read-command
     } catch {
-        # Display error message and exit this script
         write-text -type "error" -text "add-drive-letter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-        read-command
     }
 }
 
