@@ -428,7 +428,7 @@ function get-download {
         [Parameter(Mandatory = $false)]
         [string]$ProgressText = 'Loading',
         [Parameter(Mandatory = $false)]
-        [string]$failText = 'Download failed...',
+        [string]$failText = 'Connection failed...',
         [parameter(Mandatory = $false)]
         [int]$MaxRetries = 2,
         [parameter(Mandatory = $false)]
@@ -562,58 +562,6 @@ function get-download {
                 [GC]::Collect()
             } 
         }   
-    }
-}
-function get-downloadv2 {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory)]
-        [string]$Url,
-        [Parameter(Mandatory)]
-        [string]$Target,
-        [string]$ProgressText = 'Downloading',
-        [int]$MaxRetries = 2,
-        [int]$RetryInterval = 5
-    )
-
-    process {
-        $Target = [System.IO.Path]::GetFullPath($Target)
-        $targetDir = [System.IO.Path]::GetDirectoryName($Target)
-
-        if (!(Test-Path $targetDir)) {
-            New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
-        }
-
-        for ($i = 1; $i -le $MaxRetries; $i++) {
-            try {
-                $webClient = New-Object System.Net.WebClient
-                $webClient.Headers.Add("User-Agent", "PowerShell Script")
-
-                $webClient.DownloadFileAsync($Url, $Target)
-
-                while ($webClient.IsBusy) {
-                    $percentComplete = $webClient.DownloadProgressPercentage
-                    Write-Progress -Activity $ProgressText -Status "$percentComplete% Complete:" -PercentComplete $percentComplete
-                    Start-Sleep -Milliseconds 100
-                }
-
-                Write-Progress -Activity $ProgressText -Completed
-                Write-Host "Download completed successfully."
-                return
-            } catch {
-                Write-Warning "Attempt $i of $MaxRetries failed: $_"
-                if ($i -lt $MaxRetries) {
-                    Write-Host "Retrying in $RetryInterval seconds..."
-                    Start-Sleep -Seconds $RetryInterval
-                } else {
-                    Write-Error "Download failed after $MaxRetries attempts."
-                }
-            } finally {
-                if ($webClient) {
-                    $webClient.Dispose()
-                }
-            }
-        }
     }
 }
 function read-closing {
