@@ -1,4 +1,5 @@
 function help {
+    Clear-Host
     write-text -type "header" -text "COMMANDS:" -lineBefore
     write-text -type "plain" -text "toggle admin                     - Toggle the Windows built-in administrator account." -Color "DarkGray"
     write-text -type "plain" -text "add [local,domain] user          - Add a local or domain user to the system." -Color "DarkGray"
