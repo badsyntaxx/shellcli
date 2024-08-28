@@ -2,6 +2,7 @@ function install-updates {
     try { 
         write-text -type "plain" -text "Loading update module..."
 
+        Import-Module PowerShellGet
         Install-Module -Name PSWindowsUpdate -Force
         Import-Module PSWindowsUpdate -Force
 
