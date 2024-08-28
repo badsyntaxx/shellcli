@@ -26,6 +26,6 @@ function install-updates {
 
         write-text -type "success" -text "Updates complete."
     } catch {
-        write-text -type "error" -text "install-updates-$($_.InvocationInfo.ScriptLineNumber)"
+        write-text -type "error" -text "install-updates-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
