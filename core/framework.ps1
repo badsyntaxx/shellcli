@@ -54,7 +54,7 @@ function read-command {
         }
 
         $commandPath = "windows"
-        $potentialPaths = @("plugins");
+        $potentialPaths = @("plugins", "windows");
 
         foreach ($pp in $potentialPaths) {
             if ($firstWord -eq $pp -and $firstWord -ne 'menu') { 
