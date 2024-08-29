@@ -20,7 +20,7 @@ function invoke-script {
 
         if ($initialize) {
             Clear-Host
-            read-command -command "windows help"
+            read-command -command "help"
         }
 
         Invoke-Expression $script
@@ -71,6 +71,7 @@ function Convert-Command {
     $commandArray = $()
 
     switch ($command) {
+        "help" { $commandArray = $("windows", "Write-Help", "Write-Help") }
         "enable admin" { $commandArray = $("windows", "Enable-Admin", "Enable-Admin") }
         "disable admin" { $commandArray = $("windows", "Enable-Admin", "Disable-Admin") }
         "add user" { $commandArray = $("windows", "Add-User", "Add-User") }
