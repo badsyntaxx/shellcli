@@ -85,6 +85,7 @@ function convert-command {
             "add user" { $commandArray = $("windows", "Add-User", "add-user") }
             "add local user" { $commandArray = $("windows", "Add-User", "add-localuser") }
             "add ad user" { $commandArray = $("windows", "Add-User", "add-aduser") }
+            "remove user" { $commandArray = $("windows", "Remove-User", "remove-user") }
             "edit hostname" { $commandArray = $("windows", "Edit-Hostname", "edit-hostname") }
         }
 
