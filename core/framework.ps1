@@ -50,7 +50,6 @@ function read-command {
 
         if (Get-command $firstWord -ErrorAction SilentlyContinue) {
             Invoke-Expression $command
-            read-command
         }
 
         $commandPath = "windows"
