@@ -23,7 +23,7 @@ function initialize-chasteScripts {
             Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\framework.ps1" | Remove-Item -ErrorAction SilentlyContinue
 
             # Add a final line that will invoke the desired function
-            Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value 'Invoke-Script -script "read-command" -initialize $true'
+            Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value 'invoke-script -script "read-command" -initialize $true'
 
             # Execute the combined script
             $chasteScript = Get-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Raw
