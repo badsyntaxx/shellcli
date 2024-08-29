@@ -1,4 +1,4 @@
-function menu {
+function read-menu {
     try {
         # Create a menu with options and descriptions using an ordered hashtable
         $choice = read-option -options $([ordered]@{
@@ -39,4 +39,3 @@ function menu {
         write-text -type "error" -text "menu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-

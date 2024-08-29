@@ -1,4 +1,4 @@
-function Edit-Hostname {
+function edit-hostname {
     try {
         $currentHostname = $env:COMPUTERNAME
         $currentDescription = (Get-WmiObject -Class Win32_OperatingSystem).Description

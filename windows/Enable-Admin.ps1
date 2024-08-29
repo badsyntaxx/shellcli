@@ -1,4 +1,4 @@
-function Enable-Admin {
+function enable-admin {
     try { 
         $admin = Get-LocalUser -Name "Administrator"
         
@@ -17,7 +17,7 @@ function Enable-Admin {
         write-text -type "error" -text "Enable-Admin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-function Disable-Admin {
+function disable-admin {
     try { 
         $admin = Get-LocalUser -Name "Administrator"
         

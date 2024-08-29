@@ -1,4 +1,4 @@
-function Add-User {
+function add-user {
     try {
         $choice = read-option -options $([ordered]@{
                 "Add local user"  = "Add a local user to the system."
@@ -17,7 +17,7 @@ function Add-User {
         write-text -type "error" -text "Add-User-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-function Add-LocalUser {
+function add-localuser {
     try {
         $name = read-input -prompt "Enter a user name:" -Validate "^([a-zA-Z0-9 ._\-]{1,64})$" -CheckExistingUser
         $password = read-input -prompt "Enter a password or leave blank:" -IsSecure
@@ -52,7 +52,7 @@ function Add-LocalUser {
         write-text -type "error" -text "add-local-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-function Add-ADUser {
+function add-aduser {
     try {
         write-text -type "plain" -text "Editing domain users doesn't work yet."
         read-command

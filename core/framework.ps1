@@ -71,13 +71,14 @@ function Convert-Command {
     $commandArray = $()
 
     switch ($command) {
-        "help" { $commandArray = $("windows", "Write-Help", "Write-Help") }
-        "enable admin" { $commandArray = $("windows", "Enable-Admin", "Enable-Admin") }
-        "disable admin" { $commandArray = $("windows", "Enable-Admin", "Disable-Admin") }
-        "add user" { $commandArray = $("windows", "Add-User", "Add-User") }
-        "add local user" { $commandArray = $("windows", "Add-User", "Add-LocalUser") }
-        "add ad user" { $commandArray = $("windows", "Add-User", "Add-ADUser") }
-        "edit hostname" { $commandArray = $("windows", "Edit-Hostname", "Edit-Hostname") }
+        "help" { $commandArray = $("windows", "Write-Help", "write-help") }
+        "menu" { $commandArray = $("windows", "Menu", "read-menu") }
+        "enable admin" { $commandArray = $("windows", "Enable-Admin", "enable-admin") }
+        "disable admin" { $commandArray = $("windows", "Enable-Admin", "disable-admin") }
+        "add user" { $commandArray = $("windows", "Add-User", "add-user") }
+        "add local user" { $commandArray = $("windows", "Add-User", "add-localuser") }
+        "add ad user" { $commandArray = $("windows", "Add-User", "add-aduser") }
+        "edit hostname" { $commandArray = $("windows", "Edit-Hostname", "edit-hostname") }
     }
 
     return $commandArray
