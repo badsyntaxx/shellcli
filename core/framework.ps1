@@ -44,6 +44,10 @@ function read-command {
         $command = $command.ToLower()
         $command = $command.Trim()
 
+        if (Get-command $command -ErrorAction SilentlyContinue) {
+            Invoke-Expression $command
+        }
+
         $filteredCommand = convert-command -command $command
         $commandDirectory = $filteredCommand[0]
         $commandFile = $filteredCommand[1]
