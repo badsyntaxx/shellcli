@@ -22,7 +22,7 @@ function plugins {
         write-text -type "error" -text "menu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-function invoke-script {
+function Invoke-Script {
     param (
         [parameter(Mandatory = $true)]
         [string]$script,
@@ -54,7 +54,7 @@ function invoke-script {
         Invoke-Expression $script
     } catch {
         # Display error message and exit this script
-        write-text -type "error" -text "invoke-script-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        write-text -type "error" -text "Invoke-Script-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
         read-command
     }
 }
@@ -106,7 +106,7 @@ function read-command {
         New-Item -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -ItemType File -Force | Out-Null
         add-script -commandPath $commandPath -script $fileFunc
         add-script -commandPath "core" -script "framework"
-        Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "invoke-script '$fileFunc'"
+        Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "Invoke-Script '$fileFunc'"
         Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "read-command"
 
         $chasteScript = Get-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Raw
@@ -602,7 +602,7 @@ function read-closing {
         }) -lineAfter -lineBefore -prompt $customText
 
     if ($choice -eq 1) { 
-        if ($script -ne "") { invoke-script $script } 
+        if ($script -ne "") { Invoke-Script $script } 
         else { read-command }
     }
     if ($choice -eq 2) { read-command }
@@ -714,5 +714,5 @@ function select-user {
         write-text -type "error" -text "Select user error: $($_.Exception.Message)"
     }
 }
-invoke-script 'plugins'
+Invoke-Script 'plugins'
 read-command

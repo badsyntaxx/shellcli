@@ -84,7 +84,7 @@ function Add-ADUser {
             "Exit    - Run a different command."
         ) -lineAfter
 
-        if ($choice -ne 0 -and $choice -ne 2) { invoke-script -script "add-ad-user" }
+        if ($choice -ne 0 -and $choice -ne 2) { Invoke-Script -script "add-ad-user" }
         if ($choice -eq 2) { throw "This function is under construction." }
 
         New-ADUser -Name $name 

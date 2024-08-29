@@ -1,4 +1,4 @@
-function invoke-script {
+function Invoke-Script {
     param (
         [parameter(Mandatory = $true)]
         [string]$script,
@@ -25,7 +25,7 @@ function invoke-script {
 
         Invoke-Expression $script
     } catch {
-        write-text -type "error" -text "invoke-script-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        write-text -type "error" -text "Invoke-Script-$($_.InvocationInfo.ScriptLineNumber) | $script"
     }
 }
 function read-command {
@@ -52,7 +52,7 @@ function read-command {
         New-Item -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -ItemType File -Force | Out-Null
         add-script -directory $commandDirectory -file $commandFile
         add-script -directory "core" -file "framework"
-        Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "invoke-script '$commandFunction'"
+        Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "Invoke-Script '$commandFunction'"
         Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "read-command"
 
         $chasteScript = Get-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Raw
