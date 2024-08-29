@@ -3,7 +3,7 @@ function enable-admin {
         $admin = Get-LocalUser -Name "Administrator"
         
         if ($admin.Enabled) { 
-            write-text -label "Administrator account is currently" -text "enabled"
+            write-text -text "Administrator account is currently enabled"
         } else { 
             Get-LocalUser -Name "Administrator" | Enable-LocalUser 
         }
@@ -26,7 +26,7 @@ function disable-admin {
         if ($admin.Enabled) { 
             Get-LocalUser -Name "Administrator" | Disable-LocalUser 
         } else { 
-            write-text -label "Administrator account is already" -text "disabled"
+            write-text -text "Administrator account is already disabled"
         }
 
         $admin = Get-LocalUser -Name "Administrator"
