@@ -44,8 +44,10 @@ function read-command {
         $command = $command.ToLower()
         $command = $command.Trim()
 
-        if (Get-command $command -ErrorAction SilentlyContinue) {
-            Invoke-Expression $command
+        if ($command -ne "help") {
+            if (Get-command $command -ErrorAction SilentlyContinue) {
+                Invoke-Expression $command
+            }
         }
 
         $filteredCommand = convert-command -command $command
