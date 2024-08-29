@@ -1,4 +1,4 @@
-function toggle-admin {
+function Enable-Admin {
     try { 
         $admin = Get-LocalUser -Name "Administrator"
         
@@ -11,18 +11,13 @@ function toggle-admin {
         $choice = read-option -options $([ordered]@{
                 "Enable"  = "Enable the Windows built in administrator account."
                 "Disable" = "Disable the built in administrator account."
+                "Cancel"  = "Do nothing and exit this function."
             }) -prompt "Turn the account on or off?"
 
-        if ($choice -ne 0 -and $choice -ne 1) { 
-            enable-admin 
-        }
-
-        if ($choice -eq 0) { 
-            Get-LocalUser -Name "Administrator" | Enable-LocalUser 
-        } 
-
-        if ($choice -eq 1) { 
-            Get-LocalUser -Name "Administrator" | Disable-LocalUser 
+        switch ($choice) {
+            0 { Get-LocalUser -Name "Administrator" | Enable-LocalUser }
+            1 { Get-LocalUser -Name "Administrator" | Disable-LocalUser }
+            Default { read-command }
         }
 
         $admin = Get-LocalUser -Name "Administrator"
@@ -32,6 +27,6 @@ function toggle-admin {
             write-text -type "success" -text "Account disabled"
         }
     } catch {
-        write-text -type "error" -text "enable-admin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        write-text -type "error" -text "Enable-Admin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }

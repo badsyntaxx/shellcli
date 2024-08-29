@@ -44,30 +44,15 @@ function read-command {
         $command = $command.ToLower()
         $command = $command.Trim()
 
-        if ($command -ne "" -and $command -match "^(?-i)(\w+(-\w+)*)") { 
-            $firstWord = $matches[1] 
-        }
-
-        if (Get-command $firstWord -ErrorAction SilentlyContinue) {
-            Invoke-Expression $command
-        }
-
-        $commandPath = "windows"
-        $potentialPaths = @("plugins", "windows");
-
-        foreach ($pp in $potentialPaths) {
-            if ($firstWord -eq $pp -and $firstWord -ne 'menu') { 
-                $command = $command -replace "^$firstWord \s*", "" 
-                $commandPath = $pp
-            }
-        }
-
-        $fileFunc = $command -replace ' ', '-'
+        $filteredCommand = Convert-Command -command $command
+        $commandDirectory = $filteredCommand[0]
+        $commandFile = $filteredCommand[1]
+        $commandFunction = $filteredCommand[2]
 
         New-Item -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -ItemType File -Force | Out-Null
-        add-script -commandPath $commandPath -script $fileFunc
-        add-script -commandPath "core" -script "framework"
-        Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "invoke-script '$fileFunc'"
+        add-script -directory $commandDirectory -file $commandFile
+        add-script -directory "core" -file "framework"
+        Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "invoke-script '$commandFunction'"
         Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "read-command"
 
         $chasteScript = Get-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Raw
@@ -76,25 +61,42 @@ function read-command {
         write-text -type "error" -text "read-command-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
+
+function Convert-Command {
+    param (
+        [Parameter(Mandatory)]
+        [string]$command
+    )
+
+    $commandArray = $()
+
+    switch ($command) {
+        "enable admin" { $commandArray = $("windows", "Enable-Admin", "Enable-Admin") }
+        "disable admin" { $commandArray = $("windows", "Enable-Admin", "Disable-Admin") }
+        "add user" { $commandArray = $("windows", "Add-User", "Add-User") }
+        "add local user" { $commandArray = $("windows", "Add-User", "Add-LocalUser") }
+        "add ad user" { $commandArray = $("windows", "Add-User", "Add-ADUser") }
+    }
+
+    return $commandArray
+}
 function add-script {
     param (
         [Parameter(Mandatory)]
-        [string]$commandPath,
+        [string]$directory,
         [Parameter(Mandatory)]
-        [string]$script,
-        [Parameter(Mandatory = $false)]
-        [string]$progressText
+        [string]$file
     )
 
     try {
         $url = "https://raw.githubusercontent.com/badsyntaxx/chaste-scripts/main"
 
-        get-download -Url "$url/$commandPath/$script.ps1" -Target "$env:SystemRoot\Temp\$script.ps1"
+        get-download -Url "$url/$directory/$file.ps1" -Target "$env:SystemRoot\Temp\$file.ps1"
 
-        $rawScript = Get-Content -Path "$env:SystemRoot\Temp\$script.ps1" -Raw -ErrorAction SilentlyContinue
+        $rawScript = Get-Content -Path "$env:SystemRoot\Temp\$file.ps1" -Raw -ErrorAction SilentlyContinue
         Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value $rawScript
 
-        Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\$script.ps1" | Remove-Item -ErrorAction SilentlyContinue
+        Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\$file.ps1" | Remove-Item -ErrorAction SilentlyContinue
     } catch {
         write-text -type "error" -text "add-script-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
