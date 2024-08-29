@@ -44,7 +44,7 @@ function read-command {
         $command = $command.ToLower()
         $command = $command.Trim()
 
-        $filteredCommand = Convert-Command -command $command
+        $filteredCommand = convert-command -command $command
         $commandDirectory = $filteredCommand[0]
         $commandFile = $filteredCommand[1]
         $commandFunction = $filteredCommand[2]
@@ -62,26 +62,30 @@ function read-command {
     }
 }
 
-function Convert-Command {
+function convert-command {
     param (
         [Parameter(Mandatory)]
         [string]$command
     )
 
-    $commandArray = $()
+    try {
+        $commandArray = $()
 
-    switch ($command) {
-        "help" { $commandArray = $("windows", "Write-Help", "write-help") }
-        "menu" { $commandArray = $("windows", "Menu", "read-menu") }
-        "enable admin" { $commandArray = $("windows", "Enable-Admin", "enable-admin") }
-        "disable admin" { $commandArray = $("windows", "Enable-Admin", "disable-admin") }
-        "add user" { $commandArray = $("windows", "Add-User", "add-user") }
-        "add local user" { $commandArray = $("windows", "Add-User", "add-localuser") }
-        "add ad user" { $commandArray = $("windows", "Add-User", "add-aduser") }
-        "edit hostname" { $commandArray = $("windows", "Edit-Hostname", "edit-hostname") }
+        switch ($command) {
+            "help" { $commandArray = $("windows", "Write-Help", "write-help") }
+            "menu" { $commandArray = $("windows", "Menu", "read-menu") }
+            "enable admin" { $commandArray = $("windows", "Enable-Admin", "enable-admin") }
+            "disable admin" { $commandArray = $("windows", "Enable-Admin", "disable-admin") }
+            "add user" { $commandArray = $("windows", "Add-User", "add-user") }
+            "add local user" { $commandArray = $("windows", "Add-User", "add-localuser") }
+            "add ad user" { $commandArray = $("windows", "Add-User", "add-aduser") }
+            "edit hostname" { $commandArray = $("windows", "Edit-Hostname", "edit-hostname") }
+        }
+
+        return $commandArray
+    } catch {
+        write-text -type "error" -text "convert-command-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
-
-    return $commandArray
 }
 function add-script {
     param (
