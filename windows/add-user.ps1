@@ -14,7 +14,7 @@ function add-user {
 
         read-command -command $command
     } catch {
-        write-text -type "error" -text "Add-User-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        write-text -type "error" -text "add-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 function add-localuser {
@@ -49,7 +49,7 @@ function add-localuser {
         # Because of the bug listed above we just assume success if the script is still executing at this point.
         write-text -type "success" -text "Local user added."
     } catch {
-        write-text -type "error" -text "add-local-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        write-text -type "error" -text "add-localuser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 function add-aduser {
@@ -103,7 +103,7 @@ function add-aduser {
 
         write-text -type "success" -text "The user account was created."
     } catch {
-        write-text -type "error" -text "add-domain-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        write-text -type "error" -text "add-aduser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 

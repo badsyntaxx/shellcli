@@ -14,7 +14,7 @@ function enable-admin {
             write-text -type "success" -text "Could not enable administrator account"
         }
     } catch {
-        write-text -type "error" -text "Enable-Admin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        write-text -type "error" -text "enable-admin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 function disable-admin {
@@ -33,6 +33,6 @@ function disable-admin {
             write-text -type "success" -text "Administrator account disabled"
         }
     } catch {
-        write-text -type "error" -text "Disable-Admin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        write-text -type "error" -text "disable-admin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
