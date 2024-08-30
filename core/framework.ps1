@@ -102,7 +102,6 @@ function convert-command {
             "plugins win11debloat" { $commandArray = $("plugins", "win11Debloat", "win11debloat") }
             default { 
                 write-text -type "plain" -text "Unrecognized command"
-                read-command 
             }
         }
 
