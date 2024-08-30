@@ -105,9 +105,9 @@ function convertCommand {
             "plugins win11debloat" { $commandArray = $("plugins", "win11Debloat", "win11debloat") }
             default { 
                 Write-Host "  Unrecognized command. Try" -NoNewline
-                Write-Host " help" -ForegroundColor "DarkGray" -NoNewline
+                Write-Host " help" -ForegroundColor "Cyan" -NoNewline
                 Write-Host " or" -NoNewline
-                Write-Host " menu" -NoNewline -ForegroundColor "DarkGray"
+                Write-Host " menu" -NoNewline -ForegroundColor "Cyan"
                 readCommand 
             }
         }
