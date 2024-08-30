@@ -68,7 +68,6 @@ function read-command {
         write-text -type "error" -text "read-command-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-
 function convert-command {
     param (
         [Parameter(Mandatory)]
