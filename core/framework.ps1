@@ -44,8 +44,8 @@ function read-command {
         $command = $command.ToLower()
         $command = $command.Trim()
 
-        if ($command -ne "help") {
-            if (Get-command $command) {
+        if ($command -ne "help" -and $command -ne "" -and $command -match "^(?-i)(\w+(-\w+)*)") {
+            if (Get-command $matches[1] -ErrorAction SilentlyContinue) {
                 Invoke-Expression $command
                 read-command
             }
@@ -102,6 +102,7 @@ function convert-command {
             "plugins win11debloat" { $commandArray = $("plugins", "win11Debloat", "win11debloat") }
             default { 
                 write-text -type "plain" -text "Unrecognized command"
+                read-command 
             }
         }
 
