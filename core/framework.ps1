@@ -96,6 +96,8 @@ function convert-command {
             "plugins" { $commandArray = $("plugins", "Plugins", "read-menu") }
             "plugins help" { $commandArray = $("plugins", "Write-Help", "write-help") }
             "plugins reclaim" { $commandArray = $("plugins", "ReclaimW11", "reclaim") }
+            "plugins massgravel" { $commandArray = $("plugins", "massgravel", "massgravel") }
+            "plugins win11debloat" { $commandArray = $("plugins", "win11Debloat", "win11debloat") }
         }
 
         return $commandArray

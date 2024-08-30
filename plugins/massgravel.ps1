@@ -1,1 +1,3 @@
-irm https://get.activated.win | iex
+function massgravel {
+    irm https://get.activated.win | iex
+}
