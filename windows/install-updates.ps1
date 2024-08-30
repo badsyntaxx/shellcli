@@ -13,15 +13,13 @@ function install-updates {
         $choice = read-option -options $([ordered]@{
                 "All"    = "Install all updates."
                 "Severe" = "Install only severe updates."
+                "Cancel" = "Do nothing and exit this function."
             }) -prompt "Select which updates to install:" -lineBefore
 
         switch ($choice) {
-            0 { 
-                Get-WindowsUpdate -Install -AcceptAll | Out-Null
-            }
-            1 {
-                Get-WindowsUpdate -Severity "Important" -Install | Out-Null
-            }
+            0 { Get-WindowsUpdate -Install -AcceptAll | Out-Null }
+            1 { Get-WindowsUpdate -Severity "Important" -Install | Out-Null }
+            2 { read-command }
         }
 
         write-text -type "success" -text "Updates complete."
