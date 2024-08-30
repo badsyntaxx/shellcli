@@ -8,10 +8,10 @@ function read-menu {
                 "Cancel"       = "Select nothing and exit this menu."
             }) -prompt "Select a plugin:" -returnKey
 
-        Write-Host
         Write-Host ": "  -ForegroundColor "DarkCyan" -NoNewline
         Write-Host "Running command:" -NoNewline -ForegroundColor "DarkGray"
         Write-Host " $choice" -ForegroundColor "Gray"
+        Write-Host
 
         if ($choice -eq "Cancel") {
             read-command
