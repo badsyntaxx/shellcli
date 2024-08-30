@@ -63,6 +63,12 @@ function read-command {
         }
 
         $filteredCommand = convert-command -command $command
+
+        if ($filteredCommand.Count -eq 0) {
+            write-text -type "plain" -text "Unrecognized command"
+            read-command
+        }
+
         $commandDirectory = $filteredCommand[0]
         $commandFile = $filteredCommand[1]
         $commandFunction = $filteredCommand[2]
