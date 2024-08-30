@@ -85,20 +85,16 @@ function edit-userGroup {
         }
 
         if ($user["Source"] -eq "Local") { 
-            $addOrRemove = read-option -options $([ordered]@{
+            $choice = read-option -options $([ordered]@{
                     "Add"    = "Add this user to more groups"
                     "Remove" = "Remove this user from certain groups"
                     "Cancel" = "Do nothing and exit this function."
-                }) -prompt "Do you want to add or remove this user from groups?" -returnKey
+                }) -prompt "Do you want to add or remove this user from groups?"
 
-            if ($addOrRemove -eq "Cancel") {
-                read-command
-            }
-
-            if ($addOrRemove -eq "Add") {
-                add-groups -username $user["Name"]
-            } else {
-                remove-groups -username $user["Name"]
+            switch ($choice) {
+                0 { add-groups -username $user["Name"] }
+                1 { remove-groups -username $user["Name"] }
+                2 { read-command }
             }
 
             write-text -type "success" -text "Group membership updated."
