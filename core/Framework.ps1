@@ -37,7 +37,7 @@ function readCommand {
     try {
         Write-Host
         if ($command -eq "") { 
-            Write-Host "> " -NoNewline
+            Write-Host "$([char]0x203A) " -NoNewline
             $command = Read-Host 
         }
 
