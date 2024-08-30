@@ -20,7 +20,12 @@ function invokeScript {
 
         if ($initialize) {
             Clear-Host
-            readCommand -command "help"
+            Write-Host
+            Write-Host "  Try" -NoNewline
+            Write-Host " help" -ForegroundColor "Cyan" -NoNewline
+            Write-Host " or" -NoNewline
+            Write-Host " menu" -NoNewline -ForegroundColor "Cyan"
+            Write-Host " if you don't know what to do."
         }
 
         Invoke-Expression $script
@@ -108,6 +113,7 @@ function convertCommand {
                 Write-Host " help" -ForegroundColor "Cyan" -NoNewline
                 Write-Host " or" -NoNewline
                 Write-Host " menu" -NoNewline -ForegroundColor "Cyan"
+                Write-Host " to learn more."
                 readCommand 
             }
         }
