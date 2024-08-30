@@ -47,6 +47,7 @@ function read-command {
         if ($command -ne "help") {
             if (Get-command $command -ErrorAction SilentlyContinue) {
                 Invoke-Expression $command
+                read-command
             }
         }
 
