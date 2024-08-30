@@ -11,7 +11,7 @@ function readMenu {
         # Create a menu with options and descriptions using an ordered hashtable
         $choice = readOption -options $([ordered]@{
                 "massgravel"   = "https://github.com/massgravel/Microsoft-Activation-Scripts"
-                "reclaimw11"   = "Unknown"
+                "reclaimw11"   = "Credit needed"
                 "win11debloat" = "https://github.com/Raphire/Win11Debloat"
                 "Cancel"       = "Select nothing and exit this menu."
             }) -prompt "Select a plugin:" -returnKey
@@ -28,6 +28,6 @@ function readMenu {
 function writeHelp {
     writeText -type "header" -text "COMMANDS:" -lineBefore
     writeText -type "plain" -text "plugins massgravel    - https://github.com/massgravel/Microsoft-Activation-Scripts" -Color "DarkGray"
-    writeText -type "plain" -text "plugins reclaimw11    - https://gist.github.com/DanielLarsenNZ/edc6dd611418581ef90b02ad8e23b363#file-reclaim-windows-11-ps1" -Color "DarkGray"
+    writeText -type "plain" -text "plugins reclaimw11    - Credit needed" -Color "DarkGray"
     writeText -type "plain" -text "plugins win11debloat  - https://github.com/Raphire/Win11Debloat" -Color "DarkGray"
 }
