@@ -56,7 +56,7 @@ function readCommand {
             }
         }
 
-        $filteredCommand = convertCommand -command $command
+        $filteredCommand = filterCommands -command $command
         $commandDirectory = $filteredCommand[0]
         $commandFile = $filteredCommand[1]
         $commandFunction = $filteredCommand[2]
@@ -73,7 +73,7 @@ function readCommand {
         writeText -type "error" -text "readCommand-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-function convertCommand {
+function filterCommands {
     param (
         [Parameter(Mandatory)]
         [string]$command
@@ -83,8 +83,8 @@ function convertCommand {
         $commandArray = $()
 
         switch ($command) {
-            "help" { $commandArray = $("windows", "Write Help", "writeHelp") }
-            "menu" { $commandArray = $("windows", "Menu", "readMenu") }
+            "help" { $commandArray = $("windows", "Helpers", "writeHelp") }
+            "menu" { $commandArray = $("windows", "Helpers", "readMenu") }
             "toggle context menu" { $commandArray = $("windows", "Toggle Context Menu", "toggleContextMenu") }
             "toggle admin" { $commandArray = $("windows", "Toggle Admin", "toggleAdmin") }
             "enable admin" { $commandArray = $("windows", "Toggle Admin", "enableAdmin") }
@@ -103,8 +103,9 @@ function convertCommand {
             "edit wifi" { $commandArray = $("windows", "Edit Wifi", "editWifi") }
             "schedule task" { $commandArray = $("windows", "Schedule Task", "scheduleTask") }
             "install updates" { $commandArray = $("windows", "Install Updates", "installUpdates") }
-            "plugins" { $commandArray = $("plugins", "Plugins", "readMenu") }
-            "plugins help" { $commandArray = $("plugins", "Write Help", "writeHelp") }
+            "plugins" { $commandArray = $("plugins", "Helpers", "plugins") }
+            "plugins menu" { $commandArray = $("plugins", "Helpers", "readMenu") }
+            "plugins help" { $commandArray = $("plugins", "Helpers", "writeHelp") }
             "plugins reclaim" { $commandArray = $("plugins", "ReclaimW11", "reclaim") }
             "plugins massgravel" { $commandArray = $("plugins", "massgravel", "massgravel") }
             "plugins win11debloat" { $commandArray = $("plugins", "win11Debloat", "win11debloat") }
@@ -120,7 +121,7 @@ function convertCommand {
 
         return $commandArray
     } catch {
-        writeText -type "error" -text "convertCommand-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "filterCommands-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 function addScript {

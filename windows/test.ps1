@@ -61,7 +61,7 @@ function readCommand {
             }
         }
 
-        $filteredCommand = convertCommand -command $command
+        $filteredCommand = filterCommands -command $command
         $commandDirectory = $filteredCommand[0]
         $commandFile = $filteredCommand[1]
         $commandFunction = $filteredCommand[2]
@@ -79,7 +79,7 @@ function readCommand {
     }
 }
 
-function convertCommand {
+function filterCommands {
     param (
         [Parameter(Mandatory)]
         [string]$command
@@ -114,7 +114,7 @@ function convertCommand {
 
         return $commandArray
     } catch {
-        writeText -type "error" -text "convertCommand-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "filterCommands-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 function addScript {
