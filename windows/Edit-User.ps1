@@ -10,11 +10,12 @@ function edit-user {
         Write-Host ": "  -ForegroundColor "DarkCyan" -NoNewline
         Write-Host "Running command:" -NoNewline -ForegroundColor "DarkGray"
         Write-Host " $command" -ForegroundColor "Gray"
+        Write-Host
 
         switch ($choice) {
             0 { edit-userName }
             1 { edit-userPassword }
-            2 { $command = "edit user group" }
+            2 { edit-userGroup }
             3 { read-command }
         }
     } catch {

@@ -88,6 +88,9 @@ function convert-command {
             "remove user" { $commandArray = $("windows", "Remove-User", "remove-user") }
             "edit hostname" { $commandArray = $("windows", "Edit-Hostname", "edit-hostname") }
             "edit user" { $commandArray = $("windows", "Edit-User", "edit-user") }
+            "edit user name" { $commandArray = $("windows", "Edit-User", "edit-userName") }
+            "edit user password" { $commandArray = $("windows", "Edit-User", "edit-userPassword") }
+            "edit user group" { $commandArray = $("windows", "Edit-User", "edit-userGroup") }
         }
 
         return $commandArray
