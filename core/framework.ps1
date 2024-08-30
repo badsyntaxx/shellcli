@@ -80,8 +80,9 @@ function convert-command {
         switch ($command) {
             "help" { $commandArray = $("windows", "Write-Help", "write-help") }
             "menu" { $commandArray = $("windows", "Menu", "read-menu") }
-            "enable admin" { $commandArray = $("windows", "Enable-Admin", "enable-admin") }
-            "disable admin" { $commandArray = $("windows", "Enable-Admin", "disable-admin") }
+            "toggle admin" { $commandArray = $("windows", "Toggle-Admin", "toggle-admin") }
+            "enable admin" { $commandArray = $("windows", "Toggle-Admin", "enable-admin") }
+            "disable admin" { $commandArray = $("windows", "Toggle-Admin", "disable-admin") }
             "add user" { $commandArray = $("windows", "Add-User", "add-user") }
             "add local user" { $commandArray = $("windows", "Add-User", "add-localuser") }
             "add ad user" { $commandArray = $("windows", "Add-User", "add-aduser") }

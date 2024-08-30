@@ -9,6 +9,7 @@ function toggle-admin {
         Write-Host ": "  -ForegroundColor "DarkCyan" -NoNewline
         Write-Host "Running command:" -NoNewline -ForegroundColor "DarkGray"
         Write-Host " $command" -ForegroundColor "Gray"
+        Write-Host
 
         switch ($choice) {
             0 { enable-admin }
