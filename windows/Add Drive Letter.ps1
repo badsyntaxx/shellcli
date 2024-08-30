@@ -1,6 +1,6 @@
 function add-driveLetter {
     try { 
-        $choice = read-option -options $([ordered]@{
+        $choice = readOption -options $([ordered]@{
                 "Enable"  = "Enable volume 1"
                 "Disable" = "Disable volume 1"
             }) -prompt "Choose"
@@ -17,9 +17,9 @@ function add-driveLetter {
             $message = 'Drive removed.'
         } 
 
-        write-text -type "success" -text $message -lineAfter
+        writeText -type "success" -text $message -lineAfter
     } catch {
-        write-text -type "error" -text "add-drive-letter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "add-drive-letter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 

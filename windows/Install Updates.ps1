@@ -1,16 +1,16 @@
 function install-updates {
     try { 
-        write-text -type "plain" -text "Loading update module..."
+        writeText -type "plain" -text "Loading update module..."
 
         Import-Module PowerShellGet
         Install-Module -Name PSWindowsUpdate -Force
         Import-Module PSWindowsUpdate -Force
 
-        write-text -type "plain" -text "Getting updates..."
+        writeText -type "plain" -text "Getting updates..."
 
         Get-WindowsUpdate
 
-        $choice = read-option -options $([ordered]@{
+        $choice = readOption -options $([ordered]@{
                 "All"    = "Install all updates."
                 "Severe" = "Install only severe updates."
                 "Cancel" = "Do nothing and exit this function."
@@ -19,11 +19,11 @@ function install-updates {
         switch ($choice) {
             0 { Get-WindowsUpdate -Install -AcceptAll | Out-Null }
             1 { Get-WindowsUpdate -Severity "Important" -Install | Out-Null }
-            2 { read-command }
+            2 { readCommand }
         }
 
-        write-text -type "success" -text "Updates complete."
+        writeText -type "success" -text "Updates complete."
     } catch {
-        write-text -type "error" -text "install-updates-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "install-updates-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }

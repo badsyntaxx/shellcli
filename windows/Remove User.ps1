@@ -1,15 +1,15 @@
 function remove-user {
     try {
-        $user = select-user -prompt "Select an account to remove:"
+        $user = selectUser -prompt "Select an account to remove:"
         $dir = (Get-CimInstance Win32_UserProfile -Filter "SID = '$((Get-LocalUser $user["Name"]).Sid)'").LocalPath
-        $choice = read-option -options $([ordered]@{
+        $choice = readOption -options $([ordered]@{
                 "Delete" = "Also delete the users data."
                 "Keep"   = "Do not delete the users data."
                 "Cancel" = "Do not delete anything and exit this function."
             }) -prompt "Do you also want to delete the users data?"
 
         if ($choice -eq 2) {
-            read-command
+            readCommand
         }
 
         Remove-LocalUser -Name $user["Name"] | Out-Null
@@ -34,11 +34,11 @@ function remove-user {
                 $response += "but not their data."
             }
         } else {
-            write-text -type 'error' -text "Unable to delete user data for unknown reasons."
+            writeText -type 'error' -text "Unable to delete user data for unknown reasons."
         }
 
-        write-text -type 'success' -text $response
+        writeText -type 'success' -text $response
     } catch {
-        write-text -type "error" -text "remove-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "remove-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }

@@ -1,15 +1,15 @@
 function write-help {
-    write-text -type "plain" -text "COMMANDS:"
-    write-text -type "plain" -text "toggle admin                     - Toggle the Windows built-in administrator account." -Color "DarkGray"
-    write-text -type "plain" -text "add [local,domain] user          - Add a local or domain user to the system." -Color "DarkGray"
-    write-text -type "plain" -text "edit user [name,password,group]  - Edit user account settings." -Color "DarkGray"
-    write-text -type "plain" -text "edit net adapter                 - Edit network adapter settings like IP and DNS." -Color "DarkGray"
-    write-text -type "plain" -text "get wifi creds                   - View WiFi credentials saved on the system." -Color "DarkGray"
-    write-text -type "plain" -text "plugins [plugin name]  - Useful scripts made by others. Try the 'plugins help' command." -Color "DarkGray"
-    write-text -type "plain" -text "FULL DOCUMENTATION:" -lineBefore
-    write-text -type "plain" -text "https://guided.chaste.pro/dev/chaste-scripts" -Color "DarkGray"
+    writeText -type "plain" -text "COMMANDS:"
+    writeText -type "plain" -text "toggle admin                     - Toggle the Windows built-in administrator account." -Color "DarkGray"
+    writeText -type "plain" -text "add [local,domain] user          - Add a local or domain user to the system." -Color "DarkGray"
+    writeText -type "plain" -text "edit user [name,password,group]  - Edit user account settings." -Color "DarkGray"
+    writeText -type "plain" -text "edit net adapter                 - Edit network adapter settings like IP and DNS." -Color "DarkGray"
+    writeText -type "plain" -text "get wifi creds                   - View WiFi credentials saved on the system." -Color "DarkGray"
+    writeText -type "plain" -text "plugins [plugin name]  - Useful scripts made by others. Try the 'plugins help' command." -Color "DarkGray"
+    writeText -type "plain" -text "FULL DOCUMENTATION:" -lineBefore
+    writeText -type "plain" -text "https://guided.chaste.pro/dev/chaste-scripts" -Color "DarkGray"
 }
-function invoke-script {
+function invokeScript {
     param (
         [parameter(Mandatory = $true)]
         [string]$script,
@@ -31,15 +31,15 @@ function invoke-script {
 
         if ($initialize) {
             Clear-Host
-            read-command -command "help"
+            readCommand -command "help"
         }
 
         Invoke-Expression $script
     } catch {
-        write-text -type "error" -text "invoke-script-$($_.InvocationInfo.ScriptLineNumber) | $script"
+        writeText -type "error" -text "invokeScript-$($_.InvocationInfo.ScriptLineNumber) | $script"
     }
 }
-function read-command {
+function readCommand {
     param (
         [Parameter(Mandatory = $false)]
         [string]$command = ""
@@ -61,25 +61,25 @@ function read-command {
             }
         }
 
-        $filteredCommand = convert-command -command $command
+        $filteredCommand = convertCommand -command $command
         $commandDirectory = $filteredCommand[0]
         $commandFile = $filteredCommand[1]
         $commandFunction = $filteredCommand[2]
 
         New-Item -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -ItemType File -Force | Out-Null
-        add-script -directory $commandDirectory -file $commandFile
-        add-script -directory "core" -file "framework"
-        Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "invoke-script '$commandFunction'"
-        Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "read-command"
+        addScript -directory $commandDirectory -file $commandFile
+        addScript -directory "core" -file "framework"
+        Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "invokeScript '$commandFunction'"
+        Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "readCommand"
 
         $chasteScript = Get-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Raw
         Invoke-Expression $chasteScript
     } catch {
-        write-text -type "error" -text "read-command-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "readCommand-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 
-function convert-command {
+function convertCommand {
     param (
         [Parameter(Mandatory)]
         [string]$command
@@ -109,15 +109,15 @@ function convert-command {
             "plugins reclaim" { $commandArray = $("plugins", "ReclaimW11", "reclaim") }
             "plugins massgravel" { $commandArray = $("plugins", "massgravel", "massgravel") }
             "plugins win11debloat" { $commandArray = $("plugins", "win11Debloat", "win11debloat") }
-            default { read-command }
+            default { readCommand }
         }
 
         return $commandArray
     } catch {
-        write-text -type "error" -text "convert-command-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "convertCommand-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-function add-script {
+function addScript {
     param (
         [Parameter(Mandatory)]
         [string]$directory,
@@ -128,17 +128,17 @@ function add-script {
     try {
         $url = "https://raw.githubusercontent.com/badsyntaxx/chaste-scripts/main"
 
-        get-download -Url "$url/$directory/$file.ps1" -Target "$env:SystemRoot\Temp\$file.ps1"
+        getDownload -Url "$url/$directory/$file.ps1" -Target "$env:SystemRoot\Temp\$file.ps1"
 
         $rawScript = Get-Content -Path "$env:SystemRoot\Temp\$file.ps1" -Raw -ErrorAction SilentlyContinue
         Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value $rawScript
 
         Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\$file.ps1" | Remove-Item -ErrorAction SilentlyContinue
     } catch {
-        write-text -type "error" -text "add-script-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "addScript-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-function write-text {
+function writeText {
     param (
         [parameter(Mandatory = $false)]
         [string]$label = "",
@@ -213,10 +213,10 @@ function write-text {
         # Add a new line after output if specified
         if ($lineAfter) { Write-Host }
     } catch {
-        write-text -type "error" -text "write-text-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "writeText-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-function read-input {
+function readInput {
     param (
         [parameter(Mandatory = $false)]
         [string]$Value = "", # A pre-fill value so the user can hit enter without typing command and get the current value if there is one
@@ -260,12 +260,12 @@ function read-input {
 
         # Display error message if encountered
         if ($ErrorMessage -ne "") {
-            write-text -type "error" -text $ErrorMessage
-            # Recursively call read-input if user exists
-            if ($CheckExistingUser) { return read-input -prompt $prompt -Validate $Validate -CheckExistingUser } 
+            writeText -type "error" -text $ErrorMessage
+            # Recursively call readInput if user exists
+            if ($CheckExistingUser) { return readInput -prompt $prompt -Validate $Validate -CheckExistingUser } 
 
             # Otherwise, simply call again without CheckExistingUser
-            else { return read-input -prompt $prompt -Validate $Validate }
+            else { return readInput -prompt $prompt -Validate $Validate }
         }
 
         # Use provided default value if user enters nothing for a non-secure input
@@ -288,10 +288,10 @@ function read-input {
         # Return the validated user input
         return $userInput
     } catch {
-        write-text -type "error" -text "read-input-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "readInput-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-function read-option {
+function readOption {
     param (
         [parameter(Mandatory = $true)]
         [System.Collections.Specialized.OrderedDictionary]$options,
@@ -424,10 +424,10 @@ function read-option {
             return $pos 
         }
     } catch {
-        write-text -type "error" -text "read-option-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "readOption-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-function get-download {
+function getDownload {
     param (
         [Parameter(Mandatory)]
         [string]$Url,
@@ -445,7 +445,7 @@ function get-download {
         [switch]$visible = $false
     )
     Begin {
-        function Show-Progress {
+        function showProgress {
             param (
                 [Parameter(Mandatory)]
                 [Single]$TotalValue,
@@ -533,11 +533,11 @@ function get-download {
           
                     if ($visible) {
                         if ($fullSize -gt 0) {
-                            Show-Progress -TotalValue $fullSizeMB -CurrentValue $totalMB -ProgressText $ProgressText -ValueSuffix "MB"
+                            showProgress -TotalValue $fullSizeMB -CurrentValue $totalMB -ProgressText $ProgressText -ValueSuffix "MB"
                         }
 
                         if ($total -eq $fullSize -and $count -eq 0 -and $finalBarCount -eq 0) {
-                            Show-Progress -TotalValue $fullSizeMB -CurrentValue $totalMB -ProgressText $ProgressText -ValueSuffix "MB" -Complete
+                            showProgress -TotalValue $fullSizeMB -CurrentValue $totalMB -ProgressText $ProgressText -ValueSuffix "MB" -Complete
                             $finalBarCount++
                         }
                     }
@@ -548,14 +548,14 @@ function get-download {
                     Write-Host 
                 }
             } catch {
-                # write-text -type "plain" -text "$($_.Exception.Message)"
-                write-text -type "plain" -text $failText
+                # writeText -type "plain" -text "$($_.Exception.Message)"
+                writeText -type "plain" -text $failText
             
                 if ($retryCount -lt $MaxRetries) {
-                    write-text "Retrying..."
+                    writeText "Retrying..."
                     Start-Sleep -Seconds $Interval
                 } else {
-                    write-text -type "error" -text "Load failed. Exiting function." 
+                    writeText -type "error" -text "Load failed. Exiting function." 
                 }
             } finally {
                 # cleanup
@@ -572,7 +572,7 @@ function get-download {
         }   
     }
 }
-function get-userData {
+function getUserData {
     param (
         [parameter(Mandatory = $true)]
         [string]$username
@@ -596,10 +596,10 @@ function get-userData {
 
         return $data
     } catch {
-        write-text -type "error" -text "get-userData-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "getUserData-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-function select-user {
+function selectUser {
     param (
         [parameter(Mandatory = $false)]
         [string]$prompt = "Select a user account:",
@@ -654,19 +654,19 @@ function select-user {
         $accounts["Cancel"] = "Do not select a user and exit this function."
 
         # Prompt user to select a user from the list and return the key (username)
-        $choice = read-option -options $accounts -prompt $prompt -returnKey
+        $choice = readOption -options $accounts -prompt $prompt -returnKey
 
         if ($choice -eq "Cancel") {
-            read-command
+            readCommand
         }
 
         # Get user data using the selected username
-        $data = get-userData -Username $choice
+        $data = getUserData -Username $choice
 
         if ($writeResult) {
             Write-Host
             # Display user data as a list
-            write-text -type "list" -List $data -Color "Green"
+            writeText -type "list" -List $data -Color "Green"
         }
 
         # Add a line break after the menu if lineAfter is specified
@@ -675,8 +675,8 @@ function select-user {
         # Return the user data dictionary
         return $data
     } catch {
-        write-text -type "error" -text "select-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "selectUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-invoke-script 'write-help'
-read-command
+invokeScript 'write-help'
+readCommand

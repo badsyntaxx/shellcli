@@ -1,6 +1,6 @@
 function edit-user {
     try {
-        $choice = read-option -options $([ordered]@{
+        $choice = readOption -options $([ordered]@{
                 "Edit user name"     = "Edit an existing users name."
                 "Edit user password" = "Edit an existing users password."
                 "Edit user group"    = "Edit an existing users group membership."
@@ -16,50 +16,50 @@ function edit-user {
             0 { edit-userName }
             1 { edit-userPassword }
             2 { edit-userGroup }
-            3 { read-command }
+            3 { readCommand }
         }
     } catch {
-        write-text -type "error" -text "edit-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "edit-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 function edit-userName {
     try {
-        $user = select-user
+        $user = selectUser
 
         if ($user["Source"] -eq "MicrosoftAccount") { 
-            write-text -type "notice" -text "Cannot edit Microsoft accounts."
+            writeText -type "notice" -text "Cannot edit Microsoft accounts."
         }
 
         if ($user["Source"] -eq "Local") { 
-            $newName = read-input -prompt "Enter username:" -Validate "^(\s*|[a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser
+            $newName = readInput -prompt "Enter username:" -Validate "^(\s*|[a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser
     
             Rename-LocalUser -Name $user["Name"] -NewName $newName
 
             $newUser = Get-LocalUser -Name $newName
 
             if ($null -ne $newUser) { 
-                write-text -type "success" -text "Account name changed"
+                writeText -type "success" -text "Account name changed"
             } else {
-                write-text -type "error" -text "Unknown error"
+                writeText -type "error" -text "Unknown error"
             }
         } else { 
-            write-text -type "notice" -text "Editing domain users doesn't work yet."
+            writeText -type "notice" -text "Editing domain users doesn't work yet."
         }
     } catch {
-        write-text -type "error" -text "edit-user-name-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "edit-user-name-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 
 function edit-userPassword {
     try {
-        $user = select-user
+        $user = selectUser
 
         if ($user["Source"] -eq "MicrosoftAccount") { 
-            write-text -type "notice" -text "Cannot edit Microsoft accounts."
+            writeText -type "notice" -text "Cannot edit Microsoft accounts."
         }
 
         if ($user["Source"] -eq "Local") { 
-            $password = read-input -prompt "Enter password or leave blank:" -IsSecure $true
+            $password = readInput -prompt "Enter password or leave blank:" -IsSecure $true
 
             if ($password.Length -eq 0) { 
                 $message = "Password removed" 
@@ -69,24 +69,24 @@ function edit-userPassword {
 
             Get-LocalUser -Name $user["Name"] | Set-LocalUser -Password $password
 
-            write-text -Type "success" -text $message
+            writeText -Type "success" -text $message
         } else { 
-            write-text -type "plain" -text "Editing domain users doesn't work yet."
+            writeText -type "plain" -text "Editing domain users doesn't work yet."
         }
     } catch {
-        write-text -type "error" -text "edit-userPassword-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "edit-userPassword-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 function edit-userGroup {
     try {
-        $user = select-user
+        $user = selectUser
 
         if ($user["Source"] -eq "MicrosoftAccount") { 
-            write-text -type "notice" -text "Cannot edit Microsoft accounts."
+            writeText -type "notice" -text "Cannot edit Microsoft accounts."
         }
 
         if ($user["Source"] -eq "Local") { 
-            $choice = read-option -options $([ordered]@{
+            $choice = readOption -options $([ordered]@{
                     "Add"    = "Add this user to more groups"
                     "Remove" = "Remove this user from certain groups"
                     "Cancel" = "Do nothing and exit this function."
@@ -95,15 +95,15 @@ function edit-userGroup {
             switch ($choice) {
                 0 { add-groups -username $user["Name"] }
                 1 { remove-groups -username $user["Name"] }
-                2 { read-command }
+                2 { readCommand }
             }
 
-            write-text -type "success" -text "Group membership updated."
+            writeText -type "success" -text "Group membership updated."
         } else { 
-            write-text -type "plain" -text "Editing domain users doesn't work yet."
+            writeText -type "plain" -text "Editing domain users doesn't work yet."
         }
     } catch {
-        write-text -type "error" -text "edit-userGroup-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "edit-userGroup-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 } 
 function add-groups {
@@ -144,10 +144,10 @@ function add-groups {
 
     $groups["Cancel"] = "Select nothing and exit this function."
     $selectedGroups = @()
-    $selectedGroups += read-option -options $groups -prompt "Select a group:" -returnKey
+    $selectedGroups += readOption -options $groups -prompt "Select a group:" -returnKey
 
     if ($selectedGroups -eq "Cancel") {
-        read-command
+        readCommand
     }
 
     $groupsList = [ordered]@{}
@@ -162,9 +162,9 @@ function add-groups {
             }
         }
 
-        $selectedGroups += read-option -options $availableGroups -prompt "Select another group or 'Done':" -ReturnKey
+        $selectedGroups += readOption -options $availableGroups -prompt "Select another group or 'Done':" -ReturnKey
         if ($selectedGroups -eq "Cancel") {
-            read-command
+            readCommand
         }
     }
 
@@ -242,10 +242,10 @@ function remove-groups {
         $groups["Cancel"] = "Select nothing and exit this function."
 
         $selectedGroups = @()
-        $selectedGroups += read-option -options $groups -prompt "Select a group:" -returnKey
+        $selectedGroups += readOption -options $groups -prompt "Select a group:" -returnKey
 
         if ($selectedGroups -eq "Cancel") {
-            read-command
+            readCommand
         }
 
         $groupsList = [ordered]@{}
@@ -261,10 +261,10 @@ function remove-groups {
                 }
             }
 
-            $selectedGroups += read-option -options $availableGroups -prompt "Select another group or 'Done':" -ReturnKey
+            $selectedGroups += readOption -options $availableGroups -prompt "Select another group or 'Done':" -ReturnKey
 
             if ($selectedGroups -eq "Cancel") {
-                read-command
+                readCommand
             }
         }
 
@@ -274,6 +274,6 @@ function remove-groups {
             }
         }
     } catch {
-        write-text -type "error" -text "remove-group-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "remove-group-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }

@@ -1,6 +1,6 @@
 function toggle-contextMenu {
     try {         
-        $choice = read-option -options $([ordered]@{
+        $choice = readOption -options $([ordered]@{
                 "Enable"  = "Enable the stupid pointless menu that nobody wants or asked for."
                 "Disable" = "Disable the stupid pointless menu that nobody wants or asked for."
                 "Cancel"  = "Do nothing and exit this function."
@@ -9,26 +9,26 @@ function toggle-contextMenu {
         switch ($choice) {
             0 { enable-contextMenu }
             1 { disable-contextMenu }
-            2 { read-command }
+            2 { readCommand }
         }
 
         Stop-Process -Name explorer -force
         Start-Process explorer
     } catch {
-        write-text -type "error" -text "toggle-admin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "toggle-admin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 function enable-contextMenu {
     try {         
         reg delete "HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}" /f | Out-Null
     } catch {
-        write-text -type "error" -text "enable-contextMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "enable-contextMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 function disable-contextMenu {
     try {         
         reg add "HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32" /f /ve | Out-Null
     } catch {
-        write-text -type "error" -text "disable-contextMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "disable-contextMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }

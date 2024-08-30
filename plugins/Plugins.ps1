@@ -1,7 +1,7 @@
 function read-menu {
     try {
         # Create a menu with options and descriptions using an ordered hashtable
-        $choice = read-option -options $([ordered]@{
+        $choice = readOption -options $([ordered]@{
                 "massgravel"   = "https://github.com/massgravel/Microsoft-Activation-Scripts"
                 "reclaimw11"   = "Unknown"
                 "win11debloat" = "https://github.com/Raphire/Win11Debloat"
@@ -14,11 +14,11 @@ function read-menu {
         Write-Host
 
         if ($choice -eq "Cancel") {
-            read-command
+            readCommand
         }
 
-        read-command -command $choice
+        readCommand -command $choice
     } catch {
-        write-text -type "error" -text "read-menu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "read-menu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }

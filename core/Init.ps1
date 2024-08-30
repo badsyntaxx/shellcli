@@ -1,4 +1,4 @@
-function initialize-chasteScripts {
+function initializeChasteScripts {
     try {
         # Check if user has administrator privileges
         if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]"Administrator")) {
@@ -13,7 +13,7 @@ function initialize-chasteScripts {
         $url = "https://raw.githubusercontent.com/badsyntaxx/chaste-scripts/main"
 
         # Download the script
-        $download = get-script -Url "$url/core/framework.ps1" -Target "$env:SystemRoot\Temp\framework.ps1"
+        $download = getScript -Url "$url/core/framework.ps1" -Target "$env:SystemRoot\Temp\framework.ps1"
         if ($download) { 
             # Append the script to the main script
             $rawScript = Get-Content -Path "$env:SystemRoot\Temp\framework.ps1" -Raw -ErrorAction SilentlyContinue
@@ -23,7 +23,7 @@ function initialize-chasteScripts {
             Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\framework.ps1" | Remove-Item -ErrorAction SilentlyContinue
 
             # Add a final line that will invoke the desired function
-            Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value 'invoke-script -script "read-command" -initialize $true'
+            Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value 'invokeScript -script "readCommand" -initialize $true'
 
             # Execute the combined script
             $chasteScript = Get-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Raw
@@ -34,7 +34,7 @@ function initialize-chasteScripts {
     }
 }
 
-function get-script {
+function getScript {
     param (
         [Parameter(Mandatory)]
         [string]$url,
@@ -84,4 +84,4 @@ function get-script {
 }
 
 # Invoke the root of CHASTE scripts
-initialize-chasteScripts
+initializeChasteScripts

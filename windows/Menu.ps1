@@ -1,7 +1,7 @@
 function read-menu {
     try {
         # Create a menu with options and descriptions using an ordered hashtable
-        $choice = read-option -options $([ordered]@{
+        $choice = readOption -options $([ordered]@{
                 "Toggle administrator"         = "Toggle the Windows built in administrator account."
                 "Add user"                     = "Add a user to the system."
                 "Remove user"                  = "Remove a user from the system."
@@ -26,7 +26,7 @@ function read-menu {
             7 { $command = "toggle context menu" }
             8 { $command = "install updates" }
             9 { $command = "add task" }
-            10 { read-command }
+            10 { readCommand }
         }
 
         Write-Host
@@ -34,8 +34,8 @@ function read-menu {
         Write-Host "Running command:" -NoNewline -ForegroundColor "DarkGray"
         Write-Host " $command" -ForegroundColor "Gray"
 
-        read-command -command $command
+        readCommand -command $command
     } catch {
-        write-text -type "error" -text "read-menu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "read-menu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
