@@ -1,3 +1,24 @@
+function toggle-admin {
+    try {
+        $choice = read-option -options $([ordered]@{
+                "Add local user"  = "Add a local user to the system."
+                "Add domain user" = "Add a domain user to the system."
+                "Cancel"          = "Do nothing and exit this function."
+            }) -prompt "Select a user account type:"
+
+        Write-Host ": "  -ForegroundColor "DarkCyan" -NoNewline
+        Write-Host "Running command:" -NoNewline -ForegroundColor "DarkGray"
+        Write-Host " $command" -ForegroundColor "Gray"
+
+        switch ($choice) {
+            0 { add-localUser }
+            1 { add-adUser }
+            2 { read-command }
+        }
+    } catch {
+        write-text -type "error" -text "toggle-admin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
 function enable-admin {
     try { 
         $admin = Get-LocalUser -Name "Administrator"

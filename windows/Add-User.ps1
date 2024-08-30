@@ -11,15 +11,15 @@ function add-user {
         Write-Host " $command" -ForegroundColor "Gray"
 
         switch ($choice) {
-            0 { add-localuser }
-            1 { add-aduser }
+            0 { add-localUser }
+            1 { add-adUser }
             2 { read-command }
         }
     } catch {
         write-text -type "error" -text "add-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-function add-localuser {
+function add-localUser {
     try {
         $name = read-input -prompt "Enter a user name:" -Validate "^([a-zA-Z0-9 ._\-]{1,64})$" -CheckExistingUser
         $password = read-input -prompt "Enter a password or leave blank:" -IsSecure
@@ -51,10 +51,10 @@ function add-localuser {
         # Because of the bug listed above we just assume success if the script is still executing at this point.
         write-text -type "success" -text "Local user added."
     } catch {
-        write-text -type "error" -text "add-localuser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        write-text -type "error" -text "add-localUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-function add-aduser {
+function add-adUser {
     try {
         write-text -type "plain" -text "Editing domain users doesn't work yet."
         read-command
@@ -105,7 +105,7 @@ function add-aduser {
 
         write-text -type "success" -text "The user account was created."
     } catch {
-        write-text -type "error" -text "add-aduser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        write-text -type "error" -text "add-adUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 
