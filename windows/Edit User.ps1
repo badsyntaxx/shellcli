@@ -8,25 +8,11 @@ function editUser {
             }) -prompt "What would you like to edit?"
 
         switch ($choice) {
-            0 {  
-                editUserName 
-                $command = "edit user name"
-            }
-            1 {  
-                editUserPassword 
-                $command = "edit user password"
-            }
-            2 { 
-                editUserGroup 
-                $command = "edit user group"
-            }
+            0 { editUserName }
+            1 { editUserPassword }
+            2 { editUserGroup }
             3 { readCommand }
         }
-
-        Write-Host ": "  -ForegroundColor "DarkCyan" -NoNewline
-        Write-Host "Running command:" -NoNewline -ForegroundColor "DarkGray"
-        Write-Host " $command" -ForegroundColor "Gray"
-        Write-Host
     } catch {
         writeText -type "error" -text "editUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }

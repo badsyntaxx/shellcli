@@ -7,23 +7,10 @@ function toggleAdmin {
             }) -prompt "Select a user account type:"
 
         switch ($choice) {
-            0 { 
-                enableAdmin 
-                $command = "enable admin"
-            }
-            1 { 
-                disableAdmin 
-                $command = "disable admin"
-            }
-            2 { 
-                readCommand 
-            }
+            0 { enableAdmin }
+            1 { disableAdmin }
+            2 { readCommand }
         }
-
-        Write-Host ": "  -ForegroundColor "DarkCyan" -NoNewline
-        Write-Host "Running command:" -NoNewline -ForegroundColor "DarkGray"
-        Write-Host " $command" -ForegroundColor "Gray"
-        Write-Host
     } catch {
         writeText -type "error" -text "toggleAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
@@ -33,17 +20,17 @@ function enableAdmin {
         $admin = Get-LocalUser -Name "Administrator"
         
         if ($admin.Enabled) { 
-            writeText -text "Administrator account is currently enabled"
+            writeText -text "Administrator account is already enabled"
         } else { 
             Get-LocalUser -Name "Administrator" | Enable-LocalUser 
-        }
 
-        $admin = Get-LocalUser -Name "Administrator"
+            $admin = Get-LocalUser -Name "Administrator"
 
-        if ($admin.Enabled) { 
-            writeText -type "success" -text "Administrator account enabled"
-        } else { 
-            writeText -type "error" -text "Could not enable administrator account"
+            if ($admin.Enabled) { 
+                writeText -type "success" -text "Administrator account enabled"
+            } else { 
+                writeText -type "error" -text "Could not enable administrator account"
+            }
         }
     } catch {
         writeText -type "error" -text "enableAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
@@ -55,16 +42,16 @@ function disableAdmin {
         
         if ($admin.Enabled) { 
             Get-LocalUser -Name "Administrator" | Disable-LocalUser 
+
+            $admin = Get-LocalUser -Name "Administrator"
+
+            if ($admin.Enabled) { 
+                writeText -type "error" -text "Could not disable administrator account"
+            } else { 
+                writeText -type "success" -text "Administrator account disabled"
+            }
         } else { 
             writeText -text "Administrator account is already disabled"
-        }
-
-        $admin = Get-LocalUser -Name "Administrator"
-
-        if ($admin.Enabled) { 
-            writeText -type "error" -text "Could not disable administrator account"
-        } else { 
-            writeText -type "success" -text "Administrator account disabled"
         }
     } catch {
         writeText -type "error" -text "disableAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"

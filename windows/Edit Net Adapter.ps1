@@ -2,7 +2,7 @@ function editNetAdapter {
     try {
         select-adapter
     } catch {
-        writeText -type "error" -text "edit-net-adapter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "editNetAdapter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 function select-adapter {
@@ -185,7 +185,6 @@ function confirm-edits {
             }
         }
 
-        read-closing -script "edit-net-adapter"
 
         $dnsString = ""
     

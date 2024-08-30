@@ -6,11 +6,6 @@ function addUser {
                 "Cancel"          = "Do nothing and exit this function."
             }) -prompt "Select a user account type:"
 
-        Write-Host ": "  -ForegroundColor "DarkCyan" -NoNewline
-        Write-Host "Running command:" -NoNewline -ForegroundColor "DarkGray"
-        Write-Host " $command" -ForegroundColor "Gray"
-        Write-Host
-
         switch ($choice) {
             0 { addLocalUser }
             1 { addADUser }
