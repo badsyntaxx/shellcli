@@ -98,7 +98,10 @@ function convert-command {
             "plugins reclaim" { $commandArray = $("plugins", "ReclaimW11", "reclaim") }
             "plugins massgravel" { $commandArray = $("plugins", "massgravel", "massgravel") }
             "plugins win11debloat" { $commandArray = $("plugins", "win11Debloat", "win11debloat") }
-            default { read-command }
+            default { 
+                write-text -type "plain" -text "Unrecognized command"
+                read-command 
+            }
         }
 
         return $commandArray
