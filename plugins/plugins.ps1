@@ -1,4 +1,4 @@
-function plugins {
+function read-menu {
     try {
         # Create a menu with options and descriptions using an ordered hashtable
         $choice = read-option -options $([ordered]@{
