@@ -13,14 +13,14 @@ function initializeChasteScripts {
         $url = "https://raw.githubusercontent.com/badsyntaxx/chaste-scripts/main"
 
         # Download the script
-        $download = getScript -Url "$url/core/framework.ps1" -Target "$env:SystemRoot\Temp\framework.ps1"
+        $download = getScript -Url "$url/core/Framework.ps1" -Target "$env:SystemRoot\Temp\Framework.ps1"
         if ($download) { 
             # Append the script to the main script
-            $rawScript = Get-Content -Path "$env:SystemRoot\Temp\framework.ps1" -Raw -ErrorAction SilentlyContinue
+            $rawScript = Get-Content -Path "$env:SystemRoot\Temp\Framework.ps1" -Raw -ErrorAction SilentlyContinue
             Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value $rawScript
 
             # Remove the script file
-            Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\framework.ps1" | Remove-Item -ErrorAction SilentlyContinue
+            Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\Framework.ps1" | Remove-Item -ErrorAction SilentlyContinue
 
             # Add a final line that will invoke the desired function
             Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value 'invokeScript -script "readCommand" -initialize $true'

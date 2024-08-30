@@ -68,7 +68,7 @@ function readCommand {
 
         New-Item -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -ItemType File -Force | Out-Null
         addScript -directory $commandDirectory -file $commandFile
-        addScript -directory "core" -file "framework"
+        addScript -directory "core" -file "Framework"
         Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "invokeScript '$commandFunction'"
         Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "readCommand"
 
