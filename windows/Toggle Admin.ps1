@@ -6,16 +6,24 @@ function toggleAdmin {
                 "Cancel"        = "Do nothing and exit this function."
             }) -prompt "Select a user account type:"
 
+        switch ($choice) {
+            0 { 
+                enableAdmin 
+                $command = "enable admin"
+            }
+            1 { 
+                disableAdmin 
+                $command = "disable admin"
+            }
+            2 { 
+                readCommand 
+            }
+        }
+
         Write-Host ": "  -ForegroundColor "DarkCyan" -NoNewline
         Write-Host "Running command:" -NoNewline -ForegroundColor "DarkGray"
         Write-Host " $command" -ForegroundColor "Gray"
         Write-Host
-
-        switch ($choice) {
-            0 { enableAdmin }
-            1 { disableAdmin }
-            2 { readCommand }
-        }
     } catch {
         writeText -type "error" -text "toggleAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }

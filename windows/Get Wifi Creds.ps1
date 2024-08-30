@@ -1,4 +1,4 @@
-function edit-Wifi {
+function getWifiCreds {
     try {
         $wifiProfiles = netsh wlan show profiles
         if ($wifiProfiles -match "There is no wireless interface on the system.") {
@@ -33,6 +33,6 @@ function edit-Wifi {
    
         Write-Host
     } catch {
-        writeText -type "error" -text "edit-Wifi-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "getWifiCreds-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }

@@ -80,6 +80,7 @@ function convertCommand {
         switch ($command) {
             "help" { $commandArray = $("windows", "Write Help", "writeHelp") }
             "menu" { $commandArray = $("windows", "Menu", "readMenu") }
+            "toggle context menu" { $commandArray = $("windows", "Toggle Context Menu", "toggleContextMenu") }
             "toggle admin" { $commandArray = $("windows", "Toggle Admin", "toggleAdmin") }
             "enable admin" { $commandArray = $("windows", "Toggle Admin", "enableAdmin") }
             "disable admin" { $commandArray = $("windows", "Toggle Admin", "disableAdmin") }
@@ -103,7 +104,10 @@ function convertCommand {
             "plugins massgravel" { $commandArray = $("plugins", "massgravel", "massgravel") }
             "plugins win11debloat" { $commandArray = $("plugins", "win11Debloat", "win11debloat") }
             default { 
-                writeText -type "plain" -text "Unrecognized command"
+                Write-Host "  Unrecognized command. Try" -NoNewline
+                Write-Host " help" -ForegroundColor "DarkGray" -NoNewline
+                Write-Host " or" -NoNewline
+                Write-Host " menu" -NoNewline -ForegroundColor "DarkGray"
                 readCommand 
             }
         }

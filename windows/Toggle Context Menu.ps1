@@ -1,4 +1,4 @@
-function toggle-contextMenu {
+function toggleContextMenu {
     try {         
         $choice = readOption -options $([ordered]@{
                 "Enable"  = "Enable the stupid pointless menu that nobody wants or asked for."
