@@ -3,16 +3,18 @@ function add-user {
         $choice = read-option -options $([ordered]@{
                 "Add local user"  = "Add a local user to the system."
                 "Add domain user" = "Add a domain user to the system."
+                "Cancel"          = "Do nothing and exit this function."
             }) -prompt "Select a user account type:"
-
-        if ($choice -eq 0) { Add-LocalUser }
-        if ($choice -eq 1) { Add-ADUser }
 
         Write-Host ": "  -ForegroundColor "DarkCyan" -NoNewline
         Write-Host "Running command:" -NoNewline -ForegroundColor "DarkGray"
         Write-Host " $command" -ForegroundColor "Gray"
 
-        read-command -command $command
+        switch ($choice) {
+            0 { add-localuser }
+            1 { add-aduser }
+            2 { read-command }
+        }
     } catch {
         write-text -type "error" -text "add-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
