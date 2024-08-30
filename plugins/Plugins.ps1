@@ -8,17 +8,17 @@ function read-menu {
                 "Cancel"       = "Select nothing and exit this menu."
             }) -prompt "Select a plugin:" -returnKey
 
-        if ($choice -eq "Cancel") {
-            read-command
-        }
-
         Write-Host
         Write-Host ": "  -ForegroundColor "DarkCyan" -NoNewline
         Write-Host "Running command:" -NoNewline -ForegroundColor "DarkGray"
         Write-Host " $choice" -ForegroundColor "Gray"
 
+        if ($choice -eq "Cancel") {
+            read-command
+        }
+
         read-command -command $choice
     } catch {
-        write-text -type "error" -text "menu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        write-text -type "error" -text "read-menu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
