@@ -1,4 +1,4 @@
-function remove-user {
+function removeUser {
     try {
         $user = selectUser -prompt "Select an account to remove:"
         $dir = (Get-CimInstance Win32_UserProfile -Filter "SID = '$((Get-LocalUser $user["Name"]).Sid)'").LocalPath
@@ -39,6 +39,6 @@ function remove-user {
 
         writeText -type 'success' -text $response
     } catch {
-        writeText -type "error" -text "remove-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "removeUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }

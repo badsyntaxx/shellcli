@@ -1,4 +1,4 @@
-function write-help {
+function writeHelp {
     writeText -type "plain" -text "COMMANDS:"
     writeText -type "plain" -text "toggle admin                     - Toggle the Windows built-in administrator account." -Color "DarkGray"
     writeText -type "plain" -text "add [local,domain] user          - Add a local or domain user to the system." -Color "DarkGray"
@@ -89,23 +89,23 @@ function convertCommand {
         $commandArray = $()
 
         switch ($command) {
-            "help" { $commandArray = $("windows", "Write-Help", "write-help") }
-            "menu" { $commandArray = $("windows", "Menu", "read-menu") }
-            "enable admin" { $commandArray = $("windows", "Enable-Admin", "enable-admin") }
-            "disable admin" { $commandArray = $("windows", "Enable-Admin", "disable-admin") }
-            "add user" { $commandArray = $("windows", "Add-User", "add-user") }
-            "add local user" { $commandArray = $("windows", "Add-User", "add-localuser") }
-            "add ad user" { $commandArray = $("windows", "Add-User", "add-aduser") }
-            "remove user" { $commandArray = $("windows", "Remove-User", "remove-user") }
-            "edit hostname" { $commandArray = $("windows", "Edit-Hostname", "edit-hostname") }
-            "edit user" { $commandArray = $("windows", "Edit-User", "edit-user") }
-            "edit user name" { $commandArray = $("windows", "Edit-User", "edit-userName") }
-            "edit user password" { $commandArray = $("windows", "Edit-User", "edit-userPassword") }
-            "edit user group" { $commandArray = $("windows", "Edit-User", "edit-userGroup") }
-            "add drive letter" { $commandArray = $("windows", "Add-DriveLetter", "add-driveLetter") }
-            "schedule task" { $commandArray = $("windows", "Schedule-Task", "schedule-task") }
-            "plugins" { $commandArray = $("plugins", "Plugins", "read-menu") }
-            "plugins help" { $commandArray = $("plugins", "Write-Help", "write-help") }
+            "help" { $commandArray = $("windows", "writeHelp", "writeHelp") }
+            "menu" { $commandArray = $("windows", "Menu", "readMenu") }
+            "enable admin" { $commandArray = $("windows", "enableAdmin", "enableAdmin") }
+            "disable admin" { $commandArray = $("windows", "enableAdmin", "disableAdmin") }
+            "add user" { $commandArray = $("windows", "addUser", "addUser") }
+            "add local user" { $commandArray = $("windows", "addUser", "addLocalUser") }
+            "add ad user" { $commandArray = $("windows", "addUser", "addUser") }
+            "remove user" { $commandArray = $("windows", "removeUser", "removeUser") }
+            "edit hostname" { $commandArray = $("windows", "editHostname", "editHostname") }
+            "edit user" { $commandArray = $("windows", "editUser", "editUser") }
+            "edit user name" { $commandArray = $("windows", "editUser", "editUserName") }
+            "edit user password" { $commandArray = $("windows", "editUser", "editUserPassword") }
+            "edit user group" { $commandArray = $("windows", "editUser", "editUserGroup") }
+            "add drive letter" { $commandArray = $("windows", "addDriveLetter", "addDriveLetter") }
+            "schedule task" { $commandArray = $("windows", "scheduleTask", "scheduleTask") }
+            "plugins" { $commandArray = $("plugins", "Plugins", "readMenu") }
+            "plugins help" { $commandArray = $("plugins", "writeHelp", "writeHelp") }
             "plugins reclaim" { $commandArray = $("plugins", "ReclaimW11", "reclaim") }
             "plugins massgravel" { $commandArray = $("plugins", "massgravel", "massgravel") }
             "plugins win11debloat" { $commandArray = $("plugins", "win11Debloat", "win11debloat") }
@@ -678,5 +678,5 @@ function selectUser {
         writeText -type "error" -text "selectUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-invokeScript 'write-help'
+invokeScript 'writeHelp'
 readCommand

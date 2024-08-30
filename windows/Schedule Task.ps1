@@ -1,4 +1,4 @@
-function schedule-task {
+function scheduleTask {
     try {
         # Prompt the user for task settings
         $taskName = readInput -prompt "Enter a name for your scheduled task"
@@ -42,6 +42,6 @@ function schedule-task {
 
         Write-Host "Task '$taskName' has been scheduled successfully!"
     } catch {
-        writeText -type "error" -text "schedule-task-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "scheduleTask-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }

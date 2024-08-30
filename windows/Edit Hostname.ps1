@@ -1,4 +1,4 @@
-function edit-hostname {
+function editHostname {
     try {
         $currentHostname = $env:COMPUTERNAME
         $currentDescription = (Get-WmiObject -Class Win32_OperatingSystem).Description
@@ -45,6 +45,6 @@ function edit-hostname {
 
         writeText -type "success" -text $response
     } catch {
-        writeText -type "error" -text "edit-hostname-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "editHostname-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }

@@ -15,7 +15,7 @@ function toggle-contextMenu {
         Stop-Process -Name explorer -force
         Start-Process explorer
     } catch {
-        writeText -type "error" -text "toggle-admin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "toggleAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 function enable-contextMenu {

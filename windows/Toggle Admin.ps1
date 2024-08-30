@@ -1,4 +1,4 @@
-function toggle-admin {
+function toggleAdmin {
     try {
         $choice = readOption -options $([ordered]@{
                 "Enable admin"  = "Enable the built-in administrator account."
@@ -12,15 +12,15 @@ function toggle-admin {
         Write-Host
 
         switch ($choice) {
-            0 { enable-admin }
-            1 { disable-admin }
+            0 { enableAdmin }
+            1 { disableAdmin }
             2 { readCommand }
         }
     } catch {
-        writeText -type "error" -text "toggle-admin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "toggleAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-function enable-admin {
+function enableAdmin {
     try { 
         $admin = Get-LocalUser -Name "Administrator"
         
@@ -38,10 +38,10 @@ function enable-admin {
             writeText -type "error" -text "Could not enable administrator account"
         }
     } catch {
-        writeText -type "error" -text "enable-admin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "enableAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-function disable-admin {
+function disableAdmin {
     try { 
         $admin = Get-LocalUser -Name "Administrator"
         
@@ -59,6 +59,6 @@ function disable-admin {
             writeText -type "success" -text "Administrator account disabled"
         }
     } catch {
-        writeText -type "error" -text "disable-admin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "disableAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }

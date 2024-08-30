@@ -1,4 +1,4 @@
-function edit-user {
+function editUser {
     try {
         $choice = readOption -options $([ordered]@{
                 "Edit user name"     = "Edit an existing users name."
@@ -13,16 +13,16 @@ function edit-user {
         Write-Host
 
         switch ($choice) {
-            0 { edit-userName }
-            1 { edit-userPassword }
-            2 { edit-userGroup }
+            0 { editUserName }
+            1 { editUserPassword }
+            2 { editUserGroup }
             3 { readCommand }
         }
     } catch {
-        writeText -type "error" -text "edit-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "editUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-function edit-userName {
+function editUserName {
     try {
         $user = selectUser
 
@@ -46,11 +46,11 @@ function edit-userName {
             writeText -type "notice" -text "Editing domain users doesn't work yet."
         }
     } catch {
-        writeText -type "error" -text "edit-user-name-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "editUser-name-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 
-function edit-userPassword {
+function editUserPassword {
     try {
         $user = selectUser
 
@@ -74,10 +74,10 @@ function edit-userPassword {
             writeText -type "plain" -text "Editing domain users doesn't work yet."
         }
     } catch {
-        writeText -type "error" -text "edit-userPassword-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "editUserPassword-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-function edit-userGroup {
+function editUserGroup {
     try {
         $user = selectUser
 
@@ -103,7 +103,7 @@ function edit-userGroup {
             writeText -type "plain" -text "Editing domain users doesn't work yet."
         }
     } catch {
-        writeText -type "error" -text "edit-userGroup-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "editUserGroup-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 } 
 function add-groups {

@@ -1,4 +1,4 @@
-function write-help {
+function writeHelp {
     writeText -type "header" -text "COMMANDS:" -lineBefore
     writeText -type "plain" -text "plugins massgravel    - https://github.com/massgravel/Microsoft-Activation-Scripts" -Color "DarkGray"
     writeText -type "plain" -text "plugins reclaimw11    - https://gist.github.com/DanielLarsenNZ/edc6dd611418581ef90b02ad8e23b363#file-reclaim-windows-11-ps1" -Color "DarkGray"
