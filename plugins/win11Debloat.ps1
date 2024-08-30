@@ -1,3 +1,3 @@
 function win11Debloat {
-    irm https://win11debloat.raphi.re | iex
+    Invoke-RestMethod https://win11debloat.raphi.re | Invoke-Expression
 }
