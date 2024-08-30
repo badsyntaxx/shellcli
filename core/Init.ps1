@@ -30,7 +30,7 @@ function initializeChasteScripts {
             Invoke-Expression $chasteScript
         }
     } catch {
-        Write-Host "  Connection Error: $($_.Exception.Message) | init-$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor "Red"
+        Write-Host "  initializeChasteScripts-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -ForegroundColor "Red"
     }
 }
 
