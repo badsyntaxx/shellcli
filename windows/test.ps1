@@ -1,26 +1,13 @@
-function plugins {
-    try {
-        # Create a menu with options and descriptions using an ordered hashtable
-        $choice = read-option -options $([ordered]@{
-                "massgravel"   = "https://github.com/massgravel/Microsoft-Activation-Scripts"
-                "reclaimw11"   = "https://gist.github.com/DanielLarsenNZ/edc6dd611418581ef90b02ad8e23b363#file-reclaim-windows-11-ps1"
-                "win11debloat" = "https://github.com/Raphire/Win11Debloat"
-                "Cancel"       = "Select nothing and exit this menu."
-            }) -prompt "Select a plugin:" -returnKey
-
-        if ($choice -eq "Cancel") {
-            read-command
-        }
-
-        Write-Host
-        Write-Host ": "  -ForegroundColor "DarkCyan" -NoNewline
-        Write-Host "Running command:" -NoNewline -ForegroundColor "DarkGray"
-        Write-Host " $choice" -ForegroundColor "Gray"
-
-        read-command -command $choice
-    } catch {
-        write-text -type "error" -text "menu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-    }
+function write-help {
+    write-text -type "plain" -text "COMMANDS:"
+    write-text -type "plain" -text "toggle admin                     - Toggle the Windows built-in administrator account." -Color "DarkGray"
+    write-text -type "plain" -text "add [local,domain] user          - Add a local or domain user to the system." -Color "DarkGray"
+    write-text -type "plain" -text "edit user [name,password,group]  - Edit user account settings." -Color "DarkGray"
+    write-text -type "plain" -text "edit net adapter                 - Edit network adapter settings like IP and DNS." -Color "DarkGray"
+    write-text -type "plain" -text "get wifi creds                   - View WiFi credentials saved on the system." -Color "DarkGray"
+    write-text -type "plain" -text "plugins [plugin name]  - Useful scripts made by others. Try the 'plugins help' command." -Color "DarkGray"
+    write-text -type "plain" -text "FULL DOCUMENTATION:" -lineBefore
+    write-text -type "plain" -text "https://guided.chaste.pro/dev/chaste-scripts" -Color "DarkGray"
 }
 function invoke-script {
     param (
@@ -31,9 +18,7 @@ function invoke-script {
     ) 
 
     try {
-        # Check if user has administrator privileges
         if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]"Administrator")) {
-            # If not, elevate privileges and restart function with current arguments
             Start-Process powershell.exe "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`" $PSCommandArgs" -WorkingDirectory $pwd -Verb RunAs
             Exit
         } 
@@ -45,17 +30,13 @@ function invoke-script {
         $console.WindowTitle = "Chaste Scripts"
 
         if ($initialize) {
-            # Display a stylized menu prompt
             Clear-Host
-            write-help
+            read-command -command "help"
         }
 
-        # Call the script specified by the parameter
         Invoke-Expression $script
     } catch {
-        # Display error message and exit this script
-        write-text -type "error" -text "invoke-script-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-        read-command
+        write-text -type "error" -text "invoke-script-$($_.InvocationInfo.ScriptLineNumber) | $script"
     }
 }
 function read-command {
@@ -74,91 +55,88 @@ function read-command {
         $command = $command.ToLower()
         $command = $command.Trim()
 
-        if ($command -eq 'help') {
-            write-help
-        }
-
-        if ($command -eq 'plugins help') {
-            write-help -type 'plugins'
-        }   
-
-        if ($command -ne "" -and $command -match "^(?-i)(\w+(-\w+)*)") { 
-            $firstWord = $matches[1] 
-        }
-
-        if (Get-command $firstWord -ErrorAction SilentlyContinue) {
-            Invoke-Expression $command
-            read-command
-        }
-
-        $commandPath = "windows"
-        $potentialPaths = @("plugins");
-
-        foreach ($pp in $potentialPaths) {
-            if ($firstWord -eq $pp -and $firstWord -ne 'menu') { 
-                $command = $command -replace "^$firstWord \s*", "" 
-                $commandPath = $pp
+        if ($command -ne "help") {
+            if (Get-command $command -ErrorAction SilentlyContinue) {
+                Invoke-Expression $command
+                read-command
             }
         }
-        
-        $fileFunc = $command -replace ' ', '-'
+
+        $filteredCommand = convert-command -command $command
+        $commandDirectory = $filteredCommand[0]
+        $commandFile = $filteredCommand[1]
+        $commandFunction = $filteredCommand[2]
 
         New-Item -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -ItemType File -Force | Out-Null
-        add-script -commandPath $commandPath -script $fileFunc
-        add-script -commandPath "core" -script "framework"
-        Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "invoke-script '$fileFunc'"
+        add-script -directory $commandDirectory -file $commandFile
+        add-script -directory "core" -file "framework"
+        Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "invoke-script '$commandFunction'"
         Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "read-command"
 
         $chasteScript = Get-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Raw
         Invoke-Expression $chasteScript
     } catch {
-        Write-Host "    $($_.Exception.Message) | init-$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor Red
+        write-text -type "error" -text "read-command-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+
+function convert-command {
+    param (
+        [Parameter(Mandatory)]
+        [string]$command
+    )
+
+    try {
+        $commandArray = $()
+
+        switch ($command) {
+            "help" { $commandArray = $("windows", "Write-Help", "write-help") }
+            "menu" { $commandArray = $("windows", "Menu", "read-menu") }
+            "enable admin" { $commandArray = $("windows", "Enable-Admin", "enable-admin") }
+            "disable admin" { $commandArray = $("windows", "Enable-Admin", "disable-admin") }
+            "add user" { $commandArray = $("windows", "Add-User", "add-user") }
+            "add local user" { $commandArray = $("windows", "Add-User", "add-localuser") }
+            "add ad user" { $commandArray = $("windows", "Add-User", "add-aduser") }
+            "remove user" { $commandArray = $("windows", "Remove-User", "remove-user") }
+            "edit hostname" { $commandArray = $("windows", "Edit-Hostname", "edit-hostname") }
+            "edit user" { $commandArray = $("windows", "Edit-User", "edit-user") }
+            "edit user name" { $commandArray = $("windows", "Edit-User", "edit-userName") }
+            "edit user password" { $commandArray = $("windows", "Edit-User", "edit-userPassword") }
+            "edit user group" { $commandArray = $("windows", "Edit-User", "edit-userGroup") }
+            "add drive letter" { $commandArray = $("windows", "Add-DriveLetter", "add-driveLetter") }
+            "schedule task" { $commandArray = $("windows", "Schedule-Task", "schedule-task") }
+            "plugins" { $commandArray = $("plugins", "Plugins", "read-menu") }
+            "plugins help" { $commandArray = $("plugins", "Write-Help", "write-help") }
+            "plugins reclaim" { $commandArray = $("plugins", "ReclaimW11", "reclaim") }
+            "plugins massgravel" { $commandArray = $("plugins", "massgravel", "massgravel") }
+            "plugins win11debloat" { $commandArray = $("plugins", "win11Debloat", "win11debloat") }
+        }
+
+        return $commandArray
+    } catch {
+        write-text -type "error" -text "convert-command-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 function add-script {
     param (
         [Parameter(Mandatory)]
-        [string]$commandPath,
+        [string]$directory,
         [Parameter(Mandatory)]
-        [string]$script,
-        [Parameter(Mandatory = $false)]
-        [string]$progressText
+        [string]$file
     )
 
-    $url = "https://raw.githubusercontent.com/badsyntaxx/chaste-scripts/main"
+    try {
+        $url = "https://raw.githubusercontent.com/badsyntaxx/chaste-scripts/main"
 
-    get-download -Url "$url/$commandPath/$script.ps1" -Target "$env:SystemRoot\Temp\$script.ps1"
+        get-download -Url "$url/$directory/$file.ps1" -Target "$env:SystemRoot\Temp\$file.ps1"
 
-    $rawScript = Get-Content -Path "$env:SystemRoot\Temp\$script.ps1" -Raw -ErrorAction SilentlyContinue
-    Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value $rawScript
+        $rawScript = Get-Content -Path "$env:SystemRoot\Temp\$file.ps1" -Raw -ErrorAction SilentlyContinue
+        Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value $rawScript
 
-    Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\$script.ps1" | Remove-Item -ErrorAction SilentlyContinue
-}
-function write-help {
-    param (
-        [Parameter(Mandatory = $false)]
-        [string]$type = ""
-    )
-
-    switch ($type) {
-        "" { 
-            write-text -type "header" -text "DOCS:"
-            write-text -type "plain" -text "https://guided.chaste.pro/dev/chaste-scripts" -Color "DarkGray"
-            write-text -type "header" -text "COMMANDS:" -lineBefore
-            write-text -type "plain" -text "toggle admin                     - Toggle the Windows built-in administrator account." -Color "DarkGray"
-            write-text -type "plain" -text "add [local,domain] user          - Add a local or domain user to the system." -Color "DarkGray"
-            write-text -type "plain" -text "edit user [name,password,group]  - Edit user account settings." -Color "DarkGray"
-            write-text -type "plain" -text "edit net adapter                 - Edit network adapter settings like IP and DNS." -Color "DarkGray"
-            write-text -type "plain" -text "get wifi creds                   - View WiFi credentials saved on the system." -Color "DarkGray"
-            write-text -type "header" -text "PLUGINS:" -lineBefore
-            write-text -type "plain" -text "plugins [plugin name]  - Useful scripts made by others. Try the 'plugins help' command." -Color "DarkGray"
-        }
-        "plugins" {
-            write-text "plugins help unwritten"
-        }
+        Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\$file.ps1" | Remove-Item -ErrorAction SilentlyContinue
+    } catch {
+        write-text -type "error" -text "add-script-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
-
-    read-command # Recursively call itself to prompt for a new command
 }
 function write-text {
     param (
@@ -235,9 +213,7 @@ function write-text {
         # Add a new line after output if specified
         if ($lineAfter) { Write-Host }
     } catch {
-        # Display error message and exit this script
         write-text -type "error" -text "write-text-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-        read-command
     }
 }
 function read-input {
@@ -298,7 +274,6 @@ function read-input {
         # Reset cursor position
         [Console]::SetCursorPosition($currPos.X, $currPos.Y)
         
-        # Display checkmark symbol and user input (masked for secure input)
         Write-Host "? " -ForegroundColor "Cyan" -NoNewline
         if ($IsSecure -and ($userInput.Length -eq 0)) { 
             Write-Host "$prompt                                                "
@@ -313,8 +288,7 @@ function read-input {
         # Return the validated user input
         return $userInput
     } catch {
-        # Handle errors during input
-        write-text -type "error" -text "Input Error: $($_.Exception.Message)"
+        write-text -type "error" -text "read-input-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 function read-option {
@@ -433,13 +407,24 @@ function read-option {
         if ($lineAfter) { Write-Host }
 
         # Handle function return values (key, value, menu position) based on parameters
-        if ($returnKey) { if ($orderedKeys.Count -eq 1) { return $orderedKeys } else { return $orderedKeys[$pos] } } 
-        if ($returnValue) { if ($orderedKeys.Count -eq 1) { return $options[$pos] } else { return $options[$orderedKeys[$pos]] } }
-        else { return $pos }
+        if ($returnKey) { 
+            if ($orderedKeys.Count -eq 1) { 
+                return $orderedKeys 
+            } else { 
+                return $orderedKeys[$pos] 
+            } 
+        } 
+        if ($returnValue) { 
+            if ($orderedKeys.Count -eq 1) { 
+                return $options[$pos] 
+            } else { 
+                return $options[$orderedKeys[$pos]] 
+            } 
+        } else { 
+            return $pos 
+        }
     } catch {
-        # Display error message and exit this script
-        write-text -type "error" -text "Error | read-option-$($_.InvocationInfo.ScriptLineNumber)"
-        read-command
+        write-text -type "error" -text "read-option-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 function get-download {
@@ -587,26 +572,6 @@ function get-download {
         }   
     }
 }
-function read-closing {
-    param (
-        [parameter(Mandatory = $false)]
-        [string]$script = "",
-        [parameter(Mandatory = $false)]
-        [string]$customText = "Are you sure?"
-    ) 
-
-    $choice = read-option -options $([ordered]@{
-            "Submit" = "Submit and apply your changes." 
-            "Rest"   = "Discard changes and start this task over at the beginning."
-            "Exit"   = "Exit this task but remain in the CHASTE Scripts CLI." 
-        }) -lineAfter -lineBefore -prompt $customText
-
-    if ($choice -eq 1) { 
-        if ($script -ne "") { invoke-script $script } 
-        else { read-command }
-    }
-    if ($choice -eq 2) { read-command }
-}
 function get-userData {
     param (
         [parameter(Mandatory = $true)]
@@ -631,7 +596,7 @@ function get-userData {
 
         return $data
     } catch {
-        write-text -type "error" -text "Error getting account info: $($_.Exception.Message)"
+        write-text -type "error" -text "get-userData-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 function select-user {
@@ -710,9 +675,8 @@ function select-user {
         # Return the user data dictionary
         return $data
     } catch {
-        # Handle errors during user selection
-        write-text -type "error" -text "Select user error: $($_.Exception.Message)"
+        write-text -type "error" -text "select-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-invoke-script 'plugins'
+invoke-script 'write-help'
 read-command
