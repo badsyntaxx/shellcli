@@ -67,14 +67,14 @@ function edit-userPassword {
                 $message = "Password changed" 
             }
 
-            Get-LocalUser -Name $username | Set-LocalUser -Password $password
+            Get-LocalUser -Name $user["Name"] | Set-LocalUser -Password $password
 
             write-text -Type "success" -text $message
         } else { 
             write-text -type "plain" -text "Editing domain users doesn't work yet."
         }
     } catch {
-        write-text -type "error" -text "edit-user-password-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        write-text -type "error" -text "edit-userPassword-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 function edit-userGroup {
