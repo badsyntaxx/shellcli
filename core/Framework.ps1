@@ -100,7 +100,7 @@ function filterCommands {
             "edit user password" { $commandArray = $("windows", "Edit User", "editUserPassword") }
             "edit user group" { $commandArray = $("windows", "Edit User", "editUserGroup") }
             "edit net adapter" { $commandArray = $("windows", "Edit Net Adapter", "editNetAdapter") }
-            "edit wifi" { $commandArray = $("windows", "Edit Wifi", "editWifi") }
+            "get wifi creds" { $commandArray = $("windows", "Get Wifi Creds", "getWifiCreds") }
             "schedule task" { $commandArray = $("windows", "Schedule Task", "scheduleTask") }
             "install updates" { $commandArray = $("windows", "Install Updates", "installUpdates") }
             "plugins" { $commandArray = $("plugins", "Helpers", "plugins") }
