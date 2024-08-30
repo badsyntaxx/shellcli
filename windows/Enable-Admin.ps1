@@ -1,9 +1,9 @@
 function toggle-admin {
     try {
         $choice = read-option -options $([ordered]@{
-                "Add local user"  = "Add a local user to the system."
-                "Add domain user" = "Add a domain user to the system."
-                "Cancel"          = "Do nothing and exit this function."
+                "Enable admin"  = "Enable the built-in administrator account."
+                "Disable admin" = "Disable the built-in administrator account."
+                "Cancel"        = "Do nothing and exit this function."
             }) -prompt "Select a user account type:"
 
         Write-Host ": "  -ForegroundColor "DarkCyan" -NoNewline
@@ -11,8 +11,8 @@ function toggle-admin {
         Write-Host " $command" -ForegroundColor "Gray"
 
         switch ($choice) {
-            0 { add-localUser }
-            1 { add-adUser }
+            0 { enable-admin }
+            1 { disable-admin }
             2 { read-command }
         }
     } catch {
