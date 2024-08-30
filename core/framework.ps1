@@ -91,6 +91,8 @@ function convert-command {
             "edit user name" { $commandArray = $("windows", "Edit-User", "edit-userName") }
             "edit user password" { $commandArray = $("windows", "Edit-User", "edit-userPassword") }
             "edit user group" { $commandArray = $("windows", "Edit-User", "edit-userGroup") }
+            "add drive letter" { $commandArray = $("windows", "Add-DriveLetter", "add-driveLetter") }
+            "schedule task" { $commandArray = $("windows", "Schedule-Task", "schedule-task") }
         }
 
         return $commandArray

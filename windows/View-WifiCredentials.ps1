@@ -1,4 +1,4 @@
-function get-wifiCredentials {
+function view-WifiCredentials {
     try {
         $wifiProfiles = netsh wlan show profiles
         if ($wifiProfiles -match "There is no wireless interface on the system.") {
@@ -33,7 +33,6 @@ function get-wifiCredentials {
    
         Write-Host
     } catch {
-        write-text -type "error" -text "get-wifiCredentials-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        write-text -type "error" -text "view-WifiCredentials-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
-    
 }

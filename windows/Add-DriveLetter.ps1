@@ -1,4 +1,4 @@
-function add-drive-letter {
+function add-driveLetter {
     try { 
         $choice = read-option -options $([ordered]@{
                 "Enable"  = "Enable volume 1"

@@ -1,4 +1,4 @@
-function add-task {
+function schedule-task {
     try {
         # Prompt the user for task settings
         $taskName = Read-Host "Enter a name for your scheduled task"
