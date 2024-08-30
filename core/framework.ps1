@@ -45,7 +45,7 @@ function read-command {
         $command = $command.Trim()
 
         if ($command -ne "help") {
-            if (Get-command $command -ErrorAction SilentlyContinue) {
+            if (Get-command $command) {
                 Invoke-Expression $command
                 read-command
             }
