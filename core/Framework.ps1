@@ -176,9 +176,9 @@ function writeText {
             Write-Host "# " -ForegroundColor "Cyan" -NoNewline
             Write-Host "$text" -ForegroundColor "White" 
         }
-        
         if ($type -eq 'success') { 
-            Write-Host "$([char]0x2713) $text"  -ForegroundColor "Green" 
+            Write-Host
+            Write-Host "  $([char]0x2713) $text"  -ForegroundColor "Green" 
         }
         if ($type -eq 'error') { 
             Write-Host "X $text" -ForegroundColor "Red" 
