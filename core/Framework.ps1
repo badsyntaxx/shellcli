@@ -40,7 +40,6 @@ function readCommand {
     )
 
     try {
-        Write-Host
         if ($command -eq "") { 
             Write-Host "$([char]0x203A) " -NoNewline
             $command = Read-Host 
@@ -65,7 +64,7 @@ function readCommand {
         addScript -directory $commandDirectory -file $commandFile
         addScript -directory "core" -file "Framework"
         Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "invokeScript '$commandFunction'"
-        Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "writeText -type `"plain`" -text `"------------------------------`" -lineBefore -lineAfter"
+        Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "writeText -type `"plain`" -text `"---`" -lineBefore -lineAfter"
         Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "readCommand"
 
         $chasteScript = Get-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Raw
