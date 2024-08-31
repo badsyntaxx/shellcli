@@ -176,16 +176,23 @@ function writeText {
             Write-Host "# " -ForegroundColor "Cyan" -NoNewline
             Write-Host "$text" -ForegroundColor "White" 
         }
+
         if ($type -eq 'success') { 
             Write-Host
-            Write-Host "  $([char]0x2713) $text"  -ForegroundColor "Green" 
+            Write-Host "    $([char]0x2713) $text"  -ForegroundColor "Green"
+            Write-Host
         }
+
         if ($type -eq 'error') { 
-            Write-Host "X $text" -ForegroundColor "Red" 
+            Write-Host
+            Write-Host "    X $text" -ForegroundColor "Red"
+            Write-Host 
         }
+
         if ($type -eq 'notice') { 
             Write-Host "! $text" -ForegroundColor "Yellow" 
         }
+
         if ($type -eq 'plain') {
             if ($label -ne "") { 
                 if ($Color -eq "Gray") {
@@ -197,6 +204,7 @@ function writeText {
                 Write-Host "  $text" -ForegroundColor $Color 
             }
         }
+
         if ($type -eq 'list') { 
             # Get a list of keys from the options dictionary
             $orderedKeys = $List.Keys | ForEach-Object { $_ }
