@@ -65,7 +65,7 @@ function readCommand {
         addScript -directory $commandDirectory -file $commandFile
         addScript -directory "core" -file "Framework"
         Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "invokeScript '$commandFunction'"
-        write-text -type "plain" -text "------------------------------" -lineBefore -lineAfter
+        writeText -type "plain" -text "------------------------------" -lineBefore -lineAfter
         Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "readCommand"
 
         $chasteScript = Get-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Raw
