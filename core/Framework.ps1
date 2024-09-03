@@ -498,7 +498,7 @@ function getDownload {
         }
     }
     Process {
-        $downloadComplete = $true 
+        $downloadComplete = $false 
         for ($retryCount = 1; $retryCount -le $MaxRetries; $retryCount++) {
             try {
                 $storeEAP = $ErrorActionPreference
