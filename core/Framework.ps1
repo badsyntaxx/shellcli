@@ -137,12 +137,14 @@ function addScript {
     try {
         $url = "https://raw.githubusercontent.com/badsyntaxx/chaste-scripts/main"
 
-        getDownload -Url "$url/$directory/$file.ps1" -Target "$env:SystemRoot\Temp\$file.ps1"
+        $download = getDownload -url "$url/$directory/$file.ps1" -target "$env:SystemRoot\Temp\$file.ps1" -hide
 
-        $rawScript = Get-Content -Path "$env:SystemRoot\Temp\$file.ps1" -Raw -ErrorAction SilentlyContinue
-        Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value $rawScript
+        if ($download -eq $true) {
+            $rawScript = Get-Content -Path "$env:SystemRoot\Temp\$file.ps1" -Raw -ErrorAction SilentlyContinue
+            Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value $rawScript
 
-        Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\$file.ps1" | Remove-Item -ErrorAction SilentlyContinue
+            Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\$file.ps1" | Remove-Item -ErrorAction SilentlyContinue
+        }
     } catch {
         writeText -type "error" -text "addScript-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
@@ -175,17 +177,21 @@ function writeText {
 
         # Format output based on the specified Type
         if ($type -eq "header") {
+            $l = $([char]0x2500)
             Write-Host "# " -ForegroundColor "Cyan" -NoNewline
             Write-Host "$text" -ForegroundColor "White" 
+            Write-host "$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l" -ForegroundColor "Cyan"
         }
 
         if ($type -eq 'success') { 
+            Write-Host
             Write-Host
             Write-Host "    $([char]0x2713) $text"  -ForegroundColor "Green"
             Write-Host
         }
 
         if ($type -eq 'error') { 
+            Write-Host
             Write-Host
             Write-Host "    X $text" -ForegroundColor "Red"
             Write-Host 
@@ -260,7 +266,7 @@ function readInput {
         # Get current cursor position
         $currPos = $host.UI.RawUI.CursorPosition
 
-        Write-Host "? " -NoNewline -ForegroundColor "Cyan"
+        Write-Host "? " -NoNewline -ForegroundColor "Green"
         Write-Host "$prompt " -NoNewline
 
         if ($IsSecure) { $userInput = Read-Host -AsSecureString } 
@@ -291,7 +297,7 @@ function readInput {
         # Reset cursor position
         [Console]::SetCursorPosition($currPos.X, $currPos.Y)
         
-        Write-Host "? " -ForegroundColor "Cyan" -NoNewline
+        Write-Host "? " -ForegroundColor "Green" -NoNewline
         if ($IsSecure -and ($userInput.Length -eq 0)) { 
             Write-Host "$prompt                                                "
         } else { 
@@ -331,7 +337,7 @@ function readOption {
         # Get current cursor position
         $promptPos = $host.UI.RawUI.CursorPosition
 
-        Write-Host "? " -NoNewline -ForegroundColor "Cyan"
+        Write-Host "? " -NoNewline -ForegroundColor "Green"
         Write-Host "$prompt "
 
         # Initialize variables for user input handling
@@ -404,11 +410,11 @@ function readOption {
         [Console]::SetCursorPosition($promptPos.X, $promptPos.Y)
 
         if ($orderedKeys.Count -ne 1) {
-            Write-Host "? " -ForegroundColor "Cyan" -NoNewline
+            Write-Host "? " -ForegroundColor "Green" -NoNewline
             Write-Host $prompt -NoNewline
             Write-Host " $($orderedKeys[$pos])" -ForegroundColor "DarkCyan"
         } else {
-            Write-Host "? " -ForegroundColor "Cyan" -NoNewline
+            Write-Host "? " -ForegroundColor "Green" -NoNewline
             Write-Host $prompt -NoNewline
             Write-Host " $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length))" -ForegroundColor "DarkCyan"
         }
@@ -446,84 +452,75 @@ function readOption {
 }
 function getDownload {
     param (
-        [Parameter(Mandatory)]
-        [string]$Url,
-        [Parameter(Mandatory)]
-        [string]$Target,
-        [Parameter(Mandatory = $false)]
-        [string]$label = 'Loading',
-        [Parameter(Mandatory = $false)]
+        [parameter(Mandatory)]
+        [string]$url,
+        [parameter(Mandatory)]
+        [string]$target,
+        [parameter(Mandatory = $false)]
+        [string]$label = "",
+        [parameter(Mandatory = $false)]
         [string]$failText = 'Download failed...',
         [parameter(Mandatory = $false)]
-        [int]$MaxRetries = 2,
+        [switch]$lineBefore = $false,
         [parameter(Mandatory = $false)]
-        [int]$Interval = 1,
+        [switch]$lineAfter = $false,
         [parameter(Mandatory = $false)]
-        [switch]$visible = $false
+        [switch]$hide = $false
     )
     Begin {
         function Show-Progress {
             param (
-                [Parameter(Mandatory)]
-                [Single]$TotalValue,
-                [Parameter(Mandatory)]
-                [Single]$CurrentValue,
-                [Parameter(Mandatory)]
-                [string]$label,
-                [Parameter()]
-                [string]$ValueSuffix,
-                [Parameter()]
-                [int]$BarSize = 40,
-                [Parameter()]
-                [switch]$Complete
+                [parameter(Mandatory)]
+                [Single]$totalValue,
+                [parameter(Mandatory)]
+                [Single]$currentValue,
+                [parameter(Mandatory = $false)]
+                [switch]$complete = $false
             )
             
             # calc %
-            $percent = $CurrentValue / $TotalValue
+            $barSize = 30
+            $percent = $currentValue / $totalValue
             $percentComplete = $percent * 100
-            if ($ValueSuffix) {
-                $ValueSuffix = " $ValueSuffix" # add space in front
-            }
   
             # build progressbar with string function
-            $curBarSize = $BarSize * $percent
+            $curBarSize = $barSize * $percent
             $progbar = ""
             $progbar = $progbar.PadRight($curBarSize, [char]9608)
-            $progbar = $progbar.PadRight($BarSize, [char]9617)
+            $progbar = $progbar.PadRight($barSize, [char]9617)
 
-            if (!$Complete.IsPresent) {
-                Write-Host -NoNewLine "`r  $label $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%"
+            if ($complete) {
+                Write-Host -NoNewLine "`r  $progbar Complete"
             } else {
-                Write-Host -NoNewLine "`r  $label $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%"                    
-            }              
-             
+                Write-Host -NoNewLine "`r  $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%"
+            }          
         }
     }
     Process {
-        $downloadComplete = $false 
-        for ($retryCount = 1; $retryCount -le $MaxRetries; $retryCount++) {
+        $downloadComplete = $true 
+        for ($retryCount = 1; $retryCount -le 2; $retryCount++) {
             try {
                 $storeEAP = $ErrorActionPreference
                 $ErrorActionPreference = 'Stop'
         
                 # invoke request
-                $request = [System.Net.HttpWebRequest]::Create($Url)
+                $request = [System.Net.HttpWebRequest]::Create($url)
                 $response = $request.GetResponse()
   
                 if ($response.StatusCode -eq 401 -or $response.StatusCode -eq 403 -or $response.StatusCode -eq 404) {
-                    throw "Remote file either doesn't exist, is unauthorized, or is forbidden for '$Url'."
+                    throw "Remote file either doesn't exist, is unauthorized, or is forbidden for '$url'."
                 }
   
-                if ($Target -match '^\.\\') {
-                    $Target = Join-Path (Get-Location -PSProvider "FileSystem") ($Target -Split '^\.')[1]
+                if ($target -match '^\.\\') {
+                    $target = Join-Path (Get-Location -PSProvider "FileSystem") ($target -Split '^\.')[1]
                 }
             
-                if ($Target -and !(Split-Path $Target)) {
-                    $Target = Join-Path (Get-Location -PSProvider "FileSystem") $Target
+                if ($target -and !(Split-Path $target)) {
+                    $target = Join-Path (Get-Location -PSProvider "FileSystem") $target
                 }
 
-                if ($Target) {
-                    $fileDirectory = $([System.IO.Path]::GetDirectoryName($Target))
+                if ($target) {
+                    $fileDirectory = $([System.IO.Path]::GetDirectoryName($target))
                     if (!(Test-Path($fileDirectory))) {
                         [System.IO.Directory]::CreateDirectory($fileDirectory) | Out-Null
                     }
@@ -538,10 +535,15 @@ function getDownload {
   
                 # create reader / writer
                 $reader = $response.GetResponseStream()
-                $writer = new-object System.IO.FileStream $Target, "Create"
-  
+                $writer = new-object System.IO.FileStream $target, "Create"
+                
+                if ($lineBefore) { Write-Host }
+
+                if (-not $hide -and $label -ne "") {
+                    Write-Host  "  $label" -ForegroundColor "Yellow"
+                }
                 # start download
-                $finalBarCount = 0 #show final bar only one time
+                $finalBarCount = 0 #Show final bar only one time
                 do {
                     $count = $reader.Read($buffer, 0, $buffer.Length)
           
@@ -549,22 +551,25 @@ function getDownload {
               
                     $total += $count
                     $totalMB = $total / 1024 / 1024
-          
-                    if ($visible) {
+                    if (-not $hide) {
                         if ($fullSize -gt 0) {
-                            Show-Progress -TotalValue $fullSizeMB -CurrentValue $totalMB -label $label -ValueSuffix "MB"
+                            Show-Progress -totalValue $fullSizeMB -currentValue $totalMB
                         }
 
                         if ($total -eq $fullSize -and $count -eq 0 -and $finalBarCount -eq 0) {
-                            Show-Progress -TotalValue $fullSizeMB -CurrentValue $totalMB -label $label -ValueSuffix "MB" -Complete
+                            Show-Progress -totalValue $fullSizeMB -currentValue $totalMB -complete
                             $finalBarCount++
                         }
                     }
                 } while ($count -gt 0)
 
+                if (-not $hide) {
+                    Write-Host
+                }
+
                 # Prevent the following output from appearing on the same line as the progress bar
-                if ($visible) {
-                    Write-Host 
+                if ($lineAfter) { 
+                    Write-Host
                 }
                 
                 if ($downloadComplete) { 
@@ -573,26 +578,18 @@ function getDownload {
                     return $false 
                 }
             } catch {
-                # write-text -type "fail" -text "$($_.Exception.Message)"
-                write-text -type "fail" -text $failText
-                
                 $downloadComplete = $false
             
-                if ($retryCount -lt $MaxRetries) {
-                    write-text "Retrying..."
-                    Start-Sleep -Seconds $Interval
+                if ($retryCount -lt 2) {
+                    writeText -type "plain" -text "Retrying..."
+                    Start-Sleep -Seconds 1
                 } else {
-                    write-text -type "error" -text "Maximum retries reached." 
+                    writeText -type "error" -text "getDownload-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
                 }
             } finally {
                 # cleanup
-                if ($reader) { 
-                    $reader.Close() 
-                }
-                if ($writer) { 
-                    $writer.Flush() 
-                    $writer.Close() 
-                }
+                if ($reader) { $reader.Close() }
+                if ($writer) { $writer.Flush(); $writer.Close() }
         
                 $ErrorActionPreference = $storeEAP
                 [GC]::Collect()
@@ -706,3 +703,4 @@ function selectUser {
         writeText -type "error" -text "selectUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
+
