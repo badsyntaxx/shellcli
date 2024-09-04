@@ -446,13 +446,13 @@ function readOption {
 }
 function getDownload {
     param (
-        [Parameter(Mandatory)]
+        [parameter(Mandatory)]
         [string]$url,
-        [Parameter(Mandatory)]
+        [parameter(Mandatory)]
         [string]$target,
-        [Parameter(Mandatory = $false)]
+        [parameter(Mandatory = $false)]
         [string]$label = "",
-        [Parameter(Mandatory = $false)]
+        [parameter(Mandatory = $false)]
         [string]$failText = 'Download failed...',
         [parameter(Mandatory = $false)]
         [switch]$lineBefore = $false,
@@ -464,15 +464,17 @@ function getDownload {
     Begin {
         function Show-Progress {
             param (
-                [Parameter(Mandatory)]
-                [Single]$TotalValue,
-                [Parameter(Mandatory)]
-                [Single]$CurrentValue
+                [parameter(Mandatory)]
+                [Single]$totalValue,
+                [parameter(Mandatory)]
+                [Single]$currentValue,
+                [parameter(Mandatory = $false)]
+                [switch]$complete = $false
             )
             
             # calc %
             $barSize = 30
-            $percent = $CurrentValue / $TotalValue
+            $percent = $currentValue / $totalValue
             $percentComplete = $percent * 100
   
             # build progressbar with string function
@@ -481,8 +483,13 @@ function getDownload {
             $progbar = $progbar.PadRight($curBarSize, [char]9608)
             $progbar = $progbar.PadRight($barSize, [char]9617)
 
-            Write-Host -NoNewLine "`r  $progbar" -ForegroundColor "Cyan"
-            Write-Host -NoNewLine " $($percentComplete.ToString("##0.00").PadLeft(6))%"            
+            if ($complete) {
+                Write-Host -NoNewLine "`r  $progbar" -ForegroundColor "Cyan"
+                Write-Host -NoNewLine " Complete"
+            } else {
+                Write-Host -NoNewLine "`r  $progbar" -ForegroundColor "Cyan"
+                Write-Host -NoNewLine " $($percentComplete.ToString("##0.00").PadLeft(6))%"
+            }          
         }
     }
     Process {
@@ -542,11 +549,11 @@ function getDownload {
                     $totalMB = $total / 1024 / 1024
                     if (-not $hide) {
                         if ($fullSize -gt 0) {
-                            Show-Progress -TotalValue $fullSizeMB -CurrentValue $totalMB
+                            Show-Progress -totalValue $fullSizeMB -currentValue $totalMB
                         }
 
                         if ($total -eq $fullSize -and $count -eq 0 -and $finalBarCount -eq 0) {
-                            Show-Progress -TotalValue $fullSizeMB -CurrentValue $totalMB
+                            Show-Progress -totalValue $fullSizeMB -currentValue $totalMB -complete
                             $finalBarCount++
                         }
                     }
