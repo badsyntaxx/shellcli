@@ -86,6 +86,8 @@ function filterCommands {
             "help" { $commandArray = $("windows", "Helpers", "writeHelp") }
             "menu" { $commandArray = $("windows", "Helpers", "readMenu") }
             "toggle context menu" { $commandArray = $("windows", "Toggle Context Menu", "toggleContextMenu") }
+            "enable context menu" { $commandArray = $("windows", "Toggle Context Menu", "enableContextMenu") }
+            "disable context menu" { $commandArray = $("windows", "Toggle Context Menu", "disableContextMenu") }
             "toggle admin" { $commandArray = $("windows", "Toggle Admin", "toggleAdmin") }
             "enable admin" { $commandArray = $("windows", "Toggle Admin", "enableAdmin") }
             "disable admin" { $commandArray = $("windows", "Toggle Admin", "disableAdmin") }
