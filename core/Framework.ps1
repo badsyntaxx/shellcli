@@ -179,11 +179,13 @@ function writeText {
 
         if ($type -eq 'success') { 
             Write-Host
+            Write-Host
             Write-Host "    $([char]0x2713) $text"  -ForegroundColor "Green"
             Write-Host
         }
 
         if ($type -eq 'error') { 
+            Write-Host
             Write-Host
             Write-Host "    X $text" -ForegroundColor "Red"
             Write-Host 
@@ -445,19 +447,19 @@ function readOption {
 function getDownload {
     param (
         [Parameter(Mandatory)]
-        [string]$Url,
+        [string]$url,
         [Parameter(Mandatory)]
-        [string]$Target,
+        [string]$target,
         [Parameter(Mandatory = $false)]
-        [string]$label = 'Loading',
+        [string]$label = "",
         [Parameter(Mandatory = $false)]
         [string]$failText = 'Download failed...',
         [parameter(Mandatory = $false)]
-        [int]$MaxRetries = 2,
+        [switch]$lineBefore = $false,
         [parameter(Mandatory = $false)]
-        [int]$Interval = 1,
+        [switch]$lineAfter = $false,
         [parameter(Mandatory = $false)]
-        [switch]$visible = $false
+        [switch]$hide = $false
     )
     Begin {
         function Show-Progress {
@@ -465,63 +467,49 @@ function getDownload {
                 [Parameter(Mandatory)]
                 [Single]$TotalValue,
                 [Parameter(Mandatory)]
-                [Single]$CurrentValue,
-                [Parameter(Mandatory)]
-                [string]$label,
-                [Parameter()]
-                [string]$ValueSuffix,
-                [Parameter()]
-                [int]$BarSize = 40,
-                [Parameter()]
-                [switch]$Complete
+                [Single]$CurrentValue
             )
             
             # calc %
+            $barSize = 30
             $percent = $CurrentValue / $TotalValue
             $percentComplete = $percent * 100
-            if ($ValueSuffix) {
-                $ValueSuffix = " $ValueSuffix" # add space in front
-            }
   
             # build progressbar with string function
-            $curBarSize = $BarSize * $percent
+            $curBarSize = $barSize * $percent
             $progbar = ""
             $progbar = $progbar.PadRight($curBarSize, [char]9608)
-            $progbar = $progbar.PadRight($BarSize, [char]9617)
+            $progbar = $progbar.PadRight($barSize, [char]9617)
 
-            if (!$Complete.IsPresent) {
-                Write-Host -NoNewLine "`r  $label $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%"
-            } else {
-                Write-Host -NoNewLine "`r  $label $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%"                    
-            }              
-             
+            Write-Host -NoNewLine "`r  $progbar" -ForegroundColor "Cyan"
+            Write-Host -NoNewLine " $($percentComplete.ToString("##0.00").PadLeft(6))%"            
         }
     }
     Process {
-        $downloadComplete = $false 
-        for ($retryCount = 1; $retryCount -le $MaxRetries; $retryCount++) {
+        $downloadComplete = $true 
+        for ($retryCount = 1; $retryCount -le 2; $retryCount++) {
             try {
                 $storeEAP = $ErrorActionPreference
                 $ErrorActionPreference = 'Stop'
         
                 # invoke request
-                $request = [System.Net.HttpWebRequest]::Create($Url)
+                $request = [System.Net.HttpWebRequest]::Create($url)
                 $response = $request.GetResponse()
   
                 if ($response.StatusCode -eq 401 -or $response.StatusCode -eq 403 -or $response.StatusCode -eq 404) {
-                    throw "Remote file either doesn't exist, is unauthorized, or is forbidden for '$Url'."
+                    throw "Remote file either doesn't exist, is unauthorized, or is forbidden for '$url'."
                 }
   
-                if ($Target -match '^\.\\') {
-                    $Target = Join-Path (Get-Location -PSProvider "FileSystem") ($Target -Split '^\.')[1]
+                if ($target -match '^\.\\') {
+                    $target = Join-Path (Get-Location -PSProvider "FileSystem") ($target -Split '^\.')[1]
                 }
             
-                if ($Target -and !(Split-Path $Target)) {
-                    $Target = Join-Path (Get-Location -PSProvider "FileSystem") $Target
+                if ($target -and !(Split-Path $target)) {
+                    $target = Join-Path (Get-Location -PSProvider "FileSystem") $target
                 }
 
-                if ($Target) {
-                    $fileDirectory = $([System.IO.Path]::GetDirectoryName($Target))
+                if ($target) {
+                    $fileDirectory = $([System.IO.Path]::GetDirectoryName($target))
                     if (!(Test-Path($fileDirectory))) {
                         [System.IO.Directory]::CreateDirectory($fileDirectory) | Out-Null
                     }
@@ -536,10 +524,15 @@ function getDownload {
   
                 # create reader / writer
                 $reader = $response.GetResponseStream()
-                $writer = new-object System.IO.FileStream $Target, "Create"
-  
+                $writer = new-object System.IO.FileStream $target, "Create"
+                
+                if ($lineBefore) { Write-Host }
+
+                if (-not $hide -and $label -ne "") {
+                    Write-Host  "  $label" -ForegroundColor "Yellow"
+                }
                 # start download
-                $finalBarCount = 0 #show final bar only one time
+                $finalBarCount = 0 #Show final bar only one time
                 do {
                     $count = $reader.Read($buffer, 0, $buffer.Length)
           
@@ -547,25 +540,26 @@ function getDownload {
               
                     $total += $count
                     $totalMB = $total / 1024 / 1024
-          
-                    if ($visible) {
+                    if (-not $hide) {
                         if ($fullSize -gt 0) {
-                            Show-Progress -TotalValue $fullSizeMB -CurrentValue $totalMB -label $label -ValueSuffix "MB"
+                            Show-Progress -TotalValue $fullSizeMB -CurrentValue $totalMB
                         }
 
                         if ($total -eq $fullSize -and $count -eq 0 -and $finalBarCount -eq 0) {
-                            Show-Progress -TotalValue $fullSizeMB -CurrentValue $totalMB -label $label -ValueSuffix "MB" -Complete
+                            Show-Progress -TotalValue $fullSizeMB -CurrentValue $totalMB
                             $finalBarCount++
                         }
                     }
                 } while ($count -gt 0)
 
-                # Prevent the following output from appearing on the same line as the progress bar
-                if ($visible) {
-                    Write-Host 
+                if (-not $hide) {
+                    Write-Host
                 }
 
-                $downloadComplete = $true
+                # Prevent the following output from appearing on the same line as the progress bar
+                if ($lineAfter) { 
+                    Write-Host
+                }
                 
                 if ($downloadComplete) { 
                     return $true 
@@ -573,26 +567,18 @@ function getDownload {
                     return $false 
                 }
             } catch {
-                # write-text -type "fail" -text "$($_.Exception.Message)"
-                write-text -type "fail" -text $failText
-                
                 $downloadComplete = $false
             
-                if ($retryCount -lt $MaxRetries) {
-                    write-text "Retrying..."
-                    Start-Sleep -Seconds $Interval
+                if ($retryCount -lt 2) {
+                    writeText -type "plain" -text "Retrying..."
+                    Start-Sleep -Seconds 1
                 } else {
-                    write-text -type "error" -text "Maximum retries reached." 
+                    writeText -type "error" -text "getDownload-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
                 }
             } finally {
                 # cleanup
-                if ($reader) { 
-                    $reader.Close() 
-                }
-                if ($writer) { 
-                    $writer.Flush() 
-                    $writer.Close() 
-                }
+                if ($reader) { $reader.Close() }
+                if ($writer) { $writer.Flush(); $writer.Close() }
         
                 $ErrorActionPreference = $storeEAP
                 [GC]::Collect()
