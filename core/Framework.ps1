@@ -449,7 +449,7 @@ function getDownload {
         [Parameter(Mandatory)]
         [string]$Target,
         [Parameter(Mandatory = $false)]
-        [string]$ProgressText = 'Loading',
+        [string]$label = 'Loading',
         [Parameter(Mandatory = $false)]
         [string]$failText = 'Download failed...',
         [parameter(Mandatory = $false)]
@@ -467,7 +467,7 @@ function getDownload {
                 [Parameter(Mandatory)]
                 [Single]$CurrentValue,
                 [Parameter(Mandatory)]
-                [string]$ProgressText,
+                [string]$label,
                 [Parameter()]
                 [string]$ValueSuffix,
                 [Parameter()]
@@ -490,9 +490,9 @@ function getDownload {
             $progbar = $progbar.PadRight($BarSize, [char]9617)
 
             if (!$Complete.IsPresent) {
-                Write-Host -NoNewLine "`r  $ProgressText $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%"
+                Write-Host -NoNewLine "`r  $label $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%"
             } else {
-                Write-Host -NoNewLine "`r  $ProgressText $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%"                    
+                Write-Host -NoNewLine "`r  $label $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%"                    
             }              
              
         }
@@ -550,11 +550,11 @@ function getDownload {
           
                     if ($visible) {
                         if ($fullSize -gt 0) {
-                            Show-Progress -TotalValue $fullSizeMB -CurrentValue $totalMB -ProgressText $ProgressText -ValueSuffix "MB"
+                            Show-Progress -TotalValue $fullSizeMB -CurrentValue $totalMB -label $label -ValueSuffix "MB"
                         }
 
                         if ($total -eq $fullSize -and $count -eq 0 -and $finalBarCount -eq 0) {
-                            Show-Progress -TotalValue $fullSizeMB -CurrentValue $totalMB -ProgressText $ProgressText -ValueSuffix "MB" -Complete
+                            Show-Progress -TotalValue $fullSizeMB -CurrentValue $totalMB -label $label -ValueSuffix "MB" -Complete
                             $finalBarCount++
                         }
                     }

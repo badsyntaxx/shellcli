@@ -1,17 +1,26 @@
 function editNetAdapter {
     try {
-        select-adapter
+        selectAdapter
     } catch {
         writeText -type "error" -text "editNetAdapter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-function select-adapter {
+function selectAdapter {
     try {
         $adapters = [ordered]@{}
-        Get-NetAdapter | ForEach-Object { $adapters[$_.Name] = $_.MediaConnectionState }
+
+        Get-NetAdapter | ForEach-Object { 
+            $adapters[$_.Name] = $_.MediaConnectionState 
+        }
+
         $adapterList = [ordered]@{}
-        foreach ($al in $adapters) { $adapterList = $al }
+
+        foreach ($al in $adapters) { 
+            $adapterList = $al 
+        }
+
         $choice = readOption -options $adapterList -prompt "Select an network adapter:" -returnKey
+        
         $netAdapter = Get-NetAdapter -Name $choice
         $adapterIndex = $netAdapter.InterfaceIndex
         $ipData = Get-NetIPAddress -InterfaceIndex $adapterIndex -AddressFamily IPv4 | Where-Object { $_.PrefixOrigin -ne "WellKnown" -and $_.SuffixOrigin -ne "Link" -and ($_.AddressState -eq "Preferred" -or $_.AddressState -eq "Tentative") } | Select-Object -First 1
@@ -32,7 +41,7 @@ function select-adapter {
 
         get-desiredsettings -Adapter $adapter
     } catch {
-        writeText -type "error" -text "select-adapter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "selectAdapter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 function get-desiredsettings {
@@ -91,7 +100,7 @@ function read-ipsettings {
         }
 
         if (1 -eq $choice) { $desiredSettings["IPDHCP"] = $true }
-        if (2 -eq $choice) { select-adapter }
+        if (2 -eq $choice) { selectAdapter }
 
         return $desiredSettings 
     } catch {
@@ -313,7 +322,7 @@ function show-adapters {
         foreach ($n in (Get-NetAdapter | Select-Object -ExpandProperty Name)) { $adapters += $n }
         foreach ($a in $adapters) { get-adapter-info -AdapterName $a }
 
-        select-adapter
+        selectAdapter
     } catch {
         writeText -type "error" -text "show-adapters-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
