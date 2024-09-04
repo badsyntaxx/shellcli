@@ -175,8 +175,10 @@ function writeText {
 
         # Format output based on the specified Type
         if ($type -eq "header") {
+            $l = $([char]0x2500)
             Write-Host "# " -ForegroundColor "Cyan" -NoNewline
             Write-Host "$text" -ForegroundColor "White" 
+            Write-host "$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l" -ForegroundColor "Cyan"
         }
 
         if ($type -eq 'success') { 
@@ -262,7 +264,7 @@ function readInput {
         # Get current cursor position
         $currPos = $host.UI.RawUI.CursorPosition
 
-        Write-Host "? " -NoNewline -ForegroundColor "Cyan"
+        Write-Host "? " -NoNewline -ForegroundColor "Green"
         Write-Host "$prompt " -NoNewline
 
         if ($IsSecure) { $userInput = Read-Host -AsSecureString } 
@@ -293,7 +295,7 @@ function readInput {
         # Reset cursor position
         [Console]::SetCursorPosition($currPos.X, $currPos.Y)
         
-        Write-Host "? " -ForegroundColor "Cyan" -NoNewline
+        Write-Host "? " -ForegroundColor "Green" -NoNewline
         if ($IsSecure -and ($userInput.Length -eq 0)) { 
             Write-Host "$prompt                                                "
         } else { 
@@ -333,7 +335,7 @@ function readOption {
         # Get current cursor position
         $promptPos = $host.UI.RawUI.CursorPosition
 
-        Write-Host "? " -NoNewline -ForegroundColor "Cyan"
+        Write-Host "? " -NoNewline -ForegroundColor "Green"
         Write-Host "$prompt "
 
         # Initialize variables for user input handling
@@ -406,11 +408,11 @@ function readOption {
         [Console]::SetCursorPosition($promptPos.X, $promptPos.Y)
 
         if ($orderedKeys.Count -ne 1) {
-            Write-Host "? " -ForegroundColor "Cyan" -NoNewline
+            Write-Host "? " -ForegroundColor "Green" -NoNewline
             Write-Host $prompt -NoNewline
             Write-Host " $($orderedKeys[$pos])" -ForegroundColor "DarkCyan"
         } else {
-            Write-Host "? " -ForegroundColor "Cyan" -NoNewline
+            Write-Host "? " -ForegroundColor "Green" -NoNewline
             Write-Host $prompt -NoNewline
             Write-Host " $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length))" -ForegroundColor "DarkCyan"
         }
@@ -486,11 +488,9 @@ function getDownload {
             $progbar = $progbar.PadRight($barSize, [char]9617)
 
             if ($complete) {
-                Write-Host -NoNewLine "`r  $progbar" -ForegroundColor "Cyan"
-                Write-Host -NoNewLine " Complete"
+                Write-Host -NoNewLine "`r  $progbar Complete"
             } else {
-                Write-Host -NoNewLine "`r  $progbar" -ForegroundColor "Cyan"
-                Write-Host -NoNewLine " $($percentComplete.ToString("##0.00").PadLeft(6))%"
+                Write-Host -NoNewLine "`r  $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%"
             }          
         }
     }
@@ -701,3 +701,4 @@ function selectUser {
         writeText -type "error" -text "selectUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
+
