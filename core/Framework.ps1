@@ -564,6 +564,8 @@ function getDownload {
                 if ($visible) {
                     Write-Host 
                 }
+
+                $downloadComplete = $true
                 
                 if ($downloadComplete) { 
                     return $true 
