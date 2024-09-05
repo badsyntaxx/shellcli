@@ -10,12 +10,12 @@ function repairWindows {
 
         switch ($choice) {
             0 { 
-                Invoke-Expression "sfc /scannow"
-                Invoke-Expression "DISM /Online /Cleanup-Image /RestoreHealth"
+                & "cmd.exe" "sfc /scannow"
+                & "cmd.exe" "DISM /Online /Cleanup-Image /RestoreHealth"
                 restartUpdateService
             }
-            1 { Invoke-Expression "sfc /scannow" }
-            2 { Invoke-Expression "DISM /Online /Cleanup-Image /RestoreHealth" }
+            1 { & "cmd.exe" "sfc /scannow" }
+            2 { & "cmd.exe" "DISM /Online /Cleanup-Image /RestoreHealth" }
             3 { restartUpdateService } 
         }
     } catch {
@@ -24,6 +24,6 @@ function repairWindows {
 }
 
 function restartUpdateService {
-    Invoke-Expression "net stop wuauserv"
-    Invoke-Expression "net start appidsvc"
+    & "cmd.exe" "net stop wuauserv"
+    & "cmd.exe" "net start appidsvc"
 }
