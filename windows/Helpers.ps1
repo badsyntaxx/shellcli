@@ -7,11 +7,12 @@ function readMenu {
                 "Remove user"                  = "Remove a user from the system."
                 "Edit user"                    = "Edit a users."
                 "Edit hostname"                = "Edit this computers name and description."
-                "Edit network adapter (Alpha)" = "Edit a network adapter.(BETA)"
+                "Edit network adapter (alpha)" = "Edit a network adapter.(BETA)"
                 "Get WiFi credentials"         = "View all saved WiFi credentials on the system."
                 "Toggle W11 Context Menu"      = "Enable or Disable the Windows 11 context menu."
-                "Install updates (Alpha)"      = "Install Windows updates silently."
-                "Schedule task (Alpha)"        = "Schedule a new task."
+                "Repair Windows (beta)"        = "Repair Windows."
+                "Install updates (beta)"       = "Install Windows updates silently."
+                "Schedule task (alpha)"        = "Schedule a new task."
                 "Cancel"                       = "Select nothing and exit this menu."
             }) -prompt "Select a Chaste Scripts function:"
 
@@ -24,9 +25,10 @@ function readMenu {
             5 { $command = "edit net adapter" }
             6 { $command = "get wifi creds" }
             7 { $command = "toggle context menu" }
-            8 { $command = "install updates" }
-            9 { $command = "add task" }
-            10 { readCommand }
+            8 { $command = "repair windows" }
+            9 { $command = "install updates" }
+            10 { $command = "add task" }
+            11 { readCommand }
         }
 
         Write-Host
@@ -46,6 +48,7 @@ function writeHelp {
     writeText -type "plain" -text "edit user [name,password,group]  - Edit user account settings." -Color "DarkGray"
     writeText -type "plain" -text "SYSTEM COMMANDS:" -lineBefore
     writeText -type "plain" -text "edit hostname        - Edit the computers hostname and description." -Color "DarkGray"
+    writeText -type "plain" -text "repair windows       - Repair Windows." -Color "DarkGray"
     writeText -type "plain" -text "install updates      - Install Windows updates. All or just severe." -Color "DarkGray"
     writeText -type "plain" -text "schedule task        - Create a task in the task scheduler." -Color "DarkGray"
     writeText -type "plain" -text "toggle context menu  - Disable the Windows 11 context menu." -Color "DarkGray"

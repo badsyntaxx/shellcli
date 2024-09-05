@@ -1,6 +1,7 @@
 function repairWindows {
     try {
         $choice = readOption -options $([ordered]@{
+                "Run all"                = "Send it!"
                 "System file check"      = "Scans for and repairs corrupted system files."
                 "Cleanup & restore"      = "Scans for and repairs the Windows image."
                 "Restart update service" = "Restart the Windows update service."
