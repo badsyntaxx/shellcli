@@ -93,7 +93,7 @@ function filterCommands {
             "disable admin" { $commandArray = $("windows", "Toggle Admin", "disableAdmin") }
             "add user" { $commandArray = $("windows", "Add User", "addUser") }
             "add local user" { $commandArray = $("windows", "Add User", "addLocalUser") }
-            "add ad user" { $commandArray = $("windows", "Add User", "addUser") }
+            "add ad user" { $commandArray = $("windows", "Add User", "addADUser") }
             "add drive letter" { $commandArray = $("windows", "Add Drive Letter", "addDriveLetter") }
             "remove user" { $commandArray = $("windows", "Remove User", "removeUser") }
             "edit hostname" { $commandArray = $("windows", "Edit Hostname", "editHostname") }
