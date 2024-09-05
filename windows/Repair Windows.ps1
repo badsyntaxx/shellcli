@@ -10,12 +10,12 @@ function repairWindows {
 
         switch ($choice) {
             0 { 
-                Invoke-Command -CommandType ScriptBlock -ScriptBlock { cmd.exe sfc /scannow }
-                Invoke-Command -CommandType ScriptBlock -ScriptBlock { cmd.exe DISM /Online /Cleanup-Image /RestoreHealth }
+                cmd /c sfc /scannow
+                cmd /c DISM /Online /Cleanup-Image /RestoreHealth
                 restartUpdateService
             }
-            1 { Invoke-Command -CommandType ScriptBlock -ScriptBlock { cmd.exe sfc /scannow } }
-            2 { Invoke-Command -CommandType ScriptBlock -ScriptBlock { cmd.exe DISM /Online /Cleanup-Image /RestoreHealth } }
+            1 { cmd /c sfc /scannow } 
+            2 { cmd /c DISM /Online /Cleanup-Image /RestoreHealth } 
             3 { restartUpdateService } 
         }
     } catch {
@@ -24,6 +24,6 @@ function repairWindows {
 }
 
 function restartUpdateService {
-    Invoke-Command -CommandType ScriptBlock -ScriptBlock { cmd.exe net stop wuauserv }
-    Invoke-Command -CommandType ScriptBlock -ScriptBlock { cmd.exe net start appidsvc }
+    cmd /c net stop wuauserv 
+    cmd /c net start appidsvc 
 }
