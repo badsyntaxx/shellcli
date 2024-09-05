@@ -29,7 +29,6 @@ function addLocalUser {
             }) -prompt "Select a user group:" -returnKey
           
         Add-LocalGroupMember -Group $group -Member $name -ErrorAction Stop | Out-Null
-
         
         $newUser = Get-LocalUser -Name $name
         if ($null -eq $newUser) {

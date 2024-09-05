@@ -105,6 +105,7 @@ function filterCommands {
             "get wifi creds" { $commandArray = $("windows", "Get Wifi Creds", "getWifiCreds") }
             "schedule task" { $commandArray = $("windows", "Schedule Task", "scheduleTask") }
             "install updates" { $commandArray = $("windows", "Install Updates", "installUpdates") }
+            "repair windows" { $commandArray = $("windows", "Repair Windows", "repairWindows") }
             "plugins" { $commandArray = $("plugins", "Helpers", "plugins") }
             "plugins menu" { $commandArray = $("plugins", "Helpers", "readMenu") }
             "plugins help" { $commandArray = $("plugins", "Helpers", "writeHelp") }
