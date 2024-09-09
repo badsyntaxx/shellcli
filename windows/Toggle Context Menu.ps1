@@ -9,11 +9,7 @@ function toggleContextMenu {
         switch ($choice) {
             0 { enableContextMenu }
             1 { disableContextMenu }
-        }
-
-        if ($choice -ne 2) {
-            Stop-Process -Name explorer -force
-            Start-Process explorer
+            2 { readCommand }
         }
     } catch {
         writeText -type "error" -text "toggleContextMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
