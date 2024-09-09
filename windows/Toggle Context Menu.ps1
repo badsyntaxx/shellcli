@@ -18,14 +18,14 @@ function toggleContextMenu {
         writeText -type "error" -text "toggleAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-function enable-contextMenu {
+function enablecontextMenu {
     try {         
         reg delete "HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}" /f | Out-Null
     } catch {
         writeText -type "error" -text "enable-contextMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-function disable-contextMenu {
+function disablecontextMenu {
     try {         
         reg add "HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32" /f /ve | Out-Null
     } catch {
