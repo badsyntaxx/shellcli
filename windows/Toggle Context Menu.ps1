@@ -17,20 +17,14 @@ function toggleContextMenu {
 }
 function enableContextMenu {
     try {         
-        $result = & "C:\Windows\System32\reg.exe" delete "HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}" /f
-        if ($result.ExitCode -ne 0) {
-            write-host "Error enabling context menu: $($result.Error)"
-        }
+        & "C:\Windows\System32\reg.exe" delete "HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}" /f
     } catch {
         writeText -type "error" -text "enableContextMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 function disableContextMenu {
     try {         
-        $result = & "C:\Windows\System32\reg.exe" add "HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32" /f /ve
-        if ($result.ExitCode -ne 0) {
-            write-host "Error disabling context menu: $($result.Error)"
-        }
+        & "C:\Windows\System32\reg.exe" add "HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32" /f /ve
     } catch {
         writeText -type "error" -text "disableContextMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
