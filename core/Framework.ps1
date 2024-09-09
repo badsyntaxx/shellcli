@@ -49,10 +49,6 @@ function readCommand {
         $command = $command.ToLower()
         $command = $command.Trim()
 
-        if ($command -eq "") { 
-            $command = "help"
-        }
-
         if ($command -ne "help" -and $command -ne "" -and $command -match "^(?-i)(\w+(-\w+)*)") {
             if (Get-command $matches[1] -ErrorAction SilentlyContinue) {
                 Invoke-Expression $command
