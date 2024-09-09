@@ -10,12 +10,12 @@ function repairWindows {
 
         switch ($choice) {
             0 { 
-                cmd /c sfc /scannow
-                cmd /c DISM /Online /Cleanup-Image /RestoreHealth
+                & "C:\Windows\System32\cmd.exe" /c sfc /scannow
+                & "C:\Windows\System32\cmd.exe" /c DISM /Online /Cleanup-Image /RestoreHealth
                 restartUpdateService
             }
-            1 { cmd /c sfc /scannow } 
-            2 { cmd /c DISM /Online /Cleanup-Image /RestoreHealth } 
+            1 { & "C:\Windows\System32\cmd.exe" /c sfc /scannow } 
+            2 { & "C:\Windows\System32\cmd.exe" /c DISM /Online /Cleanup-Image /RestoreHealth } 
             3 { restartUpdateService } 
         }
     } catch {
@@ -24,6 +24,6 @@ function repairWindows {
 }
 
 function restartUpdateService {
-    cmd /c net stop wuauserv 
-    cmd /c net start appidsvc 
+    & "C:\Windows\System32\cmd.exe" /c net stop wuauserv 
+    & "C:\Windows\System32\cmd.exe" /c net start appidsvc 
 }
