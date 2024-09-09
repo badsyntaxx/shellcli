@@ -1,3 +1,12 @@
+function chasteScripts {
+    Write-Host
+    Write-Host "  Try" -NoNewline
+    Write-Host " help" -ForegroundColor "Cyan" -NoNewline
+    Write-Host " or" -NoNewline
+    Write-Host " menu" -NoNewline -ForegroundColor "Cyan"
+    Write-Host " if you don't know what to do."
+}
+
 function readMenu {
     try {
         # Create a menu with options and descriptions using an ordered hashtable

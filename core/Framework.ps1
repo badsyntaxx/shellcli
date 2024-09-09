@@ -87,6 +87,7 @@ function filterCommands {
         $commandArray = $()
 
         switch ($command) {
+            "" { $commandArray = $("windows", "Helpers", "chasteScripts") }
             "help" { $commandArray = $("windows", "Helpers", "writeHelp") }
             "menu" { $commandArray = $("windows", "Helpers", "readMenu") }
             "toggle context menu" { $commandArray = $("windows", "Toggle Context Menu", "toggleContextMenu") }
