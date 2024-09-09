@@ -12,7 +12,8 @@ function toggleContextMenu {
             2 { readCommand }
         }
 
-        Stop-Process -Name "explorer"
+        Stop-Process -Name explorer -force
+        Start-Process explorer
     } catch {
         writeText -type "error" -text "toggleContextMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
