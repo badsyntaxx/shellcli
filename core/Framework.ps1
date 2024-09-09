@@ -112,7 +112,7 @@ function filterCommands {
             "plugins help" { $commandArray = $("plugins", "Helpers", "writeHelp") }
             "plugins reclaim" { $commandArray = $("plugins", "ReclaimW11", "reclaim") }
             "plugins massgravel" { $commandArray = $("plugins", "massgravel", "massgravel") }
-            "plugins win11debloat" { $commandArray = $("plugins", "win11Debloat", "win11debloat") }
+            "plugins win11debloat" { $commandArray = $("plugins", "win11Debloat", "win11Debloat") }
             default { 
                 Write-Host "  Unrecognized command. Try" -NoNewline
                 Write-Host " help" -ForegroundColor "Cyan" -NoNewline
