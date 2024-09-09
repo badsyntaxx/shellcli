@@ -9,26 +9,27 @@ function toggleContextMenu {
         switch ($choice) {
             0 { enableContextMenu }
             1 { disableContextMenu }
-            2 { readCommand }
         }
 
-        Stop-Process -Name explorer -force
-        Start-Process explorer
+        if ($choice -ne 2) {
+            Stop-Process -Name explorer -force
+            Start-Process explorer
+        }
     } catch {
-        writeText -type "error" -text "toggleAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "toggleContextMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 function enableContextMenu {
     try {         
-        reg delete "HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}" /f | Out-Null
+        cmd /c reg delete "HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}" /f | Out-Null
     } catch {
-        writeText -type "error" -text "enable-contextMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "enableContextMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 function disableContextMenu {
     try {         
-        reg add "HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32" /f /ve | Out-Null
+        cmd /c reg add "HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32" /f /ve | Out-Null
     } catch {
-        writeText -type "error" -text "disable-contextMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "disableContextMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
