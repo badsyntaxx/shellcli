@@ -164,7 +164,7 @@ function addGroups {
     }
 
     foreach ($group in $selectedGroups) {
-        if ($addOrRemove -eq "Add" -and $group -ne "Done") {
+        if ($group -ne "Done") {
             Add-LocalGroupMember -Group $group -Member $username -ErrorAction SilentlyContinue | Out-Null 
         }
     }
