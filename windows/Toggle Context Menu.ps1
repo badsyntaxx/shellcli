@@ -11,9 +11,6 @@ function toggleContextMenu {
             1 { disableContextMenu }
             2 { readCommand }
         }
-
-        Stop-Process -Name explorer -force
-        Start-Process explorer
     } catch {
         writeText -type "error" -text "toggleContextMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
@@ -21,6 +18,8 @@ function toggleContextMenu {
 function enableContextMenu {
     try {         
         & "C:\Windows\System32\reg.exe" delete "HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}" /f | Out-Null
+        Stop-Process -Name explorer -force
+        Start-Process explorer
         writeText -type "success" -text "Context menu enabled"
     } catch {
         writeText -type "error" -text "enableContextMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
@@ -29,6 +28,8 @@ function enableContextMenu {
 function disableContextMenu {
     try {         
         & "C:\Windows\System32\reg.exe" add "HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32" /f /ve | Out-Null
+        Stop-Process -Name explorer -force
+        Start-Process explorer
         writeText -type "success" -text "Context menu disabled"
     } catch {
         writeText -type "error" -text "disableContextMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
