@@ -88,8 +88,8 @@ function editUserGroup {
                 }) -prompt "Do you want to add or remove this user from groups?"
 
             switch ($choice) {
-                0 { add-groups -username $user["Name"] }
-                1 { remove-groups -username $user["Name"] }
+                0 { addGroups -username $user["Name"] }
+                1 { removeGroups -username $user["Name"] }
                 2 { readCommand }
             }
 
@@ -101,7 +101,7 @@ function editUserGroup {
         writeText -type "error" -text "editUserGroup-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 } 
-function add-groups {
+function addGroups {
     param(
         [Parameter(Mandatory = $true)]
         [string]$username
@@ -169,7 +169,7 @@ function add-groups {
         }
     }
 }
-function remove-groups {
+function removeGroups {
     param(
         [Parameter(Mandatory = $true)]
         [string]$username

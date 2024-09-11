@@ -1,13 +1,281 @@
-function writeHelp {
-    writeText -type "plain" -text "COMMANDS:"
-    writeText -type "plain" -text "toggle admin                     - Toggle the Windows built-in administrator account." -Color "DarkGray"
-    writeText -type "plain" -text "add [local,domain] user          - Add a local or domain user to the system." -Color "DarkGray"
-    writeText -type "plain" -text "edit user [name,password,group]  - Edit user account settings." -Color "DarkGray"
-    writeText -type "plain" -text "edit net adapter                 - Edit network adapter settings like IP and DNS." -Color "DarkGray"
-    writeText -type "plain" -text "get wifi creds                   - View WiFi credentials saved on the system." -Color "DarkGray"
-    writeText -type "plain" -text "plugins [plugin name]  - Useful scripts made by others. Try the 'plugins help' command." -Color "DarkGray"
-    writeText -type "plain" -text "FULL DOCUMENTATION:" -lineBefore
-    writeText -type "plain" -text "https://guided.chaste.pro/dev/chaste-scripts" -Color "DarkGray"
+function editUser {
+    try {
+        $choice = readOption -options $([ordered]@{
+                "Edit user name"     = "Edit an existing users name."
+                "Edit user password" = "Edit an existing users password."
+                "Edit user group"    = "Edit an existing users group membership."
+                "Cancel"             = "Do nothing and exit this function."
+            }) -prompt "What would you like to edit?"
+
+        switch ($choice) {
+            0 { editUserName }
+            1 { editUserPassword }
+            2 { editUserGroup }
+            3 { readCommand }
+        }
+    } catch {
+        writeText -type "error" -text "editUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+function editUserName {
+    try {
+        $user = selectUser
+
+        if ($user["Source"] -eq "MicrosoftAccount") { 
+            writeText -type "notice" -text "Cannot edit Microsoft accounts."
+        }
+
+        if ($user["Source"] -eq "Local") { 
+            $newName = readInput -prompt "Enter username:" -Validate "^(\s*|[a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser
+    
+            Rename-LocalUser -Name $user["Name"] -NewName $newName
+
+            $newUser = Get-LocalUser -Name $newName
+
+            if ($null -ne $newUser) { 
+                writeText -type "success" -text "Account name changed"
+            } else {
+                writeText -type "error" -text "Unknown error"
+            }
+        } else { 
+            writeText -type "notice" -text "Editing domain users doesn't work yet."
+        }
+    } catch {
+        writeText -type "error" -text "editUser-name-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+
+function editUserPassword {
+    try {
+        $user = selectUser
+
+        if ($user["Source"] -eq "MicrosoftAccount") { 
+            writeText -type "notice" -text "Cannot edit Microsoft accounts."
+        }
+
+        if ($user["Source"] -eq "Local") { 
+            $password = readInput -prompt "Enter password or leave blank:" -IsSecure $true
+
+            if ($password.Length -eq 0) { 
+                $message = "Password removed" 
+            } else { 
+                $message = "Password changed" 
+            }
+
+            Get-LocalUser -Name $user["Name"] | Set-LocalUser -Password $password
+
+            writeText -Type "success" -text $message
+        } else { 
+            writeText -type "plain" -text "Editing domain users doesn't work yet."
+        }
+    } catch {
+        writeText -type "error" -text "editUserPassword-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+function editUserGroup {
+    try {
+        $user = selectUser
+
+        if ($user["Source"] -eq "MicrosoftAccount") { 
+            writeText -type "notice" -text "Cannot edit Microsoft accounts."
+        }
+
+        if ($user["Source"] -eq "Local") { 
+            $choice = readOption -options $([ordered]@{
+                    "Add"    = "Add this user to more groups"
+                    "Remove" = "Remove this user from certain groups"
+                    "Cancel" = "Do nothing and exit this function."
+                }) -prompt "Do you want to add or remove this user from groups?"
+
+            switch ($choice) {
+                0 { addGroups -username $user["Name"] }
+                1 { removeGroups -username $user["Name"] }
+                2 { readCommand }
+            }
+
+            writeText -type "success" -text "Group membership updated."
+        } else { 
+            writeText -type "plain" -text "Editing domain users doesn't work yet."
+        }
+    } catch {
+        writeText -type "error" -text "editUserGroup-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+} 
+function addGroups {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$username
+    )
+    
+    $default = Get-LocalGroup | ForEach-Object {
+        $description = $_.Description
+        @{ $_.Name = $description }
+    } | Sort-Object -Property Name
+
+    $groups = [ordered]@{}
+    foreach ($group in $default) { 
+        # $groups += $group
+        switch ($group.Keys) {
+            "Performance Monitor Users" { $groups["$($group.Keys)"] = "Access local performance counter data." }
+            "Power Users" { $groups["$($group.Keys)"] = "Limited administrative privileges." }
+            "Network Configuration Operators" { $groups["$($group.Keys)"] = "Privileges for managing network configuration." }
+            "Performance Log Users" { $groups["$($group.Keys)"] = "Schedule performance counter logging." }
+            "Remote Desktop Users" { $groups["$($group.Keys)"] = "Log on remotely." }
+            "System Managed Accounts Group" { $groups["$($group.Keys)"] = "Managed by the system." }
+            "Users" { $groups["$($group.Keys)"] = "Prevented from making system-wide changes." }
+            "Remote Management Users" { $groups["$($group.Keys)"] = "Access WMI resources over management protocols." }
+            "Replicator" { $groups["$($group.Keys)"] = "Supports file replication in a domain." }
+            "IIS_IUSRS" { $groups["$($group.Keys)"] = "Used by Internet Information Services (IIS)." }
+            "Backup Operators" { $groups["$($group.Keys)"] = "Override security restrictions for backup purposes." }
+            "Cryptographic Operators" { $groups["$($group.Keys)"] = "Perform cryptographic operations." }
+            "Access Control Assistance Operators" { $groups["$($group.Keys)"] = "Remotely query authorization attributes and permissions." }
+            "Administrators" { $groups["$($group.Keys)"] = "Complete, unrestricted access to the computer/domain." }
+            "Device Owners" { $groups["$($group.Keys)"] = "Can change system-wide settings." }
+            "Guests" { $groups["$($group.Keys)"] = "Similar access to members of the Users group by default." }
+            "Hyper-V Administrators" { $groups["$($group.Keys)"] = "Complete and unrestricted access to all Hyper-V features." }
+            "Distributed COM Users" { $groups["$($group.Keys)"] = "Authorized for Distributed Component Object Model (DCOM) operations." }
+        }
+    }
+
+    $groups["Cancel"] = "Select nothing and exit this function."
+    $selectedGroups = @()
+    $selectedGroups += readOption -options $groups -prompt "Select a group:" -returnKey
+
+    if ($selectedGroups -eq "Cancel") {
+        readCommand
+    }
+
+    $selectedGroups
+
+    $groupsList = [ordered]@{}
+    $groupsList["Done"] = "Stop selecting groups and move to the next step."
+    $groupsList += $groups
+
+    while ($selectedGroups -notcontains 'Done') {
+        $availableGroups = [ordered]@{}
+        foreach ($key in $groupsList.Keys) {
+            if ($selectedGroups -notcontains $key) {
+                $availableGroups[$key] = $groupsList[$key]
+            }
+        }
+
+        $selectedGroups += readOption -options $availableGroups -prompt "Select another group or 'Done':" -ReturnKey
+        if ($selectedGroups -eq "Cancel") {
+            readCommand
+        }
+    }
+
+    $selectedGroups
+
+    foreach ($group in $selectedGroups) {
+        if ($group -ne "Done") {
+            Write-Host "Adding $group / $username"
+            Add-LocalGroupMember -Group $group -Member $username
+        }
+    }
+}
+function removeGroups {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$username
+    )
+
+    try {
+        $groups = [ordered]@{}
+
+        $allGroups = Get-LocalGroup
+
+        # Check each group for the user's membership
+        foreach ($group in $allGroups) {
+            try {
+                $members = Get-LocalGroupMember -Group $group.Name -ErrorAction Stop
+                $isMember = $members | Where-Object {
+                    $_.Name -eq $Username -or 
+                    $_.SID.Value -eq $Username -or 
+                    $_ -eq $Username -or 
+                    $_ -like "*\$Username"
+                }
+            
+                if ($isMember) {
+                    $description = $group.Description
+                    if ($description.Length -gt 72) { 
+                        $description = $description.Substring(0, 72) + "..." 
+                    }
+                    $groups[$group.Name] = $description
+                }
+            } catch {
+                # If there's an error (e.g., access denied), we skip this group
+                Write-Verbose "Couldn't check membership for group $($group.Name): $_"
+            }
+        }
+
+        $groups
+
+        foreach ($group in $groups) { 
+            switch ($group.Name) {
+                "Performance Monitor Users" { $groups["$($group.Name)"] = "Access local performance counter data." }
+                "Power Users" { $groups["$($group.Name)"] = "Limited administrative privileges." }
+                "Network Configuration Operators" { $groups["$($group.Name)"] = "Privileges for managing network configuration." }
+                "Performance Log Users" { $groups["$($group.Name)"] = "Schedule performance counter logging." }
+                "Remote Desktop Users" { $groups["$($group.Name)"] = "Log on remotely." }
+                "System Managed Accounts Group" { $groups["$($group.Name)"] = "Managed by the system." }
+                "Users" { $groups["$($group.Name)"] = "Prevented from making system-wide changes." }
+                "Remote Management Users" { $groups["$($group.Name)"] = "Access WMI resources over management protocols." }
+                "Replicator" { $groups["$($group.Name)"] = "Supports file replication in a domain." }
+                "IIS_IUSRS" { $groups["$($group.Name)"] = "Used by Internet Information Services (IIS)." }
+                "Backup Operators" { $groups["$($group.Name)"] = "Override security restrictions for backup purposes." }
+                "Cryptographic Operators" { $groups["$($group.Name)"] = "Perform cryptographic operations." }
+                "Access Control Assistance Operators" { $groups["$($group.Name)"] = "Remotely query authorization attributes and permissions." }
+                "Administrators" { $groups["$($group.Name)"] = "Complete, unrestricted access to the computer/domain." }
+                "Device Owners" { $groups["$($group.Name)"] = "Can change system-wide settings." }
+                "Guests" { $groups["$($group.Name)"] = "Similar access to members of the Users group by default." }
+                "Hyper-V Administrators" { $groups["$($group.Name)"] = "Complete and unrestricted access to all Hyper-V features." }
+                "Distributed COM Users" { $groups["$($group.Name)"] = "Authorized for Distributed Component Object Model (DCOM) operations." }
+            }
+        }
+
+        if ($groups.Count -eq 0) {
+            Write-Host "The user $Username is not a member of any local groups, or we don't have permission to check."
+        }
+
+        # Add a "Cancel" option
+        $groups["Cancel"] = "Select nothing and exit this function."
+
+        $selectedGroups = @()
+        $selectedGroups += readOption -options $groups -prompt "Select a group:" -returnKey
+
+        if ($selectedGroups -eq "Cancel") {
+            readCommand
+        }
+
+        $groupsList = [ordered]@{}
+        $groupsList["Done"] = "Stop selecting groups and move to the next step."
+        $groupsList += $groups
+
+        while ($selectedGroups -notcontains 'Done') {
+            $availableGroups = [ordered]@{}
+
+            foreach ($key in $groupsList.Keys) {
+                if ($selectedGroups -notcontains $key) {
+                    $availableGroups[$key] = $groupsList[$key]
+                }
+            }
+
+            $selectedGroups += readOption -options $availableGroups -prompt "Select another group or 'Done':" -ReturnKey
+
+            if ($selectedGroups -eq "Cancel") {
+                readCommand
+            }
+        }
+
+        foreach ($group in $selectedGroups) {
+            if ($group -ne "Done") {
+                Remove-LocalGroupMember -Group $group -Member $username -ErrorAction SilentlyContinue
+            }
+        }
+    } catch {
+        writeText -type "error" -text "remove-group-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
 }
 function invokeScript {
     param (
@@ -31,7 +299,12 @@ function invokeScript {
 
         if ($initialize) {
             Clear-Host
-            readCommand -command "help"
+            Write-Host
+            Write-Host "  Try" -NoNewline
+            Write-Host " help" -ForegroundColor "Cyan" -NoNewline
+            Write-Host " or" -NoNewline
+            Write-Host " menu" -NoNewline -ForegroundColor "Cyan"
+            Write-Host " if you don't know what to do."
         }
 
         Invoke-Expression $script
@@ -55,9 +328,10 @@ function readCommand {
         $command = $command.ToLower()
         $command = $command.Trim()
 
-        if ($command -ne "help") {
-            if (Get-command $command -ErrorAction SilentlyContinue) {
+        if ($command -ne "help" -and $command -ne "" -and $command -match "^(?-i)(\w+(-\w+)*)") {
+            if (Get-command $matches[1] -ErrorAction SilentlyContinue) {
                 Invoke-Expression $command
+                readCommand
             }
         }
 
@@ -78,7 +352,6 @@ function readCommand {
         writeText -type "error" -text "readCommand-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-
 function filterCommands {
     param (
         [Parameter(Mandatory)]
@@ -89,27 +362,44 @@ function filterCommands {
         $commandArray = $()
 
         switch ($command) {
-            "help" { $commandArray = $("windows", "writeHelp", "writeHelp") }
-            "menu" { $commandArray = $("windows", "Menu", "readMenu") }
-            "enable admin" { $commandArray = $("windows", "enableAdmin", "enableAdmin") }
-            "disable admin" { $commandArray = $("windows", "enableAdmin", "disableAdmin") }
-            "add user" { $commandArray = $("windows", "addUser", "addUser") }
-            "add local user" { $commandArray = $("windows", "addUser", "addLocalUser") }
-            "add ad user" { $commandArray = $("windows", "addUser", "addUser") }
-            "remove user" { $commandArray = $("windows", "removeUser", "removeUser") }
-            "edit hostname" { $commandArray = $("windows", "editHostname", "editHostname") }
-            "edit user" { $commandArray = $("windows", "editUser", "editUser") }
-            "edit user name" { $commandArray = $("windows", "editUser", "editUserName") }
-            "edit user password" { $commandArray = $("windows", "editUser", "editUserPassword") }
-            "edit user group" { $commandArray = $("windows", "editUser", "editUserGroup") }
-            "add drive letter" { $commandArray = $("windows", "addDriveLetter", "addDriveLetter") }
-            "schedule task" { $commandArray = $("windows", "scheduleTask", "scheduleTask") }
-            "plugins" { $commandArray = $("plugins", "Plugins", "readMenu") }
-            "plugins help" { $commandArray = $("plugins", "writeHelp", "writeHelp") }
+            "" { $commandArray = $("windows", "Helpers", "chasteScripts") }
+            "help" { $commandArray = $("windows", "Helpers", "writeHelp") }
+            "menu" { $commandArray = $("windows", "Helpers", "readMenu") }
+            "toggle context menu" { $commandArray = $("windows", "Toggle Context Menu", "toggleContextMenu") }
+            "enable context menu" { $commandArray = $("windows", "Toggle Context Menu", "enableContextMenu") }
+            "disable context menu" { $commandArray = $("windows", "Toggle Context Menu", "disableContextMenu") }
+            "toggle admin" { $commandArray = $("windows", "Toggle Admin", "toggleAdmin") }
+            "enable admin" { $commandArray = $("windows", "Toggle Admin", "enableAdmin") }
+            "disable admin" { $commandArray = $("windows", "Toggle Admin", "disableAdmin") }
+            "add user" { $commandArray = $("windows", "Add User", "addUser") }
+            "add local user" { $commandArray = $("windows", "Add User", "addLocalUser") }
+            "add ad user" { $commandArray = $("windows", "Add User", "addADUser") }
+            "add drive letter" { $commandArray = $("windows", "Add Drive Letter", "addDriveLetter") }
+            "remove user" { $commandArray = $("windows", "Remove User", "removeUser") }
+            "edit hostname" { $commandArray = $("windows", "Edit Hostname", "editHostname") }
+            "edit user" { $commandArray = $("windows", "Edit User", "editUser") }
+            "edit user name" { $commandArray = $("windows", "Edit User", "editUserName") }
+            "edit user password" { $commandArray = $("windows", "Edit User", "editUserPassword") }
+            "edit user group" { $commandArray = $("windows", "Edit User", "editUserGroup") }
+            "edit net adapter" { $commandArray = $("windows", "Edit Net Adapter", "editNetAdapter") }
+            "get wifi creds" { $commandArray = $("windows", "Get Wifi Creds", "getWifiCreds") }
+            "schedule task" { $commandArray = $("windows", "Schedule Task", "scheduleTask") }
+            "install updates" { $commandArray = $("windows", "Install Updates", "installUpdates") }
+            "repair windows" { $commandArray = $("windows", "Repair Windows", "repairWindows") }
+            "plugins" { $commandArray = $("plugins", "Helpers", "plugins") }
+            "plugins menu" { $commandArray = $("plugins", "Helpers", "readMenu") }
+            "plugins help" { $commandArray = $("plugins", "Helpers", "writeHelp") }
             "plugins reclaim" { $commandArray = $("plugins", "ReclaimW11", "reclaim") }
             "plugins massgravel" { $commandArray = $("plugins", "massgravel", "massgravel") }
-            "plugins win11debloat" { $commandArray = $("plugins", "win11Debloat", "win11debloat") }
-            default { readCommand }
+            "plugins win11debloat" { $commandArray = $("plugins", "win11Debloat", "win11Debloat") }
+            default { 
+                Write-Host "  Unrecognized command '$command'. Try" -NoNewline
+                Write-Host " help" -ForegroundColor "Cyan" -NoNewline
+                Write-Host " or" -NoNewline
+                Write-Host " menu" -NoNewline -ForegroundColor "Cyan"
+                Write-Host " to learn more."
+                readCommand 
+            }
         }
 
         return $commandArray
@@ -128,12 +418,14 @@ function addScript {
     try {
         $url = "https://raw.githubusercontent.com/badsyntaxx/chaste-scripts/main"
 
-        getDownload -Url "$url/$directory/$file.ps1" -Target "$env:SystemRoot\Temp\$file.ps1"
+        $download = getDownload -url "$url/$directory/$file.ps1" -target "$env:SystemRoot\Temp\$file.ps1" -hide
 
-        $rawScript = Get-Content -Path "$env:SystemRoot\Temp\$file.ps1" -Raw -ErrorAction SilentlyContinue
-        Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value $rawScript
+        if ($download -eq $true) {
+            $rawScript = Get-Content -Path "$env:SystemRoot\Temp\$file.ps1" -Raw -ErrorAction SilentlyContinue
+            Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value $rawScript
 
-        Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\$file.ps1" | Remove-Item -ErrorAction SilentlyContinue
+            Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\$file.ps1" | Remove-Item -ErrorAction SilentlyContinue
+        }
     } catch {
         writeText -type "error" -text "addScript-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
@@ -166,19 +458,30 @@ function writeText {
 
         # Format output based on the specified Type
         if ($type -eq "header") {
+            $l = $([char]0x2500)
             Write-Host "# " -ForegroundColor "Cyan" -NoNewline
             Write-Host "$text" -ForegroundColor "White" 
+            Write-host "$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l" -ForegroundColor "Cyan"
         }
-        
+
         if ($type -eq 'success') { 
-            Write-Host "$([char]0x2713) $text"  -ForegroundColor "Green" 
+            Write-Host
+            Write-Host
+            Write-Host "    $([char]0x2713) $text"  -ForegroundColor "Green"
+            Write-Host
         }
+
         if ($type -eq 'error') { 
-            Write-Host "X $text" -ForegroundColor "Red" 
+            Write-Host
+            Write-Host
+            Write-Host "    X $text" -ForegroundColor "Red"
+            Write-Host 
         }
+
         if ($type -eq 'notice') { 
             Write-Host "! $text" -ForegroundColor "Yellow" 
         }
+
         if ($type -eq 'plain') {
             if ($label -ne "") { 
                 if ($Color -eq "Gray") {
@@ -190,6 +493,7 @@ function writeText {
                 Write-Host "  $text" -ForegroundColor $Color 
             }
         }
+
         if ($type -eq 'list') { 
             # Get a list of keys from the options dictionary
             $orderedKeys = $List.Keys | ForEach-Object { $_ }
@@ -429,82 +733,75 @@ function readOption {
 }
 function getDownload {
     param (
-        [Parameter(Mandatory)]
-        [string]$Url,
-        [Parameter(Mandatory)]
-        [string]$Target,
-        [Parameter(Mandatory = $false)]
-        [string]$label = 'Loading',
-        [Parameter(Mandatory = $false)]
-        [string]$failText = 'Connection failed...',
+        [parameter(Mandatory)]
+        [string]$url,
+        [parameter(Mandatory)]
+        [string]$target,
         [parameter(Mandatory = $false)]
-        [int]$MaxRetries = 2,
+        [string]$label = "",
         [parameter(Mandatory = $false)]
-        [int]$Interval = 1,
+        [string]$failText = 'Download failed...',
         [parameter(Mandatory = $false)]
-        [switch]$visible = $false
+        [switch]$lineBefore = $false,
+        [parameter(Mandatory = $false)]
+        [switch]$lineAfter = $false,
+        [parameter(Mandatory = $false)]
+        [switch]$hide = $false
     )
     Begin {
-        function showProgress {
+        function Show-Progress {
             param (
-                [Parameter(Mandatory)]
-                [Single]$TotalValue,
-                [Parameter(Mandatory)]
-                [Single]$CurrentValue,
-                [Parameter(Mandatory)]
-                [string]$label,
-                [Parameter()]
-                [string]$ValueSuffix,
-                [Parameter()]
-                [int]$BarSize = 40,
-                [Parameter()]
-                [switch]$Complete
+                [parameter(Mandatory)]
+                [Single]$totalValue,
+                [parameter(Mandatory)]
+                [Single]$currentValue,
+                [parameter(Mandatory = $false)]
+                [switch]$complete = $false
             )
             
             # calc %
-            $percent = $CurrentValue / $TotalValue
+            $barSize = 30
+            $percent = $currentValue / $totalValue
             $percentComplete = $percent * 100
-            if ($ValueSuffix) {
-                $ValueSuffix = " $ValueSuffix" # add space in front
-            }
   
             # build progressbar with string function
-            $curBarSize = $BarSize * $percent
+            $curBarSize = $barSize * $percent
             $progbar = ""
             $progbar = $progbar.PadRight($curBarSize, [char]9608)
-            $progbar = $progbar.PadRight($BarSize, [char]9617)
+            $progbar = $progbar.PadRight($barSize, [char]9617)
 
-            if (!$Complete.IsPresent) {
-                Write-Host -NoNewLine "`r  $label $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%"
+            if ($complete) {
+                Write-Host -NoNewLine "`r  $progbar Complete"
             } else {
-                Write-Host -NoNewLine "`r  $label $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%"                    
-            }              
+                Write-Host -NoNewLine "`r  $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%"
+            }          
         }
     }
     Process {
-        for ($retryCount = 1; $retryCount -le $MaxRetries; $retryCount++) {
+        $downloadComplete = $true 
+        for ($retryCount = 1; $retryCount -le 2; $retryCount++) {
             try {
                 $storeEAP = $ErrorActionPreference
                 $ErrorActionPreference = 'Stop'
         
                 # invoke request
-                $request = [System.Net.HttpWebRequest]::Create($Url)
+                $request = [System.Net.HttpWebRequest]::Create($url)
                 $response = $request.GetResponse()
   
                 if ($response.StatusCode -eq 401 -or $response.StatusCode -eq 403 -or $response.StatusCode -eq 404) {
-                    throw "Remote file either doesn't exist, is unauthorized, or is forbidden for '$Url'."
+                    throw "Remote file either doesn't exist, is unauthorized, or is forbidden for '$url'."
                 }
   
-                if ($Target -match '^\.\\') {
-                    $Target = Join-Path (Get-Location -PSProvider "FileSystem") ($Target -Split '^\.')[1]
+                if ($target -match '^\.\\') {
+                    $target = Join-Path (Get-Location -PSProvider "FileSystem") ($target -Split '^\.')[1]
                 }
             
-                if ($Target -and !(Split-Path $Target)) {
-                    $Target = Join-Path (Get-Location -PSProvider "FileSystem") $Target
+                if ($target -and !(Split-Path $target)) {
+                    $target = Join-Path (Get-Location -PSProvider "FileSystem") $target
                 }
 
-                if ($Target) {
-                    $fileDirectory = $([System.IO.Path]::GetDirectoryName($Target))
+                if ($target) {
+                    $fileDirectory = $([System.IO.Path]::GetDirectoryName($target))
                     if (!(Test-Path($fileDirectory))) {
                         [System.IO.Directory]::CreateDirectory($fileDirectory) | Out-Null
                     }
@@ -519,10 +816,15 @@ function getDownload {
   
                 # create reader / writer
                 $reader = $response.GetResponseStream()
-                $writer = new-object System.IO.FileStream $Target, "Create"
-  
+                $writer = new-object System.IO.FileStream $target, "Create"
+                
+                if ($lineBefore) { Write-Host }
+
+                if (-not $hide -and $label -ne "") {
+                    Write-Host  "  $label" -ForegroundColor "Yellow"
+                }
                 # start download
-                $finalBarCount = 0 #show final bar only one time
+                $finalBarCount = 0 #Show final bar only one time
                 do {
                     $count = $reader.Read($buffer, 0, $buffer.Length)
           
@@ -530,41 +832,45 @@ function getDownload {
               
                     $total += $count
                     $totalMB = $total / 1024 / 1024
-          
-                    if ($visible) {
+                    if (-not $hide) {
                         if ($fullSize -gt 0) {
-                            showProgress -TotalValue $fullSizeMB -CurrentValue $totalMB -label $label -ValueSuffix "MB"
+                            Show-Progress -totalValue $fullSizeMB -currentValue $totalMB
                         }
 
                         if ($total -eq $fullSize -and $count -eq 0 -and $finalBarCount -eq 0) {
-                            showProgress -TotalValue $fullSizeMB -CurrentValue $totalMB -label $label -ValueSuffix "MB" -Complete
+                            Show-Progress -totalValue $fullSizeMB -currentValue $totalMB -complete
                             $finalBarCount++
                         }
                     }
                 } while ($count -gt 0)
 
+                if (-not $hide) {
+                    Write-Host
+                }
+
                 # Prevent the following output from appearing on the same line as the progress bar
-                if ($visible) {
-                    Write-Host 
+                if ($lineAfter) { 
+                    Write-Host
+                }
+                
+                if ($downloadComplete) { 
+                    return $true 
+                } else { 
+                    return $false 
                 }
             } catch {
-                # writeText -type "plain" -text "$($_.Exception.Message)"
-                writeText -type "plain" -text $failText
+                $downloadComplete = $false
             
-                if ($retryCount -lt $MaxRetries) {
-                    writeText "Retrying..."
-                    Start-Sleep -Seconds $Interval
+                if ($retryCount -lt 2) {
+                    writeText -type "plain" -text "Retrying..."
+                    Start-Sleep -Seconds 1
                 } else {
-                    writeText -type "error" -text "Load failed. Exiting function." 
+                    writeText -type "error" -text "getDownload-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
                 }
             } finally {
                 # cleanup
-                if ($reader) { 
-                    $reader.Close() 
-                }
-                if ($writer) { 
-                    $writer.Flush(); $writer.Close() 
-                }
+                if ($reader) { $reader.Close() }
+                if ($writer) { $writer.Flush(); $writer.Close() }
         
                 $ErrorActionPreference = $storeEAP
                 [GC]::Collect()
@@ -678,5 +984,5 @@ function selectUser {
         writeText -type "error" -text "selectUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-invokeScript 'writeHelp'
+invokeScript 'editUser'
 readCommand
