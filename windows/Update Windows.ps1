@@ -1,4 +1,4 @@
-function installUpdates {
+function updateWindows {
     try { 
         writeText -type "plain" -text "Loading update module..."
 
@@ -24,6 +24,6 @@ function installUpdates {
 
         writeText -type "success" -text "Updates complete."
     } catch {
-        writeText -type "error" -text "installUpdates-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "updateWindows-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
