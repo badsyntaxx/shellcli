@@ -1,280 +1,364 @@
-function editUser {
+function editNetAdapter {
+    try {
+        selectAdapter
+    } catch {
+        writeText -type "error" -text "editNetAdapter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+function getDesiredSettings {
+    param (
+        [parameter(Mandatory = $true)]
+        [System.Collections.Specialized.OrderedDictionary]$Adapter
+    )
+
+    try {
+        getAdapterInfo -AdapterName $Adapter["name"]
+
+        # This block of code is just to get the original adapter array.
+        $memoryStream = New-Object System.IO.MemoryStream
+        $binaryFormatter = New-Object System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+        $binaryFormatter.Serialize($memoryStream, $Adapter)
+        $memoryStream.Position = 0
+        $Original = $binaryFormatter.Deserialize($memoryStream)
+        $memoryStream.Close()
+
+        $Adapter = readIPSettings -Adapter $Adapter
+        $Adapter = read-dnssettings -Adapter $Adapter
+
+        confirm-edits -Adapter $Adapter -Original $Original
+    } catch {
+        writeText -type "error" -text "get-desired-user-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+function selectAdapter {
+    try {
+        $adapters = [ordered]@{}
+
+        Get-NetAdapter | ForEach-Object { 
+            $adapters[$_.Name] = $_.MediaConnectionState 
+        }
+
+        $adapterList = [ordered]@{}
+
+        foreach ($al in $adapters) { 
+            $adapterList = $al 
+        }
+
+        $choice = readOption -options $adapterList -prompt "Select an network adapter:" -returnKey
+        
+        $netAdapter = Get-NetAdapter -Name $choice
+        $netAdapter
+        $adapterIndex = $netAdapter.InterfaceIndex
+
+        $script:ipv4Regex = "^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){0,4}$"
+
+        if ($netAdapter.Status -eq "Up") {
+            $ipData = Get-NetIPAddress -InterfaceIndex $adapterIndex -AddressFamily IPv4 | Where-Object { $_.PrefixOrigin -ne "WellKnown" -and $_.SuffixOrigin -ne "Link" -and ($_.AddressState -eq "Preferred" -or $_.AddressState -eq "Tentative") } | Select-Object -First 1
+            $interface = Get-NetIPInterface -InterfaceIndex $adapterIndex
+            $adapter = [ordered]@{
+                "name"    = $choice
+                "self"    = Get-NetAdapter -Name $choice
+                "index"   = $netAdapter.InterfaceIndex
+                "ip"      = $ipData.IPAddress
+                "gateway" = Get-NetRoute -InterfaceAlias $choice -DestinationPrefix "0.0.0.0/0" | Select-Object -ExpandProperty "NextHop"
+                "subnet"  = convert-cidr-to-mask -CIDR $ipData.PrefixLength
+                "dns"     = Get-DnsClientServerAddress -InterfaceIndex $adapterIndex | Select-Object -ExpandProperty ServerAddresses
+                "IPDHCP"  = if ($interface.Dhcp -eq "Enabled") { 
+                    $true 
+                } else { 
+                    $false 
+                }
+                "status"  = $netAdapter.Status
+            }
+        } else {
+            $adapter = [ordered]@{
+                "name"   = $choice
+                "self"   = Get-NetAdapter -Name $choice
+                "index"  = $netAdapter.InterfaceIndex
+                "status" = $netAdapter.Status
+            }
+        }
+
+        getDesiredSettings -Adapter $adapter
+    } catch {
+        writeText -type "error" -text "selectAdapter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+function readIPSettings {
+    param (
+        [parameter(Mandatory = $true)]
+        [System.Collections.Specialized.OrderedDictionary]$Adapter
+    )
+
+    try {
+        $choices = $([ordered]@{})
+
+        $Adapter["ip"]
+        if ($Adapter["status"] -eq "Disabled") {
+            $choices["Enable adapter"] = "Enable this network adapter"
+        } else {
+            $choices["Disabled adapter"] = "Enable this network adapter"
+        }
+
+        $choices["Set static"] = "Set this adapter to static and enter IP data manually."
+        $choices["Set dynamic"] = "Set this adapter to DHCP."
+        $choices["Back" ] = "Go back to network adapter selection."
+    
+        $choice = readOption -options $choices -prompt "Select an action:"
+
+        $desiredSettings = $Adapter
+
+        if ($choice -eq 0 -and $Adapter["status"] -eq "Disabled") { 
+            Get-NetAdapter | Where-Object { $_.Name -eq $Adapter["name"] } | Enable-NetAdapter
+        }
+        if ($choice -eq 0 -and $Adapter["status"] -ne "Disabled") { 
+            Get-NetAdapter | Where-Object { $_.Name -eq $Adapter["name"] } | Disable-NetAdapter
+        }
+        if ($choice -eq 1) { 
+            $ip = readInput -prompt "IPv4:" -Validate $ipv4Regex -Value $Adapter["ip"]
+            $subnet = readInput -prompt "Subnet mask:" -Validate $ipv4Regex -Value $Adapter["subnet"]  
+            $gateway = readInput -prompt "Gateway:" -Validate $ipv4Regex -Value $Adapter["gateway"] -lineAfter
+        
+            if ($ip -eq "") { $ip = $Adapter["ip"] }
+            if ($subnet -eq "") { $subnet = $Adapter["subnet"] }
+            if ($gateway -eq "") { $gateway = $Adapter["gateway"] }
+
+            $desiredSettings["ip"] = $ip
+            $desiredSettings["subnet"] = $subnet
+            $desiredSettings["gateway"] = $gateway
+            $desiredSettings["IPDHCP"] = $false
+        }
+
+        if (2 -eq $choice) { 
+            $desiredSettings["IPDHCP"] = $true 
+        }
+        if (3 -eq $choice) { 
+            selectAdapter 
+        }
+
+        return $desiredSettings 
+    } catch {
+        writeText -type "error" -text "readIPSettings-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+function read-dnssettings {
+    param (
+        [parameter(Mandatory = $true)]
+        [System.Collections.Specialized.OrderedDictionary]$Adapter
+    )
+
     try {
         $choice = readOption -options $([ordered]@{
-                "Edit user name"     = "Edit an existing users name."
-                "Edit user password" = "Edit an existing users password."
-                "Edit user group"    = "Edit an existing users group membership."
-                "Cancel"             = "Do nothing and exit this function."
-            }) -prompt "What would you like to edit?"
+                "Set DNS to static"  = "Set this adapter to static and enter DNS data manually."
+                "Set DNS to dynamic" = "Set this adapter to DHCP."
+                "Back"               = "Go back to network adapter selection."
+            })
 
-        switch ($choice) {
-            0 { editUserName }
-            1 { editUserPassword }
-            2 { editUserGroup }
-            3 { readCommand }
+        $dns = @()
+
+        if ($choice -eq 0) { 
+            $prompt = readInput -prompt "Enter a DNS (Leave blank to skip)" -Validate $ipv4Regex
+            $dns += $prompt
+            while ($prompt.Length -gt 0) {
+                $prompt = readInput -prompt "Enter another DNS (Leave blank to skip)" -Validate $ipv4Regex
+                if ($prompt -ne "") { $dns += $prompt }
+            }
+            $Adapter["dns"] = $dns
         }
+        if (1 -eq $choice) { $Adapter["DNSDHCP"] = $true }
+        if (2 -eq $choice) { readIPSettings }
+
+        return $Adapter
     } catch {
-        writeText -type "error" -text "editUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "read-dnssettings-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-function editUserName {
-    try {
-        $user = selectUser
-
-        if ($user["Source"] -eq "MicrosoftAccount") { 
-            writeText -type "notice" -text "Cannot edit Microsoft accounts."
-        }
-
-        if ($user["Source"] -eq "Local") { 
-            $newName = readInput -prompt "Enter username:" -Validate "^(\s*|[a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser
-    
-            Rename-LocalUser -Name $user["Name"] -NewName $newName
-
-            $newUser = Get-LocalUser -Name $newName
-
-            if ($null -ne $newUser) { 
-                writeText -type "success" -text "Account name changed"
-            } else {
-                writeText -type "error" -text "Unknown error"
-            }
-        } else { 
-            writeText -type "notice" -text "Editing domain users doesn't work yet."
-        }
-    } catch {
-        writeText -type "error" -text "editUser-name-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-    }
-}
-
-function editUserPassword {
-    try {
-        $user = selectUser
-
-        if ($user["Source"] -eq "MicrosoftAccount") { 
-            writeText -type "notice" -text "Cannot edit Microsoft accounts."
-        }
-
-        if ($user["Source"] -eq "Local") { 
-            $password = readInput -prompt "Enter password or leave blank:" -IsSecure $true
-
-            if ($password.Length -eq 0) { 
-                $message = "Password removed" 
-            } else { 
-                $message = "Password changed" 
-            }
-
-            Get-LocalUser -Name $user["Name"] | Set-LocalUser -Password $password
-
-            writeText -Type "success" -text $message
-        } else { 
-            writeText -type "plain" -text "Editing domain users doesn't work yet."
-        }
-    } catch {
-        writeText -type "error" -text "editUserPassword-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-    }
-}
-function editUserGroup {
-    try {
-        $user = selectUser
-
-        if ($user["Source"] -eq "MicrosoftAccount") { 
-            writeText -type "notice" -text "Cannot edit Microsoft accounts."
-        }
-
-        if ($user["Source"] -eq "Local") { 
-            $choice = readOption -options $([ordered]@{
-                    "Add"    = "Add this user to more groups"
-                    "Remove" = "Remove this user from certain groups"
-                    "Cancel" = "Do nothing and exit this function."
-                }) -prompt "Do you want to add or remove this user from groups?"
-
-            switch ($choice) {
-                0 { addGroups -username $user["Name"] }
-                1 { removeGroups -username $user["Name"] }
-                2 { readCommand }
-            }
-
-            writeText -type "success" -text "Group membership updated."
-        } else { 
-            writeText -type "plain" -text "Editing domain users doesn't work yet."
-        }
-    } catch {
-        writeText -type "error" -text "editUserGroup-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-    }
-} 
-function addGroups {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$username
+function confirm-edits {
+    param (
+        [parameter(Mandatory = $true)]
+        [System.Collections.Specialized.OrderedDictionary]$Adapter,
+        [parameter(Mandatory = $true)]
+        [System.Collections.Specialized.OrderedDictionary]$Original
     )
-    
-    $default = Get-LocalGroup | ForEach-Object {
-        $description = $_.Description
-        @{ $_.Name = $description }
-    } | Sort-Object -Property Name
 
-    $groups = [ordered]@{}
-    foreach ($group in $default) { 
-        # $groups += $group
-        switch ($group.Keys) {
-            "Performance Monitor Users" { $groups["$($group.Keys)"] = "Access local performance counter data." }
-            "Power Users" { $groups["$($group.Keys)"] = "Limited administrative privileges." }
-            "Network Configuration Operators" { $groups["$($group.Keys)"] = "Privileges for managing network configuration." }
-            "Performance Log Users" { $groups["$($group.Keys)"] = "Schedule performance counter logging." }
-            "Remote Desktop Users" { $groups["$($group.Keys)"] = "Log on remotely." }
-            "System Managed Accounts Group" { $groups["$($group.Keys)"] = "Managed by the system." }
-            "Users" { $groups["$($group.Keys)"] = "Prevented from making system-wide changes." }
-            "Remote Management Users" { $groups["$($group.Keys)"] = "Access WMI resources over management protocols." }
-            "Replicator" { $groups["$($group.Keys)"] = "Supports file replication in a domain." }
-            "IIS_IUSRS" { $groups["$($group.Keys)"] = "Used by Internet Information Services (IIS)." }
-            "Backup Operators" { $groups["$($group.Keys)"] = "Override security restrictions for backup purposes." }
-            "Cryptographic Operators" { $groups["$($group.Keys)"] = "Perform cryptographic operations." }
-            "Access Control Assistance Operators" { $groups["$($group.Keys)"] = "Remotely query authorization attributes and permissions." }
-            "Administrators" { $groups["$($group.Keys)"] = "Complete, unrestricted access to the computer/domain." }
-            "Device Owners" { $groups["$($group.Keys)"] = "Can change system-wide settings." }
-            "Guests" { $groups["$($group.Keys)"] = "Similar access to members of the Users group by default." }
-            "Hyper-V Administrators" { $groups["$($group.Keys)"] = "Complete and unrestricted access to all Hyper-V features." }
-            "Distributed COM Users" { $groups["$($group.Keys)"] = "Authorized for Distributed Component Object Model (DCOM) operations." }
+    try {
+        $status = Get-NetAdapter -Name $Adapter["name"] | Select-Object -ExpandProperty Status
+        if ($status -eq "Up") {
+            Write-Host "  $([char]0x2022)" -ForegroundColor "Green" -NoNewline
+            Write-Host " $($Original["name"])" -ForegroundColor "Gray"
+        } else {
+            Write-Host "  $([char]0x25BC)" -ForegroundColor "Red" -NoNewline
+            Write-Host " $($Original["name"])" -ForegroundColor "Gray"
         }
-    }
 
-    $groups["Cancel"] = "Select nothing and exit this function."
-    $selectedGroups = @()
-    $selectedGroups += readOption -options $groups -prompt "Select a group:" -returnKey
+        if ($Adapter["IPDHCP"]) {
+            write-compare -oldData "IPv4 Address. . . : $($Original["ip"])" -newData "Dynamic"
+            write-compare -oldData "Subnet Mask . . . : $($Original["subnet"])" -newData "Dynamic"
+            write-compare -oldData "Default Gateway . : $($Original["gateway"])" -newData "Dynamic"
+        } else {
+            write-compare -oldData "IPv4 Address. . . : $($Original["ip"])" -newData $($Adapter['ip'])
+            write-compare -oldData "Subnet Mask . . . : $($Original["subnet"])" -newData $($Adapter['subnet'])
+            write-compare -oldData "Default Gateway . : $($Original["gateway"])" -newData $($Adapter['gateway'])
+        }
 
-    if ($selectedGroups -eq "Cancel") {
+        $originalDNS = $Original["dns"]
+        $newDNS = $Adapter["dns"]
+        $count = 0
+        if ($originalDNS.Count -gt $newDNS.Count) {
+            $count = $originalDNS.Count
+        } else {
+            $count = $newDNS.Count
+        }
+    
+        if ($Adapter["DNSDHCP"]) {
+            for ($i = 0; $i -lt $count; $i++) {
+                if ($i -eq 0) {
+                    write-compare -oldData "DNS Servers . . . : $($originalDNS[$i])" -newData "Dynamic"
+                } else {
+                    write-compare -oldData "                    $($originalDNS[$i])" -newData "Dynamic"
+                }
+            }
+        } else {
+            for ($i = 0; $i -lt $count; $i++) {
+                if ($i -eq 0) {
+                    write-compare -oldData "DNS Servers . . . : $($originalDNS[$i])" -newData $($newDNS[$i])
+                } else {
+                    write-compare -oldData "                    $($originalDNS[$i])" -newData $($newDNS[$i])
+                }
+            }
+        }
+
+
+        $dnsString = ""
+    
+        $dns = $Adapter['dns']
+
+        if ($dns.Count -gt 0) { $dnsString = $dns -join ", " } 
+        else { $dnsString = $dns[0] }
+
+        Get-NetAdapter -Name $adapter["name"] | Remove-NetIPAddress -Confirm:$false -ErrorAction SilentlyContinue
+        Remove-NetRoute -InterfaceAlias $adapter["name"] -DestinationPrefix 0.0.0.0 / 0 -Confirm:$false -ErrorAction SilentlyContinue
+
+        if ($Adapter["IPDHCP"]) {
+            Set-NetIPInterface -InterfaceIndex $adapterIndex -Dhcp Enabled  | Out-Null
+            netsh interface ipv4 set address name = "$($adapter["name"])" source = dhcp | Out-Null
+            writeText -type 'success' -text "The network adapters IP settings were set to dynamic"
+        } else {
+            writeText "Disabling DHCP and applying static addresses." 
+            netsh interface ipv4 set address name = "$($adapter["name"])" static $Adapter["ip"] $Adapter["subnet"] $Adapter["gateway"] | Out-Null
+            writeText -type 'success' -text "The network adapters IP, subnet, and gateway were set to static and your addresses were applied."
+        }
+
+        if ($Adapter["DNSDHCP"]) {
+            Set-DnsClientServerAddress -InterfaceAlias $Adapter["name"] -ResetServerAddresses | Out-Null
+            writeText -type 'success' -text "The network adapters DNS settings were set to dynamic"
+        } else {
+            writeText "Disabling DHCP and applying static addresses."
+            Set-DnsClientServerAddress -InterfaceAlias $Adapter["name"] -ServerAddresses $dnsString
+            writeText -type 'success' -text "The network adapters DNS was set to static and your addresses were applied."
+        }
+
+        Disable-NetAdapter -Name $Adapter["name"] -Confirm:$false
+        Start-Sleep 1
+        Enable-NetAdapter -Name $Adapter["name"] -Confirm:$false
+
         readCommand
-    }
-
-    $selectedGroups
-
-    $groupsList = [ordered]@{}
-    $groupsList["Done"] = "Stop selecting groups and move to the next step."
-    $groupsList += $groups
-
-    while ($selectedGroups -notcontains 'Done') {
-        $availableGroups = [ordered]@{}
-        foreach ($key in $groupsList.Keys) {
-            if ($selectedGroups -notcontains $key) {
-                $availableGroups[$key] = $groupsList[$key]
-            }
-        }
-
-        $selectedGroups += readOption -options $availableGroups -prompt "Select another group or 'Done':" -ReturnKey
-        if ($selectedGroups -eq "Cancel") {
-            readCommand
-        }
-    }
-
-    $selectedGroups
-
-    foreach ($group in $selectedGroups) {
-        if ($group -ne "Done") {
-            Write-Host "Adding $group / $username"
-            Add-LocalGroupMember -Group $group -Member $username
-        }
+    } catch {
+        writeText -type "error" -text "confirm-edits-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-function removeGroups {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$username
+function getAdapterInfo {
+    param (
+        [parameter(Mandatory = $false)]
+        [string]$AdapterName
     )
-
+    
     try {
-        $groups = [ordered]@{}
+        $status = Get-NetAdapter -Name $AdapterName | Select-Object -ExpandProperty Status
+        if ($status -ne "Disabled") {
+            $macAddress = Get-NetAdapter -Name $AdapterName | Select-Object -ExpandProperty MacAddress
+            $name = Get-NetAdapter -Name $AdapterName | Select-Object -ExpandProperty Name
+            $status = Get-NetAdapter -Name $AdapterName | Select-Object -ExpandProperty Status
+            $index = Get-NetAdapter -Name $AdapterName | Select-Object -ExpandProperty InterfaceIndex
+            $gateway = Get-NetIPConfiguration -InterfaceAlias $adapterName | ForEach-Object { $_.IPv4DefaultGateway.NextHop }
+            # $gateway = Get-NetRoute -InterfaceAlias $AdapterName -DestinationPrefix "0.0.0.0/0" | Select-Object -ExpandProperty "NextHop"
+            $interface = Get-NetIPInterface -InterfaceIndex $index 
+            $dhcp = $(if ($interface.Dhcp -eq "Enabled") { "DHCP" } else { "Static" })
+            $ipData = Get-NetIPAddress -InterfaceIndex $index -AddressFamily IPv4 | Where-Object { $_.PrefixOrigin -ne "WellKnown" -and $_.SuffixOrigin -ne "Link" -and ($_.AddressState -eq "Preferred" -or $_.AddressState -eq "Tentative") } | Select-Object -First 1
+            $ipAddress = $ipData.IPAddress
+            $subnet = convert-cidr-to-mask -CIDR $ipData.PrefixLength
+            $dnsServers = Get-DnsClientServerAddress -InterfaceIndex $index | Select-Object -ExpandProperty ServerAddresses
 
-        $allGroups = Get-LocalGroup
+            if ($status -eq "Up") {
+                Write-Host "  $([char]0x2022)" -ForegroundColor "Green" -NoNewline
+                Write-Host " $name | $dhcp" -ForegroundColor "Gray" 
+            } else {
+                Write-Host "  $([char]0x25BC)" -ForegroundColor "Red" -NoNewline
+                Write-Host " $name | $dhcp" -ForegroundColor "Gray"
+            }
 
-        # Check each group for the user's membership
-        foreach ($group in $allGroups) {
-            try {
-                $members = Get-LocalGroupMember -Group $group.Name -ErrorAction Stop
-                $isMember = $members | Where-Object {
-                    $_.Name -eq $Username -or 
-                    $_.SID.Value -eq $Username -or 
-                    $_ -eq $Username -or 
-                    $_ -like "*\$Username"
+            writeText "MAC Address . . . : $macAddress" -Color "Gray"
+            writeText "IPv4 Address. . . : $ipAddress" -Color "Gray"
+            writeText "Subnet Mask . . . : $subnet" -Color "Gray"
+            writeText "Default Gateway . : $gateway" -Color "Gray"
+
+            for ($i = 0; $i -lt $dnsServers.Count; $i++) {
+                if ($i -eq 0) {
+                    writeText "DNS Servers . . . : $($dnsServers[$i])" -Color "Gray"
+                } else {
+                    writeText "                    $($dnsServers[$i])" -Color "Gray"
                 }
-            
-                if ($isMember) {
-                    $description = $group.Description
-                    if ($description.Length -gt 72) { 
-                        $description = $description.Substring(0, 72) + "..." 
-                    }
-                    $groups[$group.Name] = $description
-                }
-            } catch {
-                # If there's an error (e.g., access denied), we skip this group
-                Write-Verbose "Couldn't check membership for group $($group.Name): $_"
-            }
-        }
-
-        $groups
-
-        foreach ($group in $groups) { 
-            switch ($group.Name) {
-                "Performance Monitor Users" { $groups["$($group.Name)"] = "Access local performance counter data." }
-                "Power Users" { $groups["$($group.Name)"] = "Limited administrative privileges." }
-                "Network Configuration Operators" { $groups["$($group.Name)"] = "Privileges for managing network configuration." }
-                "Performance Log Users" { $groups["$($group.Name)"] = "Schedule performance counter logging." }
-                "Remote Desktop Users" { $groups["$($group.Name)"] = "Log on remotely." }
-                "System Managed Accounts Group" { $groups["$($group.Name)"] = "Managed by the system." }
-                "Users" { $groups["$($group.Name)"] = "Prevented from making system-wide changes." }
-                "Remote Management Users" { $groups["$($group.Name)"] = "Access WMI resources over management protocols." }
-                "Replicator" { $groups["$($group.Name)"] = "Supports file replication in a domain." }
-                "IIS_IUSRS" { $groups["$($group.Name)"] = "Used by Internet Information Services (IIS)." }
-                "Backup Operators" { $groups["$($group.Name)"] = "Override security restrictions for backup purposes." }
-                "Cryptographic Operators" { $groups["$($group.Name)"] = "Perform cryptographic operations." }
-                "Access Control Assistance Operators" { $groups["$($group.Name)"] = "Remotely query authorization attributes and permissions." }
-                "Administrators" { $groups["$($group.Name)"] = "Complete, unrestricted access to the computer/domain." }
-                "Device Owners" { $groups["$($group.Name)"] = "Can change system-wide settings." }
-                "Guests" { $groups["$($group.Name)"] = "Similar access to members of the Users group by default." }
-                "Hyper-V Administrators" { $groups["$($group.Name)"] = "Complete and unrestricted access to all Hyper-V features." }
-                "Distributed COM Users" { $groups["$($group.Name)"] = "Authorized for Distributed Component Object Model (DCOM) operations." }
-            }
-        }
-
-        if ($groups.Count -eq 0) {
-            Write-Host "The user $Username is not a member of any local groups, or we don't have permission to check."
-        }
-
-        # Add a "Cancel" option
-        $groups["Cancel"] = "Select nothing and exit this function."
-
-        $selectedGroups = @()
-        $selectedGroups += readOption -options $groups -prompt "Select a group:" -returnKey
-
-        if ($selectedGroups -eq "Cancel") {
-            readCommand
-        }
-
-        $groupsList = [ordered]@{}
-        $groupsList["Done"] = "Stop selecting groups and move to the next step."
-        $groupsList += $groups
-
-        while ($selectedGroups -notcontains 'Done') {
-            $availableGroups = [ordered]@{}
-
-            foreach ($key in $groupsList.Keys) {
-                if ($selectedGroups -notcontains $key) {
-                    $availableGroups[$key] = $groupsList[$key]
-                }
-            }
-
-            $selectedGroups += readOption -options $availableGroups -prompt "Select another group or 'Done':" -ReturnKey
-
-            if ($selectedGroups -eq "Cancel") {
-                readCommand
-            }
-        }
-
-        foreach ($group in $selectedGroups) {
-            if ($group -ne "Done") {
-                Remove-LocalGroupMember -Group $group -Member $username -ErrorAction SilentlyContinue
             }
         }
     } catch {
-        writeText -type "error" -text "remove-group-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "getAdapterInfo-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+function convert-cidr-to-mask {
+    param (
+        [parameter(Mandatory = $false)]
+        [int]$CIDR
+    )
+
+    switch ($CIDR) {
+        8 { $mask = "255.0.0.0" }
+        9 { $mask = "255.128.0.0" }
+        10 { $mask = "255.192.0.0" }
+        11 { $mask = "255.224.0.0" }
+        12 { $mask = "255.240.0.0" }
+        13 { $mask = "255.248.0.0" }
+        14 { $mask = "255.252.0.0" }
+        15 { $mask = "255.254.0.0" }
+        16 { $mask = "255.255.0.0" }
+        17 { $mask = "255.255.128.0" }
+        18 { $mask = "255.255.192.0" }
+        19 { $mask = "255.255.224.0" }
+        20 { $mask = "255.255.240.0" }
+        21 { $mask = "255.255.248.0" }
+        22 { $mask = "255.255.252.0" }
+        23 { $mask = "255.255.254.0" }
+        24 { $mask = "255.255.255.0" }
+        25 { $mask = "255.255.255.128" }
+        26 { $mask = "255.255.255.192" }
+        27 { $mask = "255.255.255.224" }
+        28 { $mask = "255.255.255.240" }
+        29 { $mask = "255.255.255.248" }
+        30 { $mask = "255.255.255.252" }
+        31 { $mask = "255.255.255.254" }
+        32 { $mask = "255.255.255.255" }
+    }
+
+    return $mask
+}
+function show-adapters {
+    try {
+        $adapters = @()
+        foreach ($n in (Get-NetAdapter | Select-Object -ExpandProperty Name)) { $adapters += $n }
+        foreach ($a in $adapters) { getAdapterInfo -AdapterName $a }
+
+        selectAdapter
+    } catch {
+        writeText -type "error" -text "show-adapters-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 function invokeScript {
@@ -384,7 +468,7 @@ function filterCommands {
             "edit net adapter" { $commandArray = $("windows", "Edit Net Adapter", "editNetAdapter") }
             "get wifi creds" { $commandArray = $("windows", "Get Wifi Creds", "getWifiCreds") }
             "schedule task" { $commandArray = $("windows", "Schedule Task", "scheduleTask") }
-            "install updates" { $commandArray = $("windows", "Install Updates", "installUpdates") }
+            "update windows" { $commandArray = $("windows", "Update Windows", "updateWindows") }
             "repair windows" { $commandArray = $("windows", "Repair Windows", "repairWindows") }
             "plugins" { $commandArray = $("plugins", "Helpers", "plugins") }
             "plugins menu" { $commandArray = $("plugins", "Helpers", "readMenu") }
@@ -393,7 +477,7 @@ function filterCommands {
             "plugins massgravel" { $commandArray = $("plugins", "massgravel", "massgravel") }
             "plugins win11debloat" { $commandArray = $("plugins", "win11Debloat", "win11Debloat") }
             default { 
-                Write-Host "  Unrecognized command '$command'. Try" -NoNewline
+                Write-Host "  Unrecognized command `"$command`". Try" -NoNewline
                 Write-Host " help" -ForegroundColor "Cyan" -NoNewline
                 Write-Host " or" -NoNewline
                 Write-Host " menu" -NoNewline -ForegroundColor "Cyan"
@@ -633,10 +717,10 @@ function readOption {
         $values = $options.Values
 
         # Find the length of the longest key for padding
-        $longestKeyLength = ($orderedKeys | Measure-Object -Property Length -Maximum).Maximum
+        $longestKeyLength = ($orderedKeys | ForEach-Object { "$_".Length } | Measure-Object -Maximum).Maximum
 
         # Find the length of the longest value
-        $longestValueLength = ($values | Measure-Object -Property Length -Maximum).Maximum
+        $longestValueLength = ($values | ForEach-Object { "$_".Length } | Measure-Object -Maximum).Maximum
 
         # Display single option if only one exists
         if ($orderedKeys.Count -eq 1) {
@@ -984,5 +1068,7 @@ function selectUser {
         writeText -type "error" -text "selectUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-invokeScript 'editUser'
+
+
+invokeScript 'editNetAdapter'
 readCommand
