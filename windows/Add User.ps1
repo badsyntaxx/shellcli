@@ -54,7 +54,10 @@ function addADUser {
         $name = readInput -prompt "Enter name" -Validate "^([a-zA-Z0-9 _\-]{1,64})$"  -CheckExistingUser
         $samAccountName = readInput -prompt "Enter sam name" -Validate "^([a-zA-Z0-9 _\-]{1,20})$"  -CheckExistingUser
         $password = readInput -prompt "Enter password" -IsSecure
-        $choice = readOption -prompt "Set group membership" -options @("Administrator", "Standard user")
+        $choice = readOption -options $([ordered]@{
+                "Administrator" = "Create admin user"
+                "Standard user" = "Create standard user"
+            }) -prompt "Set group membership"
         $domainName = $env:USERDNSDOMAIN
         
         if ($choice -eq 0) { 
