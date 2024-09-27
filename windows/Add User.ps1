@@ -51,31 +51,16 @@ function addLocalUser {
 }
 function addADUser {
     try {
-        Get-Item -ErrorAction SilentlyContinue "$path\add-ad-user.ps1" | Remove-Item -ErrorAction SilentlyContinue
-        Write-Host " Chaste Scripts: Add Domain User v0321240710"
-        Write-Host "$des" -ForegroundColor DarkGray
-
-        writeText -type "label" -text "Enter name"  -lineAfter
-        $name = readInput -prompt "" -Validate "^([a-zA-Z0-9 _\-]{1,64})$"  -CheckExistingUser
-
-        writeText -type "label" -text "Enter sam name"  -lineAfter
-        $samAccountName = readInput -prompt "" -Validate "^([a-zA-Z0-9 _\-]{1,20})$"  -CheckExistingUser
-
-        writeText -type "label" -text "Enter password"  -lineAfter
-        $password = readInput -prompt "" -IsSecure
-        
-        writeText -type "label" -text "Set group membership"  -lineAfter
-        $choice = readOption -options @("Administrator", "Standard user")
+        $name = readInput -prompt "Enter name" -Validate "^([a-zA-Z0-9 _\-]{1,64})$"  -CheckExistingUser
+        $samAccountName = readInput -prompt "Enter sam name" -Validate "^([a-zA-Z0-9 _\-]{1,20})$"  -CheckExistingUser
+        $password = readInput -prompt "Enter password" -IsSecure
+        $choice = readOption -prompt "Set group membership" -options @("Administrator", "Standard user")
+        $domainName = $env:USERDNSDOMAIN
         
         if ($choice -eq 0) { 
             $group = 'Administrators' 
         } else { 
             $group = "Users" 
-        }
-        if ($group -eq 'Administrators') { 
-            $groupDisplay = 'Administrator' 
-        } else { 
-            $groupDisplay = 'Standard user' 
         }
 
         New-ADUser -Name $name 
