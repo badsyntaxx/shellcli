@@ -20,8 +20,10 @@ function selectAdapter {
         }
 
         $choice = readOption -options $adapterList -prompt "Select an network adapter:" -returnKey
+
+        $choice
         
-        $netAdapter = Get-NetAdapter -Name $choice
+        <# $netAdapter = Get-NetAdapter -Name $choice
         $adapterIndex = $netAdapter.InterfaceIndex
         $ipData = Get-NetIPAddress -InterfaceIndex $adapterIndex -AddressFamily IPv4 | Where-Object { $_.PrefixOrigin -ne "WellKnown" -and $_.SuffixOrigin -ne "Link" -and ($_.AddressState -eq "Preferred" -or $_.AddressState -eq "Tentative") } | Select-Object -First 1
         $interface = Get-NetIPInterface -InterfaceIndex $adapterIndex
@@ -39,7 +41,7 @@ function selectAdapter {
             "IPDHCP"  = if ($interface.Dhcp -eq "Enabled") { $true } else { $false }
         }
 
-        get-desiredsettings -Adapter $adapter
+        get-desiredsettings -Adapter $adapter #>
     } catch {
         writeText -type "error" -text "selectAdapter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }

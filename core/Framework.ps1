@@ -354,10 +354,10 @@ function readOption {
         $values = $options.Values
 
         # Find the length of the longest key for padding
-        $longestKeyLength = ($orderedKeys | Measure-Object -Property Length -Maximum).Maximum
+        $longestKeyLength = ($orderedKeys | ForEach-Object { "$_".Length } | Measure-Object -Maximum).Maximum
 
         # Find the length of the longest value
-        $longestValueLength = ($values | Measure-Object -Property Length -Maximum).Maximum
+        $longestValueLength = ($values | ForEach-Object { "$_".Length } | Measure-Object -Maximum).Maximum
 
         # Display single option if only one exists
         if ($orderedKeys.Count -eq 1) {
