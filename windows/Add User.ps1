@@ -51,9 +51,12 @@ function addLocalUser {
 }
 function addADUser {
     try {
-        $name = readInput -prompt "Enter name" -Validate "^([a-zA-Z0-9 _\-]{1,64})$"  -CheckExistingUser
-        $samAccountName = readInput -prompt "Enter sam name" -Validate "^([a-zA-Z0-9 _\-]{1,20})$"  -CheckExistingUser
-        $password = readInput -prompt "Enter password" -IsSecure
+        $name = readInput -prompt "Enter name:" -Validate "^([a-zA-Z0-9 _\-]{1,64})$"  -CheckExistingUser
+        $nameParts = $name -split ' '
+        $GivenName = $nameParts[0]
+        $Surname = $nameParts[-1]
+        $samAccountName = readInput -prompt "Enter sam name:" -Validate "^([a-zA-Z0-9 _\-]{1,20})$"  -CheckExistingUser
+        $password = readInput -prompt "Enter password:" -IsSecure
         $choice = readOption -options $([ordered]@{
                 "Administrator" = "Create admin user"
                 "Standard user" = "Create standard user"
@@ -68,9 +71,9 @@ function addADUser {
 
         New-ADUser -Name $name 
         -SamAccountName $samAccountName 
-        -GivenName $GivenName 
-        -Surname $Surname 
-        -UserPrincipalName "$UserPrincipalName@$domainName.com" 
+        -GivenName $GivenName
+        -Surname $Surname
+        -UserPrincipalName "$samAccountName@$domainName.com" 
         -AccountPassword $password 
         -Enabled $true
 
