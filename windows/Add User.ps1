@@ -51,9 +51,6 @@ function addLocalUser {
 }
 function addADUser {
     try {
-        writeText -type "plain" -text "Editing domain users doesn't work yet."
-        readCommand
-
         Get-Item -ErrorAction SilentlyContinue "$path\add-ad-user.ps1" | Remove-Item -ErrorAction SilentlyContinue
         Write-Host " Chaste Scripts: Add Domain User v0321240710"
         Write-Host "$des" -ForegroundColor DarkGray
@@ -70,19 +67,16 @@ function addADUser {
         writeText -type "label" -text "Set group membership"  -lineAfter
         $choice = readOption -options @("Administrator", "Standard user")
         
-        if ($choice -eq 0) { $group = 'Administrators' } else { $group = "Users" }
-        if ($group -eq 'Administrators') { $groupDisplay = 'Administrator' } else { $groupDisplay = 'Standard user' }
-
-        writeText -type "label" -text "YOU'RE ABOUT TO CREATE A NEW AD USER!"  -lineAfter
-
-        $choice = readOption -options @(
-            "Submit  - Confirm and apply." 
-            "Reset   - Start over at the beginning."
-            "Exit    - Run a different command."
-        ) -lineAfter
-
-        if ($choice -ne 0 -and $choice -ne 2) { invokeScript -script "add-ad-user" }
-        if ($choice -eq 2) { throw "This function is under construction." }
+        if ($choice -eq 0) { 
+            $group = 'Administrators' 
+        } else { 
+            $group = "Users" 
+        }
+        if ($group -eq 'Administrators') { 
+            $groupDisplay = 'Administrator' 
+        } else { 
+            $groupDisplay = 'Standard user' 
+        }
 
         New-ADUser -Name $name 
         -SamAccountName $samAccountName 
@@ -103,4 +97,3 @@ function addADUser {
         writeText -type "error" -text "addADUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-
