@@ -161,13 +161,48 @@ function changeIPSettings {
             $desiredSettings["gateway"] = $gateway
 
             & "C:\Windows\System32\cmd.exe" /c netsh interface ipv4 set address name = "$($originalAdapter["name"])" static $desiredSettings["ip"] $desiredSettings["subnet"] $desiredSettings["gateway"] | Out-Null
-            writeText -type 'success' -text "The network adapters IP, subnet, and gateway were set to static and your addresses were applied."
+            
+            $updatedAdapter = selectAdapter -adapterName $originalAdapter["name"]
+
+            if ($originalAdapter["ip"] -eq $updatedAdapter["ip"]) {
+                writeText -type "plain" -text "IP updated."
+            } else {
+                writeText -type "plain" -text "IP not updated."
+            }
+
+            if ($originalAdapter["subnet"] -eq $updatedAdapter["subnet"]) {
+                writeText -type "plain" -text "Subnet updated."
+            } else {
+                writeText -type "plain" -text "Subnet not updated."
+            }
+
+            if ($originalAdapter["gateway"] -eq $updatedAdapter["gateway"]) {
+                writeText -type "plain" -text "Gateway updated."
+            } else {
+                writeText -type "plain" -text "Gateway not updated."
+            }
+
+            if ($originalAdapter["ip"] -eq $updatedAdapter["ip"] -and $originalAdapter["subnet"] -eq $updatedAdapter["subnet"] -and $originalAdapter["gateway"] -eq $updatedAdapter["gateway"]) {
+                writeText -type 'success' -text "The network adapters IP, subnet, and gateway were set to static and your addresses were applied."
+            } else {
+                writeText -type "error" -text "Something went wrong and not all values were updated."
+            }
         }
         
         if (1 -eq $choice) { 
             Set-NetIPInterface -InterfaceIndex $originalAdapter["index"] -Dhcp Enabled  | Out-Null
             & "C:\Windows\System32\cmd.exe" /c netsh interface ipv4 set address name = "$($originalAdapter["name"])" source = dhcp | Out-Null
-            writeText -type 'success' -text "The network adapters IP settings were set to dynamic"
+
+            # Verify DHCP settings
+            $verifyDHCP = Get-NetIPInterface -InterfaceAlias $originalAdapter["name"] -AddressFamily IPv4
+            if ($verifyDHCP.Dhcp -eq "Enabled") {
+                writeText -type 'success' -text "The network adapter's IP settings were successfully set to dynamic (DHCP)."
+            } else {
+                writeText -type 'error' -text "Failed to set DHCP. Please check the configuration manually."
+
+            }
+
+            # writeText -type 'success' -text "The network adapters IP settings were set to dynamic"
         }
 
         Disable-NetAdapter -Name $originalAdapter["name"] -Confirm:$false
