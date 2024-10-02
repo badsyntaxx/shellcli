@@ -11,18 +11,18 @@ function readMenu {
     try {
         # Create a menu with options and descriptions using an ordered hashtable
         $choice = readOption -options $([ordered]@{
-                "Toggle administrator"         = "Toggle the Windows built in administrator account."
-                "Add user"                     = "Add a user to the system."
-                "Remove user"                  = "Remove a user from the system."
-                "Edit user"                    = "Edit a users."
-                "Edit hostname"                = "Edit this computers name and description."
-                "Edit network adapter (alpha)" = "Edit a network adapter.(BETA)"
-                "Get WiFi credentials"         = "View all saved WiFi credentials on the system."
-                "Toggle W11 Context Menu"      = "Enable or Disable the Windows 11 context menu."
-                "Repair Windows (beta)"        = "Repair Windows."
-                "Install updates (beta)"       = "Install Windows updates silently."
-                "Schedule task (alpha)"        = "Schedule a new task."
-                "Cancel"                       = "Select nothing and exit this menu."
+                "Toggle administrator"        = "Toggle the Windows built in administrator account."
+                "Add user"                    = "Add a user to the system."
+                "Remove user"                 = "Remove a user from the system."
+                "Edit user"                   = "Edit a users."
+                "Edit hostname"               = "Edit this computers name and description."
+                "Edit network adapter (BETA)" = "Edit a network adapter."
+                "Get WiFi credentials"        = "View all saved WiFi credentials on the system."
+                "Toggle W11 Context Menu"     = "Enable or Disable the Windows 11 context menu."
+                "Repair Windows (BETA)"       = "Repair Windows."
+                "Install updates (BETA)"      = "Install Windows updates silently."
+                "Schedule task (ALPHA)"       = "Schedule a new task."
+                "Cancel"                      = "Select nothing and exit this menu."
             }) -prompt "Select a Chaste Scripts function:"
 
         switch ($choice) {
