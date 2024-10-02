@@ -209,7 +209,7 @@ function changeDNSSettings {
             $dns = $originalAdapter['dns']
 
             if ($dns.Count -gt 0) { 
-                $dnsString = $dns -join ", " 
+                $dnsString = $dns -join "," 
             } else { 
                 $dnsString = $dns[0] 
             }
