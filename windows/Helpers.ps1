@@ -20,7 +20,7 @@ function readMenu {
                 "Get WiFi credentials"        = "View all saved WiFi credentials on the system."
                 "Toggle W11 Context Menu"     = "Enable or Disable the Windows 11 context menu."
                 "Repair Windows (BETA)"       = "Repair Windows."
-                "Install updates (BETA)"      = "Install Windows updates silently."
+                "Update Windows (BETA)"      = "Install Windows updates silently."
                 "Schedule task (ALPHA)"       = "Schedule a new task."
                 "Cancel"                      = "Select nothing and exit this menu."
             }) -prompt "Select a Chaste Scripts function:"
@@ -35,7 +35,7 @@ function readMenu {
             6 { $command = "get wifi creds" }
             7 { $command = "toggle context menu" }
             8 { $command = "repair windows" }
-            9 { $command = "install updates" }
+            9 { $command = "update windows" }
             10 { $command = "add task" }
             11 { readCommand }
         }
@@ -58,7 +58,7 @@ function writeHelp {
     writeText -type "plain" -text "SYSTEM COMMANDS:" -lineBefore
     writeText -type "plain" -text "edit hostname        - Edit the computers hostname and description." -Color "DarkGray"
     writeText -type "plain" -text "repair windows       - Repair Windows." -Color "DarkGray"
-    writeText -type "plain" -text "install updates      - Install Windows updates. All or just severe." -Color "DarkGray"
+    writeText -type "plain" -text "update windows      - Install Windows updates. All or just severe." -Color "DarkGray"
     writeText -type "plain" -text "schedule task        - Create a task in the task scheduler." -Color "DarkGray"
     writeText -type "plain" -text "toggle context menu  - Disable the Windows 11 context menu." -Color "DarkGray"
     writeText -type "plain" -text "NETWORK COMMANDS:" -lineBefore
