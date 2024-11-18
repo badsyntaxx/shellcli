@@ -1,7 +1,8 @@
 function removeUser {
     try {
         $user = selectUser -prompt "Select an account to remove:"
-        $userProfile = Get-CimInstance Win32_UserProfile -Filter "SID = '$((Get-LocalUser $user["Name"]).Sid)'"
+        $userSid = (Get-LocalUser $user["Name"]).Sid
+        $userProfile = Get-CimInstance Win32_UserProfile -Filter "SID = '$userSid'"
         $dir = $userProfile.LocalPath
 
         $choice = readOption -options $([ordered]@{
@@ -19,13 +20,25 @@ function removeUser {
         $response = "The user has been removed"
         if ($choice -eq 0 -and $dir) { 
             try {
+                # Attempt to take ownership and grant full control
+                $acl = Get-Acl $dir
+                $rule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+                    [System.Security.Principal.WindowsIdentity]::GetCurrent().User, 
+                    "FullControl", 
+                    "ContainerInherit,ObjectInherit", 
+                    "None", 
+                    "Allow"
+                )
+                $acl.SetAccessRule($rule)
+                Set-Acl $dir $acl
+
+                # Remove files with full permissions
                 Remove-Item -Path $dir -Recurse -Force -ErrorAction Stop
                 
                 # Verify profile folder deletion
-                $u = Get-LocalUser -Name $user["Name"] -ErrorAction SilentlyContinue
-                $profileStillExists = Get-CimInstance Win32_UserProfile -Filter "SID = '$((Get-LocalUser $user["Name"]).Sid)'" -ErrorAction SilentlyContinue
+                $profileStillExists = Get-CimInstance Win32_UserProfile -Filter "SID = '$userSid'" -ErrorAction SilentlyContinue
 
-                if (!$u -and $null -eq $profileStillExists) {
+                if ($null -eq $profileStillExists) {
                     $response += " as well as their data."
                 } else {
                     writeText -type 'error' -text "Unable to delete user data for unknown reasons."
