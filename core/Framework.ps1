@@ -48,14 +48,6 @@ function readCommand {
 
         $command = $command.ToLower()
         $command = $command.Trim()
-
-        if ($command -ne "help" -and $command -ne "" -and $command -match "^(?-i)(\w+(-\w+)*)") {
-            if (Get-command $matches[1] -ErrorAction SilentlyContinue) {
-                Invoke-Expression $command
-                readCommand
-            }
-        }
-
         $filteredCommand = filterCommands -command $command
         $commandDirectory = $filteredCommand[0]
         $commandFile = $filteredCommand[1]
@@ -114,6 +106,12 @@ function filterCommands {
             "plugins massgravel" { $commandArray = $("plugins", "massgravel", "massgravel") }
             "plugins win11debloat" { $commandArray = $("plugins", "win11Debloat", "win11Debloat") }
             default { 
+                if ($command -ne "help" -and $command -ne "" -and $command -match "^(?-i)(\w+(-\w+)*)") {
+                    if (Get-command $matches[1] -ErrorAction SilentlyContinue) {
+                        Invoke-Expression $command
+                        readCommand
+                    }
+                }
                 Write-Host "  Unrecognized command `"$command`". Try" -NoNewline
                 Write-Host " help" -ForegroundColor "Cyan" -NoNewline
                 Write-Host " or" -NoNewline
