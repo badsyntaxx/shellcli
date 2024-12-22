@@ -106,11 +106,10 @@ function filterCommands {
             "plugins massgravel" { $commandArray = $("plugins", "massgravel", "massgravel") }
             "plugins win11debloat" { $commandArray = $("plugins", "win11Debloat", "win11Debloat") }
             default { 
-                if ($command -ne "help" -and $command -ne "" -and $command -match "^(?-i)(\w+(-\w+)*)") {
-                    if (Get-command $matches[1] -ErrorAction SilentlyContinue) {
-                        Invoke-Expression $command
-                        readCommand
-                    }
+                if (Get-command $matches[1] -ErrorAction SilentlyContinue) {
+                    $output = Invoke-Expression -Command $command 
+                    $output | Format-Table | Out-String | ForEach-Object { Write-Host $_ }
+                    readCommand
                 }
                 Write-Host "  Unrecognized command `"$command`". Try" -NoNewline
                 Write-Host " help" -ForegroundColor "Cyan" -NoNewline
