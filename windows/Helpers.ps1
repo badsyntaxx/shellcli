@@ -11,41 +11,31 @@ function readMenu {
     try {
         # Create a menu with options and descriptions using an ordered hashtable
         $choice = readOption -options $([ordered]@{
-                "Toggle administrator"        = "Toggle the Windows built in administrator account."
-                "Add user"                    = "Add a user to the system."
-                "Remove user"                 = "Remove a user from the system."
-                "Edit user"                   = "Edit a users."
-                "Edit hostname"               = "Edit this computers name and description."
-                "Edit network adapter (BETA)" = "Edit a network adapter."
-                "Get WiFi credentials"        = "View all saved WiFi credentials on the system."
-                "Toggle W11 Context Menu"     = "Enable or Disable the Windows 11 context menu."
-                "Repair Windows (BETA)"       = "Repair Windows."
-                "Update Windows (BETA)"      = "Install Windows updates silently."
-                "Schedule task (ALPHA)"       = "Schedule a new task."
-                "Cancel"                      = "Select nothing and exit this menu."
-            }) -prompt "Select a Chaste Scripts function:"
+                "toggle admin"        = "Toggle the Windows built in administrator account."
+                "add user"            = "Add a user to the system."
+                "remove user"         = "Remove a user from the system."
+                "edit user"           = "Edit a users."
+                "edit hostname"       = "Edit this computers name and description."
+                "edit net adapter"    = "(BETA) Edit a network adapter."
+                "get wifi creds"      = "View all saved WiFi credentials on the system."
+                "toggle context menu" = "Enable or Disable the Windows 11 context menu."
+                "repair windows"      = "Repair Windows."
+                "update window"       = "(BETA) Install Windows updates silently."
+                "get software"        = "Get a list of installed software that can be installed."
+                "schedule task "      = "(ALPHA) Schedule a new task."
+                "Cancel"              = "Select nothing and exit this menu."
+            }) -prompt "Select a Chaste Scripts function:" -returnKey
 
-        switch ($choice) {
-            0 { $command = "toggle admin" }
-            1 { $command = "add user" }
-            2 { $command = "remove user" }
-            3 { $command = "edit user" }
-            4 { $command = "edit hostname" }
-            5 { $command = "edit net adapter" }
-            6 { $command = "get wifi creds" }
-            7 { $command = "toggle context menu" }
-            8 { $command = "repair windows" }
-            9 { $command = "update windows" }
-            10 { $command = "add task" }
-            11 { readCommand }
+        if ($choice -eq "Cancel") {
+            readCommand
         }
 
         Write-Host
         Write-Host ": "  -ForegroundColor "DarkCyan" -NoNewline
         Write-Host "Running command:" -NoNewline -ForegroundColor "DarkGray"
-        Write-Host " $command" -ForegroundColor "Gray"
+        Write-Host " $choice" -ForegroundColor "Gray"
 
-        readCommand -command $command
+        readCommand -command $choice
     } catch {
         writeText -type "error" -text "readMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
