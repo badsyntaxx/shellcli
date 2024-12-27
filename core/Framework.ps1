@@ -96,6 +96,7 @@ function filterCommands {
             "edit user group" { $commandArray = $("windows", "Edit User", "editUserGroup") }
             "edit net adapter" { $commandArray = $("windows", "Edit Net Adapter", "editNetAdapter") }
             "get wifi creds" { $commandArray = $("windows", "Get Wifi Creds", "getWifiCreds") }
+            "get software" { $commandArray = $("windows", "Get Software", "getSoftware") }
             "schedule task" { $commandArray = $("windows", "Schedule Task", "scheduleTask") }
             "update windows" { $commandArray = $("windows", "Update Windows", "updateWindows") }
             "repair windows" { $commandArray = $("windows", "Repair Windows", "repairWindows") }
@@ -106,10 +107,11 @@ function filterCommands {
             "plugins massgravel" { $commandArray = $("plugins", "massgravel", "massgravel") }
             "plugins win11debloat" { $commandArray = $("plugins", "win11Debloat", "win11Debloat") }
             default { 
-                if (Get-command $matches[1] -ErrorAction SilentlyContinue) {
-                    $output = Invoke-Expression -Command $command 
-                    $output | Format-Table | Out-String | ForEach-Object { Write-Host $_ }
-                    readCommand
+                if ($command -ne "help" -and $command -ne "" -and $command -match "^(?-i)(\w+(-\w+)*)") {
+                    if (Get-command $matches[1] -ErrorAction SilentlyContinue) {
+                        Invoke-Expression $command
+                        readCommand
+                    }
                 }
                 Write-Host "  Unrecognized command `"$command`". Try" -NoNewline
                 Write-Host " help" -ForegroundColor "Cyan" -NoNewline
