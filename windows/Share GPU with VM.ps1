@@ -2,9 +2,9 @@ function shareGPUWithVM {
     try {
         # Create a menu with options and descriptions using an ordered hashtable
         $choice = readOption -options $([ordered]@{
-                "copy host gpu drivers to vm"    = "Copy the host GPU drivers to a temp folder on the VM. (RUN ON HOST WHILE VM IS RUNNING)"
-                "install host gpu drivers on vm" = "Install the copied GPU drivers on the VM. (RUN ON VM)"
-                "partition gpu"                  = "Partition the GPU. (RUN ON HOST WHILE VM IS OFF)"
+                "copy host gpu drivers to vm"    = "Copy drivers. (RUN ON HOST WHILE VM IS RUNNING)"
+                "install host gpu drivers on vm" = "Install drivers. (RUN ON VM)"
+                "partition gpu"                  = "Partition GPU. (RUN ON HOST WHILE VM IS OFF)"
                 "Cancel"                         = "Select nothing and exit this menu."
             }) -prompt "Select a Chaste Scripts function:" -returnKey
 
