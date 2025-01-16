@@ -458,11 +458,10 @@ function listUsers {
             $accounts["$username"] = "$source | $groupString"
         }
 
-        if ($writeResult) {
-            Write-Host
-            # Display user data as a list
-            writeText -type "list" -List $accounts
-        }
+        Write-Host
+        # Display user data as a list
+        writeText -type "list" -List $accounts
+        
     } catch {
         writeText -type "error" -text "listUsers-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
