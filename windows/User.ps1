@@ -433,11 +433,15 @@ function listUsers {
 
         # Check if the "Administrator" account is disabled and add it to excluded list if so
         $adminEnabled = Get-LocalUser -Name "Administrator" | Select-Object -ExpandProperty Enabled
-        if (!$adminEnabled) { $excludedAccounts += "Administrator" }
+        if (!$adminEnabled) { 
+            $excludedAccounts += "Administrator" 
+        }
 
         # Filter local users to exclude predefined accounts
         foreach ($user in $localUsers) {
-            if ($user.Name -notin $excludedAccounts) { $userNames += $user.Name }
+            if ($user.Name -notin $excludedAccounts) { 
+                $userNames += $user.Name 
+            }
         }
 
         # Create an ordered dictionary to store username and group information
