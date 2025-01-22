@@ -84,11 +84,12 @@ function filterCommands {
             "toggle admin" { $commandArray = $("windows", "Toggle Admin", "toggleAdmin") }
             "enable admin" { $commandArray = $("windows", "Toggle Admin", "enableAdmin") }
             "disable admin" { $commandArray = $("windows", "Toggle Admin", "disableAdmin") }
-            "add user" { $commandArray = $("windows", "Add User", "addUser") }
-            "add local user" { $commandArray = $("windows", "Add User", "addLocalUser") }
-            "add ad user" { $commandArray = $("windows", "Add User", "addADUser") }
+            "list users" { $commandArray = $("windows", "User", "listUsers") }
+            "add user" { $commandArray = $("windows", "User", "addUser") }
+            "add local user" { $commandArray = $("windows", "User", "addLocalUser") }
+            "add ad user" { $commandArray = $("windows", "User", "addADUser") }
             "add drive letter" { $commandArray = $("windows", "Add Drive Letter", "addDriveLetter") }
-            "remove user" { $commandArray = $("windows", "Remove User", "removeUser") }
+            "remove user" { $commandArray = $("windows", "User", "removeUser") }
             "edit hostname" { $commandArray = $("windows", "Edit Hostname", "editHostname") }
             "edit description" { $commandArray = $("windows", "Edit Hostname", "editDescription") }
             "edit user" { $commandArray = $("windows", "Edit User", "editUser") }
