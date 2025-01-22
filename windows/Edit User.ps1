@@ -44,7 +44,6 @@ function editUserName {
         writeText -type "error" -text "editUser-name-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-
 function editUserPassword {
     try {
         $user = selectUser
