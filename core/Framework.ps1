@@ -91,10 +91,11 @@ function filterCommands {
             "add drive letter" { $commandArray = $("windows", "Add Drive Letter", "addDriveLetter") }
             "remove user" { $commandArray = $("windows", "User", "removeUser") }
             "edit hostname" { $commandArray = $("windows", "Edit Hostname", "editHostname") }
-            "edit user" { $commandArray = $("windows", "User", "editUser") }
-            "edit user name" { $commandArray = $("windows", "User", "editUserName") }
-            "edit user password" { $commandArray = $("windows", "User", "editUserPassword") }
-            "edit user group" { $commandArray = $("windows", "User", "editUserGroup") }
+            "edit description" { $commandArray = $("windows", "Edit Hostname", "editDescription") }
+            "edit user" { $commandArray = $("windows", "Edit User", "editUser") }
+            "edit user name" { $commandArray = $("windows", "Edit User", "editUserName") }
+            "edit user password" { $commandArray = $("windows", "Edit User", "editUserPassword") }
+            "edit user group" { $commandArray = $("windows", "Edit User", "editUserGroup") }
             "edit net adapter" { $commandArray = $("windows", "Edit Net Adapter", "editNetAdapter") }
             "get wifi creds" { $commandArray = $("windows", "Get Wifi Creds", "getWifiCreds") }
             "get software" { $commandArray = $("windows", "Get Software", "getSoftware") }
