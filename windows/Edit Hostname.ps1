@@ -25,7 +25,7 @@ function editHostname {
         if ($hostnameChanged) {
             writeText -type "success" -text "Hostname changed."
         } else {
-            writeText -type "error" -text "Hostname unchanged."
+            writeText -type "success" -text "Hostname unchanged."
         }
 
         $choice = readOption -options $([ordered]@{
