@@ -45,7 +45,7 @@ function editHostname {
 function editDescription {
     try {
         $currentDescription = (Get-WmiObject -Class Win32_OperatingSystem).Description
-        $description = readInput -prompt "Enter a desired description:" -Validate "^(\s*|[a-zA-Z0-9[\] |_\-?]{1,64})$" -Value $currentDescription
+        $description = readInput -prompt "Enter a desired description:" -Validate "^(\s*|[a-zA-Z0-9[\] |_\-?']{1,64})$" -Value $currentDescription
         
         if ($description -eq "") { 
             $description = $currentDescription 
