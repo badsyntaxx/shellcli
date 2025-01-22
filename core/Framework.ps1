@@ -90,6 +90,7 @@ function filterCommands {
             "add drive letter" { $commandArray = $("windows", "Add Drive Letter", "addDriveLetter") }
             "remove user" { $commandArray = $("windows", "Remove User", "removeUser") }
             "edit hostname" { $commandArray = $("windows", "Edit Hostname", "editHostname") }
+            "edit description" { $commandArray = $("windows", "Edit Hostname", "editDescription") }
             "edit user" { $commandArray = $("windows", "Edit User", "editUser") }
             "edit user name" { $commandArray = $("windows", "Edit User", "editUserName") }
             "edit user password" { $commandArray = $("windows", "Edit User", "editUserPassword") }
