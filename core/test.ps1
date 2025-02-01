@@ -1,365 +1,60 @@
-function editNetAdapter {
+function toggleAdmin {
     try {
-        selectTask
+        $choice = readOption -options $([ordered]@{
+                "Enable admin"  = "Enable the built-in administrator account."
+                "Disable admin" = "Disable the built-in administrator account."
+                "Cancel"        = "Do nothing and exit this function."
+            }) -prompt "Select a user account type:"
+
+        switch ($choice) {
+            0 { enableAdmin }
+            1 { disableAdmin }
+            2 { readCommand }
+        }
     } catch {
-        writeText -type "error" -text "editNetAdapter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "toggleAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-function selectTask {
-    $task = readOption -options $([ordered]@{
-            "Enable / Disable"  = "Enable or disable a network adapter."
-            "Rename"            = "Rename a network adapter."
-            "Edit IP settings"  = "Set the IP schema to dynamic or static."
-            "Edit DNS settings" = "Set the DNS to dynamic or static."
-        }) -prompt "Select a task:"
-
-    switch ($task) {
-        0 { toggleAdapter }
-        1 { renameAdapter }
-        2 { changeIPSettings }
-        3 { changeDNSSettings }
-    }
-}
-function selectAdapter {
-    param (
-        [parameter(Mandatory = $false)]
-        [string]$adapterName = ""
-    )
-
-    try {
-        $adapters = [ordered]@{}
-
-        Get-NetAdapter | ForEach-Object { 
-            $adapters[$_.Name] = $_.MediaConnectionState 
-        }
-
-        $adapterList = [ordered]@{}
-
-        foreach ($al in $adapters) { 
-            $adapterList = $al 
-        }
+function enableAdmin {
+    try { 
+        $admin = Get-LocalUser -Name "Administrator"
         
-        if ($adapterName -ne "") {
-            $choice = $adapterName
-        } else {
-            $choice = readOption -options $adapterList -prompt "Select a network adapter:" -returnKey
-        }
-
-        $netAdapter = Get-NetAdapter -Name $choice
-        $adapterIndex = $netAdapter.InterfaceIndex
-        $script:ipv4Regex = "^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){0,4}$"
-
-        $adapter = [ordered]@{}
-        $adapter["name"] = $choice
-        $adapter["self"] = Get-NetAdapter -Name $choice
-        $adapter["index"] = $netAdapter.InterfaceIndex
-        $adapter["status"] = $netAdapter.Status
-        $interface = Get-NetIPInterface -InterfaceIndex $adapterIndex
-        $ipData = Get-NetIPAddress -InterfaceIndex $adapterIndex -AddressFamily IPv4 | Where-Object { $_.PrefixOrigin -ne "WellKnown" -and $_.SuffixOrigin -ne "Link" -and ($_.AddressState -eq "Preferred" -or $_.AddressState -eq "Tentative") } | Select-Object -First 1
-        $adapter["ip"] = $ipData.IPAddress
-        $adapter["gateway"] = Get-NetRoute -InterfaceAlias $choice -DestinationPrefix "0.0.0.0/0" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty "NextHop"
-        $adapter["subnet"] = convertCIDRtoMask -CIDR $ipData.PrefixLength
-        $adapter["dns"] = Get-DnsClientServerAddress -InterfaceIndex $adapterIndex | Select-Object -ExpandProperty ServerAddresses
-        if ($interface.Dhcp -eq "Enabled") { 
-            $adapter["IPDHCP"] = $true 
+        if ($admin.Enabled) { 
+            writeText -text "Administrator account is already enabled"
         } else { 
-            $adapter["IPDHCP"] = $false 
-        }
+            Get-LocalUser -Name "Administrator" | Enable-LocalUser 
 
-        getAdapterInfo -adapterName $adapter["name"]
+            $admin = Get-LocalUser -Name "Administrator"
 
-        return $adapter
-    } catch {
-        writeText -type "error" -text "selectAdapter-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-    }
-}
-function toggleAdapter {
-    $adapter = selectAdapter
-    $choices = $([ordered]@{})
-
-    if ($adapter["status"] -eq "Disabled") {
-        $choices["Enable"] = "Enable this network adapter."
-    } else {
-        $choices["Disable"] = "Disable this network adapter."
-    }
-
-    $choices["Back" ] = "Go back to task selection."
-    
-    $choice = readOption -options $choices -prompt "Select an action:" -returnKey
-
-    if ($choice -eq "Enable" -and $adapter["status"] -eq "Disabled") { 
-        Get-NetAdapter | Where-Object { $_.Name -eq $adapter["name"] } | Enable-NetAdapter
-    }
-    if ($choice -eq "Disable" -and $adapter["status"] -ne "Disabled") { 
-        Get-NetAdapter | Where-Object { $_.Name -eq $adapter["name"] } | Disable-NetAdapter
-    }
-    if ($choice -eq "Back") {
-        selectTask
-    }
-
-    $updatedAdapter = selectAdapter -adapterName $adapter["name"]
-
-    if ($choice -eq "Enable" -and $updatedAdapter["status"] -eq "Enabled") { 
-        writeText -type "success" -text "Success the adapter was Enabled."
-    }
-    if ($choice -eq "Disable" -and $updatedAdapter["status"] -eq "Disabled") { 
-        writeText -type "success" -text "Success the adapter was Disabled."
-    }
-}
-function getOriginalAdapterSettings {
-    try {
-        $adapter = selectAdapter
-
-        # This block of code is just to get the original adapter array.
-        $memoryStream = New-Object System.IO.MemoryStream
-        $binaryFormatter = New-Object System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
-        $binaryFormatter.Serialize($memoryStream, $adapter)
-        $memoryStream.Position = 0
-        $original = $binaryFormatter.Deserialize($memoryStream)
-        $memoryStream.Close()
-
-        return $original
-    } catch {
-        writeText -type "error" -text "getOriginalAdapterSettings-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-    }
-}
-function changeIPSettings {
-    try {   
-        $originalAdapter = getOriginalAdapterSettings
-
-        $choice = readOption -options $([ordered]@{
-                "Static"  = "Set this adapter to static and enter IP data manually."
-                "Dynamic" = "Set this adapter to DHCP."
-                "Back"    = "Go back to network adapter selection."
-            }) -prompt "Set the IP scheme to static or dynamic?"
-
-        if (2 -eq $choice) { 
-            selectTask
-        }
-
-        $desiredSettings = $originalAdapter
-        Get-NetAdapter -Name $originalAdapter["name"] | Remove-NetIPAddress -Confirm:$false -ErrorAction SilentlyContinue
-        Remove-NetRoute -InterfaceAlias $originalAdapter["name"] -DestinationPrefix "0.0.0.0/0" -Confirm:$false -ErrorAction SilentlyContinue
-
-        if ($choice -eq 0) { 
-            $ip = readInput -prompt "IPv4:" -Validate $ipv4Regex -Value $originalAdapter["ip"]
-            $subnet = readInput -prompt "Subnet mask:" -Validate $ipv4Regex -Value $originalAdapter["subnet"]  
-            $gateway = readInput -prompt "Gateway:" -Validate $ipv4Regex -Value $originalAdapter["gateway"] -lineAfter
-        
-            if ($ip -eq "") { 
-                $ip = $originalAdapter["ip"] 
-            }
-            if ($subnet -eq "") { 
-                $subnet = $originalAdapter["subnet"] 
-            }
-            if ($gateway -eq "") { 
-                $gateway = $originalAdapter["gateway"] 
-            }
-
-            $desiredSettings["ip"] = $ip
-            $desiredSettings["subnet"] = $subnet
-            $desiredSettings["gateway"] = $gateway
-
-            & "C:\Windows\System32\cmd.exe" /c netsh interface ipv4 set address name = "$($originalAdapter["name"])" static $desiredSettings["ip"] $desiredSettings["subnet"] $desiredSettings["gateway"] | Out-Null
-            
-            $updatedAdapter = selectAdapter -adapterName $originalAdapter["name"]
-
-            if ($originalAdapter["ip"] -eq $updatedAdapter["ip"]) {
-                writeText -type "plain" -text "IP updated."
-            } else {
-                writeText -type "plain" -text "IP not updated."
-            }
-
-            if ($originalAdapter["subnet"] -eq $updatedAdapter["subnet"]) {
-                writeText -type "plain" -text "Subnet updated."
-            } else {
-                writeText -type "plain" -text "Subnet not updated."
-            }
-
-            if ($originalAdapter["gateway"] -eq $updatedAdapter["gateway"]) {
-                writeText -type "plain" -text "Gateway updated."
-            } else {
-                writeText -type "plain" -text "Gateway not updated."
-            }
-
-            if ($originalAdapter["ip"] -eq $updatedAdapter["ip"] -and $originalAdapter["subnet"] -eq $updatedAdapter["subnet"] -and $originalAdapter["gateway"] -eq $updatedAdapter["gateway"]) {
-                writeText -type 'success' -text "The network adapters IP, subnet, and gateway were set to static and your addresses were applied."
-            } else {
-                writeText -type "error" -text "Something went wrong and not all values were updated."
-            }
-        }
-        
-        if (1 -eq $choice) { 
-            Set-NetIPInterface -InterfaceIndex $originalAdapter["index"] -Dhcp Enabled  | Out-Null
-            & "C:\Windows\System32\cmd.exe" /c netsh interface ipv4 set address name = "$($originalAdapter["name"])" source = dhcp | Out-Null
-
-            # Verify DHCP settings
-            $verifyDHCP = Get-NetIPInterface -InterfaceAlias $originalAdapter["name"] -AddressFamily IPv4
-            if ($verifyDHCP.Dhcp -eq "Enabled") {
-                writeText -type 'success' -text "The network adapter's IP settings were successfully set to dynamic (DHCP)."
-            } else {
-                writeText -type 'error' -text "Failed to set DHCP. Please check the configuration manually."
-
-            }
-
-            # writeText -type 'success' -text "The network adapters IP settings were set to dynamic"
-        }
-
-        Disable-NetAdapter -Name $originalAdapter["name"] -Confirm:$false
-        Start-Sleep 1
-        Enable-NetAdapter -Name $originalAdapter["name"] -Confirm:$false
-    } catch {
-        writeText -type "error" -text "changeIPSettings-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-    }
-}
-function changeDNSSettings {
-    try {
-        $originalAdapter = getOriginalAdapterSettings
-        $desiredSettings = $originalAdapter
-
-        $choice = readOption -options $([ordered]@{
-                "Static"  = "Set this adapters DNS to static."
-                "Dynamic" = "Set this adapters DNS to DHCP."
-                "Back"    = "Go back to task selection."
-            }) -prompt "Set DNS to static or dynamic?"
-
-        if (2 -eq $choice) { 
-            selectTask 
-        }
-
-        Get-NetAdapter -Name $originalAdapter["name"] | Remove-NetIPAddress -Confirm:$false -ErrorAction SilentlyContinue
-        Remove-NetRoute -InterfaceAlias $originalAdapter["name"] -DestinationPrefix "0.0.0.0/0" -Confirm:$false -ErrorAction SilentlyContinue
-
-        $dns = @()
-
-        if ($choice -eq 0) { 
-            $prompt = readInput -prompt "Enter a DNS:" -Validate $ipv4Regex
-            $dns += $prompt
-            while ($prompt.Length -gt 0) {
-                $prompt = readInput -prompt "Enter another DNS (Leave blank to finish):" -Validate $ipv4Regex
-                if ($prompt -ne "") { $dns += $prompt }
-            }
-            $originalAdapter["dns"] = $dns
-
-            $dnsString = ""
-            $dns = $originalAdapter['dns']
-
-            if ($dns.Count -gt 0) { 
-                $dnsString = $dns -join "," 
+            if ($admin.Enabled) { 
+                writeText -type "success" -text "Administrator account enabled"
             } else { 
-                $dnsString = $dns[0] 
-            }
-
-            Set-DnsClientServerAddress -InterfaceAlias $originalAdapter["name"] -ServerAddresses $dnsString
-            writeText -type 'success' -text "The network adapters DNS was set to static and your addresses were applied."
-        }
-
-        if (1 -eq $choice) { 
-            Set-DnsClientServerAddress -InterfaceAlias $originalAdapter["name"] -ResetServerAddresses | Out-Null
-            writeText -type 'success' -text "The network adapters DNS settings were set to dynamic"
-        }
-
-        Disable-NetAdapter -Name $originalAdapter["name"] -Confirm:$false
-        Start-Sleep 1
-        Enable-NetAdapter -Name $originalAdapter["name"] -Confirm:$false
-    } catch {
-        writeText -type "error" -text "changeDNSSettings-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-    }
-}
-function getAdapterInfo {
-    param (
-        [parameter(Mandatory = $false)]
-        [string]$adapterName
-    )
-    
-    try {
-        Write-Host
-        $status = Get-NetAdapter -Name $adapterName | Select-Object -ExpandProperty Status
-        if ($status -ne "Disabled") {
-            $macAddress = Get-NetAdapter -Name $adapterName | Select-Object -ExpandProperty MacAddress
-            $name = Get-NetAdapter -Name $adapterName | Select-Object -ExpandProperty Name
-            $status = Get-NetAdapter -Name $adapterName | Select-Object -ExpandProperty Status
-            $index = Get-NetAdapter -Name $adapterName | Select-Object -ExpandProperty InterfaceIndex
-            $gateway = Get-NetIPConfiguration -InterfaceAlias $adapterName | ForEach-Object { $_.IPv4DefaultGateway.NextHop }
-            # $gateway = Get-NetRoute -InterfaceAlias $adapterName -DestinationPrefix "0.0.0.0/0" | Select-Object -ExpandProperty "NextHop"
-            $interface = Get-NetIPInterface -InterfaceIndex $index 
-            $dhcp = $(if ($interface.Dhcp -eq "Enabled") { "DHCP" } else { "Static" })
-            $ipData = Get-NetIPAddress -InterfaceIndex $index -AddressFamily IPv4 | Where-Object { $_.PrefixOrigin -ne "WellKnown" -and $_.SuffixOrigin -ne "Link" -and ($_.AddressState -eq "Preferred" -or $_.AddressState -eq "Tentative") } | Select-Object -First 1
-            $ipAddress = $ipData.IPAddress
-            $subnet = convertCIDRtoMask -CIDR $ipData.PrefixLength
-            $dnsServers = Get-DnsClientServerAddress -InterfaceIndex $index | Select-Object -ExpandProperty ServerAddresses
-
-            if ($status -eq "Up") {
-                Write-Host "  $([char]0x2022)" -ForegroundColor "Green" -NoNewline
-                Write-Host " $name | $dhcp" -ForegroundColor "Gray" 
-            } else {
-                Write-Host "  $([char]0x25BC)" -ForegroundColor "Red" -NoNewline
-                Write-Host " $name | $dhcp" -ForegroundColor "Gray"
-            }
-
-            writeText -type "plain" -text "  MAC Address . . . : $macAddress" -Color "Gray"
-            writeText -type "plain" -text "  IPv4 Address. . . : $ipAddress" -Color "Gray"
-            writeText -type "plain" -text "  Subnet Mask . . . : $subnet" -Color "Gray"
-            writeText -type "plain" -text "  Default Gateway . : $gateway" -Color "Gray"
-
-            for ($i = 0; $i -lt $dnsServers.Count; $i++) {
-                if ($i -eq 0) {
-                    writeText -type "plain" -text "  DNS Servers . . . : $($dnsServers[$i])" -Color "Gray"
-                } else {
-                    writeText -type "plain" -text "                      $($dnsServers[$i])" -Color "Gray"
-                }
+                writeText -type "error" -text "Could not enable administrator account"
             }
         }
-        Write-Host
     } catch {
-        writeText -type "error" -text "getAdapterInfo-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "enableAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-function convertCIDRtoMask {
-    param (
-        [parameter(Mandatory = $false)]
-        [int]$CIDR
-    )
+function disableAdmin {
+    try { 
+        $admin = Get-LocalUser -Name "Administrator"
+        
+        if ($admin.Enabled) { 
+            Get-LocalUser -Name "Administrator" | Disable-LocalUser 
 
-    switch ($CIDR) {
-        8 { $mask = "255.0.0.0" }
-        9 { $mask = "255.128.0.0" }
-        10 { $mask = "255.192.0.0" }
-        11 { $mask = "255.224.0.0" }
-        12 { $mask = "255.240.0.0" }
-        13 { $mask = "255.248.0.0" }
-        14 { $mask = "255.252.0.0" }
-        15 { $mask = "255.254.0.0" }
-        16 { $mask = "255.255.0.0" }
-        17 { $mask = "255.255.128.0" }
-        18 { $mask = "255.255.192.0" }
-        19 { $mask = "255.255.224.0" }
-        20 { $mask = "255.255.240.0" }
-        21 { $mask = "255.255.248.0" }
-        22 { $mask = "255.255.252.0" }
-        23 { $mask = "255.255.254.0" }
-        24 { $mask = "255.255.255.0" }
-        25 { $mask = "255.255.255.128" }
-        26 { $mask = "255.255.255.192" }
-        27 { $mask = "255.255.255.224" }
-        28 { $mask = "255.255.255.240" }
-        29 { $mask = "255.255.255.248" }
-        30 { $mask = "255.255.255.252" }
-        31 { $mask = "255.255.255.254" }
-        32 { $mask = "255.255.255.255" }
-    }
+            $admin = Get-LocalUser -Name "Administrator"
 
-    return $mask
-}
-function showAdapters {
-    try {
-        $adapters = @()
-        foreach ($n in (Get-NetAdapter | Select-Object -ExpandProperty Name)) { $adapters += $n }
-        foreach ($a in $adapters) { getAdapterInfo -adapterName $a }
-
-        selectAdapter
+            if ($admin.Enabled) { 
+                writeText -type "error" -text "Could not disable administrator account"
+            } else { 
+                writeText -type "success" -text "Administrator account disabled"
+            }
+        } else { 
+            writeText -text "Administrator account is already disabled"
+        }
     } catch {
-        writeText -type "error" -text "showAdapters-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "disableAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 function invokeScript {
@@ -412,14 +107,6 @@ function readCommand {
 
         $command = $command.ToLower()
         $command = $command.Trim()
-
-        if ($command -ne "help" -and $command -ne "" -and $command -match "^(?-i)(\w+(-\w+)*)") {
-            if (Get-command $matches[1] -ErrorAction SilentlyContinue) {
-                Invoke-Expression $command
-                readCommand
-            }
-        }
-
         $filteredCommand = filterCommands -command $command
         $commandDirectory = $filteredCommand[0]
         $commandFile = $filteredCommand[1]
@@ -456,18 +143,21 @@ function filterCommands {
             "toggle admin" { $commandArray = $("windows", "Toggle Admin", "toggleAdmin") }
             "enable admin" { $commandArray = $("windows", "Toggle Admin", "enableAdmin") }
             "disable admin" { $commandArray = $("windows", "Toggle Admin", "disableAdmin") }
-            "add user" { $commandArray = $("windows", "Add User", "addUser") }
-            "add local user" { $commandArray = $("windows", "Add User", "addLocalUser") }
-            "add ad user" { $commandArray = $("windows", "Add User", "addADUser") }
+            "list users" { $commandArray = $("windows", "User", "listUsers") }
+            "add user" { $commandArray = $("windows", "User", "addUser") }
+            "add local user" { $commandArray = $("windows", "User", "addLocalUser") }
+            "add ad user" { $commandArray = $("windows", "User", "addADUser") }
             "add drive letter" { $commandArray = $("windows", "Add Drive Letter", "addDriveLetter") }
-            "remove user" { $commandArray = $("windows", "Remove User", "removeUser") }
+            "remove user" { $commandArray = $("windows", "User", "removeUser") }
             "edit hostname" { $commandArray = $("windows", "Edit Hostname", "editHostname") }
-            "edit user" { $commandArray = $("windows", "Edit User", "editUser") }
-            "edit user name" { $commandArray = $("windows", "Edit User", "editUserName") }
-            "edit user password" { $commandArray = $("windows", "Edit User", "editUserPassword") }
-            "edit user group" { $commandArray = $("windows", "Edit User", "editUserGroup") }
+            "edit description" { $commandArray = $("windows", "Edit Hostname", "editDescription") }
+            "edit user" { $commandArray = $("windows", "User", "editUser") }
+            "edit user name" { $commandArray = $("windows", "User", "editUserName") }
+            "edit user password" { $commandArray = $("windows", "User", "editUserPassword") }
+            "edit user group" { $commandArray = $("windows", "User", "editUserGroup") }
             "edit net adapter" { $commandArray = $("windows", "Edit Net Adapter", "editNetAdapter") }
             "get wifi creds" { $commandArray = $("windows", "Get Wifi Creds", "getWifiCreds") }
+            "get software" { $commandArray = $("windows", "Get Software", "getSoftware") }
             "schedule task" { $commandArray = $("windows", "Schedule Task", "scheduleTask") }
             "update windows" { $commandArray = $("windows", "Update Windows", "updateWindows") }
             "repair windows" { $commandArray = $("windows", "Repair Windows", "repairWindows") }
@@ -477,7 +167,18 @@ function filterCommands {
             "plugins reclaim" { $commandArray = $("plugins", "ReclaimW11", "reclaim") }
             "plugins massgravel" { $commandArray = $("plugins", "massgravel", "massgravel") }
             "plugins win11debloat" { $commandArray = $("plugins", "win11Debloat", "win11Debloat") }
+            "share gpu with vm" { $commandArray = ("windows", "Share GPU with VM", "shareGPUWithVM") }
+            "copy host gpu drivers to vm" { $commandArray = ("windows", "Share GPU with VM", "copyHostGPUDriversToVM") }
+            "install host gpu drivers on vm" { $commandArray = ("windows", "Share GPU with VM", "installHostGPUDriversOnVM") }
+            "partition gpu" { $commandArray = ("windows", "Share GPU with VM", "partitionGPU") }
             default { 
+                if ($command -ne "help" -and $command -ne "" -and $command -match "^(?-i)(\w+(-\w+)*)") {
+                    if (Get-command $matches[1] -ErrorAction SilentlyContinue) {
+                        $output = Invoke-Expression -Command $command 
+                        $output | Format-Table | Out-String | ForEach-Object { Write-Host $_ }
+                        readCommand
+                    }
+                }
                 Write-Host "  Unrecognized command `"$command`". Try" -NoNewline
                 Write-Host " help" -ForegroundColor "Cyan" -NoNewline
                 Write-Host " or" -NoNewline
@@ -748,7 +449,6 @@ function readOption {
         While ($vkeycode -ne 13) {
             $press = $host.ui.rawui.readkey("NoEcho, IncludeKeyDown")
             $vkeycode = $press.virtualkeycode
-            Write-host "$($press.character)" -NoNewLine
             if ($orderedKeys.Count -ne 1) { 
                 $oldPos = $pos;
                 if ($vkeycode -eq 38) { $pos-- }
@@ -763,7 +463,7 @@ function readOption {
                 $oldKey = $orderedKeys[$oldPos]
                 $newKey = $orderedKeys[$pos]
             
-                # Re-draw the previously selected and newly selected options
+                # Re-draw the previously selected and newly selected options using ANSI escape sequences
                 $host.UI.RawUI.CursorPosition = $menuOldPos
                 Write-Host "  $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $($options[$orderedKeys[$oldPos]])" -ForegroundColor "Gray"
                 $host.UI.RawUI.CursorPosition = $menuNewPos
@@ -773,24 +473,22 @@ function readOption {
             }
         }
 
-        [Console]::SetCursorPosition($promptPos.X, $promptPos.Y)
-
-        if ($orderedKeys.Count -ne 1) {
-            Write-Host "? " -ForegroundColor "Green" -NoNewline
-            Write-Host $prompt -NoNewline
-            Write-Host " $($orderedKeys[$pos])" -ForegroundColor "DarkCyan"
-        } else {
-            Write-Host "? " -ForegroundColor "Green" -NoNewline
-            Write-Host $prompt -NoNewline
-            Write-Host " $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length))" -ForegroundColor "DarkCyan"
-        }
-
+        # Clear the menu using ANSI escape sequences
+        $escape = [char]27
+        $clearLines = ""
         for ($i = 0; $i -lt $options.Count; $i++) {
-            Write-Host "       $(" " * ($longestKeyLength + $longestValueLength))"
+            $clearLines += "$escape[2K$escape[1A"
         }
-        
-        [Console]::SetCursorPosition($promptPos.X, $promptPos.Y)
-        Write-Host
+        $clearLines += "$escape[2K" # Clear the last line
+        Write-Host $clearLines -NoNewline
+
+        # Move the cursor back to the prompt position
+        Write-Host "$escape[${promptPos.Y};${promptPos.X}H" -NoNewline
+
+        # Display the selected option on the same line as the prompt
+        Write-Host "? " -NoNewline -ForegroundColor "Green"
+        Write-Host "$prompt " -NoNewline
+        Write-Host "$($orderedKeys[$pos])" -ForegroundColor "DarkCyan"
 
         # Add a line break after the menu if lineAfter is specified
         if ($lineAfter) { Write-Host }
@@ -1069,5 +767,7 @@ function selectUser {
         writeText -type "error" -text "selectUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-invokeScript 'editNetAdapter'
+
+
+invokeScript 'toggleAdmin'
 readCommand
