@@ -417,15 +417,19 @@ function readOption {
         # Clear the menu by overwriting it with spaces
         $menuLines = $options.Count
         $newY = $promptPos.Y + 1 # Calculate the new Y position
-        $host.UI.RawUI.CursorPosition = New-Object System.Management.Automation.Host.Coordinates($promptPos.X, $newY)
         for ($i = 0; $i -lt $menuLines; $i++) {
-            Write-Host (" " * ($host.UI.RawUI.WindowSize.Width - 1)) # Clear each line with spaces
-            $newY = $host.UI.RawUI.CursorPosition.Y + 1 # Move to the next line
-            $host.UI.RawUI.CursorPosition = New-Object System.Management.Automation.Host.Coordinates($promptPos.X, $newY)
+            # Ensure the Y position is within the terminal bounds
+            if ($newY -ge 0 -and $newY -lt $host.UI.RawUI.WindowSize.Height) {
+                $host.UI.RawUI.CursorPosition = New-Object System.Management.Automation.Host.Coordinates($promptPos.X, $newY)
+                Write-Host (" " * ($host.UI.RawUI.WindowSize.Width - 1)) # Clear each line with spaces
+            }
+            $newY++ # Move to the next line
         }
 
         # Move the cursor back to the prompt position
-        $host.UI.RawUI.CursorPosition = $promptPos
+        if ($promptPos.Y -ge 0 -and $promptPos.Y -lt $host.UI.RawUI.WindowSize.Height) {
+            $host.UI.RawUI.CursorPosition = $promptPos
+        }
 
         # Display the selected option on the same line as the prompt
         Write-Host "? " -NoNewline -ForegroundColor "Green"
