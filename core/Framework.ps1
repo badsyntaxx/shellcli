@@ -414,12 +414,12 @@ function readOption {
             }
         }
 
-        # Clear only the menu lines (without affecting content above or below the menu)
+        # Clear all menu lines (including the first option)
         $escape = [char]27
         $clearLines = ""
         for ($i = 0; $i -lt $options.Count; $i++) {
             $clearLines += "$escape[2K" # Clear the current line
-            if ($i -lt $options.Count) {
+            if ($i -lt $options.Count - 1) {
                 $clearLines += "$escape[1A" # Move the cursor up (except for the last line)
             }
         }
