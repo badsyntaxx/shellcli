@@ -419,10 +419,12 @@ function readOption {
         $clearLines = ""
         for ($i = 0; $i -lt $options.Count; $i++) {
             $clearLines += "$escape[2K" # Clear the current line
-            if ($i -lt $options.Count) {
+            if ($i -lt $options.Count - 1) {
                 $clearLines += "$escape[1A" # Move the cursor up (except for the last line)
             }
         }
+        # Move the cursor to the first line of the menu before clearing
+        $host.UI.RawUI.CursorPosition = New-Object System.Management.Automation.Host.Coordinates($promptPos.X, $promptPos.Y + 1)
         Write-Host $clearLines -NoNewline
 
         # Move the cursor back to the prompt position
