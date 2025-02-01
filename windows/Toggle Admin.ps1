@@ -1,8 +1,8 @@
 function toggleAdmin {
     try {
         $choice = readOption -options $([ordered]@{
-                "Enable admin"  = "Enable the built-in administrator account."
-                "Disable admin" = "Disable the built-in administrator account."
+                "enable admin"  = "Enable the built-in administrator account."
+                "disable admin" = "Disable the built-in administrator account."
                 "Cancel"        = "Do nothing and exit this function."
             }) -prompt "Select a user account type:"
 
