@@ -426,7 +426,7 @@ function readOption {
         Write-Host $clearLines -NoNewline
 
         # Move the cursor back to the prompt position
-        Write-Host "$escape[${promptPos.Y};${promptPos.X}H" -NoNewline
+        $host.UI.RawUI.CursorPosition = $promptPos
 
         # Display the selected option on the same line as the prompt
         Write-Host "? " -NoNewline -ForegroundColor "Green"
