@@ -713,4 +713,3 @@ function selectUser {
         writeText -type "error" -text "selectUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-
