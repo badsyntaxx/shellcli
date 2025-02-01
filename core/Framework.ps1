@@ -92,10 +92,10 @@ function filterCommands {
             "remove user" { $commandArray = $("windows", "User", "removeUser") }
             "edit hostname" { $commandArray = $("windows", "Edit Hostname", "editHostname") }
             "edit description" { $commandArray = $("windows", "Edit Hostname", "editDescription") }
-            "edit user" { $commandArray = $("windows", "User", "editUser") }
-            "edit user name" { $commandArray = $("windows", "User", "editUserName") }
-            "edit user password" { $commandArray = $("windows", "User", "editUserPassword") }
-            "edit user group" { $commandArray = $("windows", "User", "editUserGroup") }
+            "edit user" { $commandArray = $("windows", "Edit User", "editUser") }
+            "edit user name" { $commandArray = $("windows", "Edit User", "editUserName") }
+            "edit user password" { $commandArray = $("windows", "Edit User", "editUserPassword") }
+            "edit user group" { $commandArray = $("windows", "Edit User", "editUserGroup") }
             "edit net adapter" { $commandArray = $("windows", "Edit Net Adapter", "editNetAdapter") }
             "get wifi creds" { $commandArray = $("windows", "Get Wifi Creds", "getWifiCreds") }
             "get software" { $commandArray = $("windows", "Get Software", "getSoftware") }
@@ -390,6 +390,7 @@ function readOption {
         While ($vkeycode -ne 13) {
             $press = $host.ui.rawui.readkey("NoEcho, IncludeKeyDown")
             $vkeycode = $press.virtualkeycode
+            Write-host "$($press.character)" -NoNewLine
             if ($orderedKeys.Count -ne 1) { 
                 $oldPos = $pos;
                 if ($vkeycode -eq 38) { $pos-- }
@@ -399,12 +400,12 @@ function readOption {
 
                 # Calculate positions for redrawing menu items
                 $menuLen = $orderedKeys.Count
-                $menuOldPos = New-Object System.Management.Automation.Host.Coordinates($currPos.X, ($currPos.Y - ($menuLen - $oldPos)))
-                $menuNewPos = New-Object System.Management.Automation.Host.Coordinates($currPos.X, ($currPos.Y - ($menuLen - $pos)))
+                $menuOldPos = New-Object System.Management.Automation.Host.Coordinates(0, ($currPos.Y - ($menuLen - $oldPos)))
+                $menuNewPos = New-Object System.Management.Automation.Host.Coordinates(0, ($currPos.Y - ($menuLen - $pos)))
                 $oldKey = $orderedKeys[$oldPos]
                 $newKey = $orderedKeys[$pos]
             
-                # Re-draw the previously selected and newly selected options using ANSI escape sequences
+                # Re-draw the previously selected and newly selected options
                 $host.UI.RawUI.CursorPosition = $menuOldPos
                 Write-Host "  $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $($options[$orderedKeys[$oldPos]])" -ForegroundColor "Gray"
                 $host.UI.RawUI.CursorPosition = $menuNewPos
@@ -423,17 +424,20 @@ function readOption {
                 $clearLines += "$escape[1A" # Move the cursor up (except for the last line)
             }
         }
-        # Move the cursor to the first line of the menu before clearing
-        $host.UI.RawUI.CursorPosition = New-Object System.Management.Automation.Host.Coordinates($promptPos.X, $promptPos.Y + 1)
-        Write-Host $clearLines -NoNewline
 
-        # Move the cursor back to the prompt position
-        $host.UI.RawUI.CursorPosition = $promptPos
+        # [Console]::SetCursorPosition($promptPos.X, $promptPos.Y)
 
         # Display the selected option on the same line as the prompt
         Write-Host "? " -NoNewline -ForegroundColor "Green"
         Write-Host "$prompt " -NoNewline
         Write-Host "$($orderedKeys[$pos])" -ForegroundColor "DarkCyan"
+
+        <# for ($i = 0; $i -lt $options.Count; $i++) {
+            Write-Host "       $(" " * ($longestKeyLength + $longestValueLength))"
+        } #>
+        
+        [Console]::SetCursorPosition($promptPos.X, $promptPos.Y)
+        Write-Host
 
         # Add a line break after the menu if lineAfter is specified
         if ($lineAfter) { Write-Host }
