@@ -416,10 +416,12 @@ function readOption {
 
         # Clear the menu by overwriting it with spaces
         $menuLines = $options.Count
-        $host.UI.RawUI.CursorPosition = New-Object System.Management.Automation.Host.Coordinates($promptPos.X, $promptPos.Y + 1)
+        $newY = $promptPos.Y + 1 # Calculate the new Y position
+        $host.UI.RawUI.CursorPosition = New-Object System.Management.Automation.Host.Coordinates($promptPos.X, $newY)
         for ($i = 0; $i -lt $menuLines; $i++) {
             Write-Host (" " * ($host.UI.RawUI.WindowSize.Width - 1)) # Clear each line with spaces
-            $host.UI.RawUI.CursorPosition = New-Object System.Management.Automation.Host.Coordinates($promptPos.X, $host.UI.RawUI.CursorPosition.Y + 1)
+            $newY = $host.UI.RawUI.CursorPosition.Y + 1 # Move to the next line
+            $host.UI.RawUI.CursorPosition = New-Object System.Management.Automation.Host.Coordinates($promptPos.X, $newY)
         }
 
         # Move the cursor back to the prompt position
