@@ -419,7 +419,7 @@ function readOption {
         $clearLines = ""
         for ($i = 0; $i -lt $options.Count; $i++) {
             $clearLines += "$escape[2K" # Clear the current line
-            if ($i -lt $options.Count - 1) {
+            if ($i -lt $options.Count) {
                 $clearLines += "$escape[1A" # Move the cursor up (except for the last line)
             }
         }
