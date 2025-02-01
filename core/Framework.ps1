@@ -327,7 +327,7 @@ function readOption {
         [parameter(Mandatory = $true)]
         [System.Collections.Specialized.OrderedDictionary]$options,
         [parameter(Mandatory = $false)]
-        [string]$prompt, # Provide a specific prompt in necessary
+        [string]$prompt, # Provide a specific prompt if necessary
         [parameter(Mandatory = $false)]
         [switch]$returnKey = $false,
         [parameter(Mandatory = $false)]
@@ -390,7 +390,6 @@ function readOption {
         While ($vkeycode -ne 13) {
             $press = $host.ui.rawui.readkey("NoEcho, IncludeKeyDown")
             $vkeycode = $press.virtualkeycode
-            Write-host "$($press.character)" -NoNewLine
             if ($orderedKeys.Count -ne 1) { 
                 $oldPos = $pos;
                 if ($vkeycode -eq 38) { $pos-- }
@@ -400,8 +399,8 @@ function readOption {
 
                 # Calculate positions for redrawing menu items
                 $menuLen = $orderedKeys.Count
-                $menuOldPos = New-Object System.Management.Automation.Host.Coordinates(0, ($currPos.Y - ($menuLen - $oldPos)))
-                $menuNewPos = New-Object System.Management.Automation.Host.Coordinates(0, ($currPos.Y - ($menuLen - $pos)))
+                $menuOldPos = New-Object System.Management.Automation.Host.Coordinates($currPos.X, ($currPos.Y - ($menuLen - $oldPos)))
+                $menuNewPos = New-Object System.Management.Automation.Host.Coordinates($currPos.X, ($currPos.Y - ($menuLen - $pos)))
                 $oldKey = $orderedKeys[$oldPos]
                 $newKey = $orderedKeys[$pos]
             
@@ -415,29 +414,21 @@ function readOption {
             }
         }
 
-        # Clear all menu lines (including the first option)
-        $escape = [char]27
-        $clearLines = ""
-        for ($i = 0; $i -lt $options.Count; $i++) {
-            $clearLines += "$escape[2K" # Clear the current line
-            if ($i -lt $options.Count - 1) {
-                $clearLines += "$escape[1A" # Move the cursor up (except for the last line)
-            }
+        # Clear the menu by overwriting it with spaces
+        $menuLines = $options.Count
+        $host.UI.RawUI.CursorPosition = New-Object System.Management.Automation.Host.Coordinates($promptPos.X, $promptPos.Y + 1)
+        for ($i = 0; $i -lt $menuLines; $i++) {
+            Write-Host (" " * ($host.UI.RawUI.WindowSize.Width - 1)) # Clear each line with spaces
+            $host.UI.RawUI.CursorPosition = New-Object System.Management.Automation.Host.Coordinates($promptPos.X, $host.UI.RawUI.CursorPosition.Y + 1)
         }
 
-        # [Console]::SetCursorPosition($promptPos.X, $promptPos.Y)
+        # Move the cursor back to the prompt position
+        $host.UI.RawUI.CursorPosition = $promptPos
 
         # Display the selected option on the same line as the prompt
         Write-Host "? " -NoNewline -ForegroundColor "Green"
         Write-Host "$prompt " -NoNewline
         Write-Host "$($orderedKeys[$pos])" -ForegroundColor "DarkCyan"
-
-        <# for ($i = 0; $i -lt $options.Count; $i++) {
-            Write-Host "       $(" " * ($longestKeyLength + $longestValueLength))"
-        } #>
-        
-        [Console]::SetCursorPosition($promptPos.X, $promptPos.Y)
-        Write-Host
 
         # Add a line break after the menu if lineAfter is specified
         if ($lineAfter) { Write-Host }
