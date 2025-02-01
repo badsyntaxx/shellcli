@@ -473,13 +473,15 @@ function readOption {
             }
         }
 
-        # Clear the menu using ANSI escape sequences
+        # Clear only the menu lines (without affecting content above the menu)
         $escape = [char]27
         $clearLines = ""
         for ($i = 0; $i -lt $options.Count; $i++) {
-            $clearLines += "$escape[2K$escape[1A"
+            $clearLines += "$escape[2K" # Clear the current line
+            if ($i -lt $options.Count - 1) {
+                $clearLines += "$escape[1A" # Move the cursor up (except for the last line)
+            }
         }
-        $clearLines += "$escape[2K" # Clear the last line
         Write-Host $clearLines -NoNewline
 
         # Move the cursor back to the prompt position

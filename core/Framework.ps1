@@ -339,6 +339,7 @@ function readOption {
     )
 
     try {
+        Write-Host "Foo"
         # Add a line break before the menu if lineBefore is specified
         if ($lineBefore) { Write-Host }
 
