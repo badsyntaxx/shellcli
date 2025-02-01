@@ -1,3 +1,62 @@
+function chasteScripts {
+    Write-Host
+    Write-Host "  Try" -NoNewline
+    Write-Host " help" -ForegroundColor "Cyan" -NoNewline
+    Write-Host " or" -NoNewline
+    Write-Host " menu" -NoNewline -ForegroundColor "Cyan"
+    Write-Host " if you don't know what to do."
+}
+
+function readMenu {
+    try {
+        # Create a menu with options and descriptions using an ordered hashtable
+        $choice = readOption -options $([ordered]@{
+                "toggle admin"        = "Toggle the Windows built in administrator account."
+                "add user"            = "Add a user to the system."
+                "remove user"         = "Remove a user from the system."
+                "edit user"           = "Edit a users."
+                "edit hostname"       = "Edit this computers name and description."
+                "edit net adapter"    = "(BETA) Edit a network adapter."
+                "get wifi creds"      = "View all saved WiFi credentials on the system."
+                "toggle context menu" = "Enable or Disable the Windows 11 context menu."
+                "repair windows"      = "Repair Windows."
+                "update window"       = "(BETA) Install Windows updates silently."
+                "get software"        = "Get a list of installed software that can be installed."
+                "schedule task "      = "(ALPHA) Schedule a new task."
+                "Cancel"              = "Select nothing and exit this menu."
+            }) -prompt "Select a Chaste Scripts function:" -returnKey
+
+        if ($choice -eq "Cancel") {
+            readCommand
+        }
+
+        Write-Host
+        Write-Host ": "  -ForegroundColor "DarkCyan" -NoNewline
+        Write-Host "Running command:" -NoNewline -ForegroundColor "DarkGray"
+        Write-Host " $choice" -ForegroundColor "Gray"
+
+        readCommand -command $choice
+    } catch {
+        writeText -type "error" -text "readMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+function writeHelp {
+    writeText -type "plain" -text "USER COMMANDS:" -lineBefore
+    writeText -type "plain" -text "add [local,ad] user              - Add a local or domain user to the system." -Color "DarkGray"
+    writeText -type "plain" -text "remove user                      - Add a local or domain user to the system." -Color "DarkGray"
+    writeText -type "plain" -text "edit user [name,password,group]  - Edit user account settings." -Color "DarkGray"
+    writeText -type "plain" -text "SYSTEM COMMANDS:" -lineBefore
+    writeText -type "plain" -text "edit hostname        - Edit the computers hostname and description." -Color "DarkGray"
+    writeText -type "plain" -text "repair windows       - Repair Windows." -Color "DarkGray"
+    writeText -type "plain" -text "update windows      - Install Windows updates. All or just severe." -Color "DarkGray"
+    writeText -type "plain" -text "schedule task        - Create a task in the task scheduler." -Color "DarkGray"
+    writeText -type "plain" -text "toggle context menu  - Disable the Windows 11 context menu." -Color "DarkGray"
+    writeText -type "plain" -text "NETWORK COMMANDS:" -lineBefore
+    writeText -type "plain" -text "edit net adapter  - Edit network adapters." -Color "DarkGray"
+    writeText -type "plain" -text "get wifi creds    - View WiFi credentials for the currently active WiFi adapter." -Color "DarkGray"
+    writeText -type "plain" -text "FULL DOCUMENTATION:" -lineBefore
+    writeText -type "plain" -text "https://guided.chaste.pro/dev/chaste-scripts" -Color "DarkGray"
+}
 function toggleAdmin {
     try {
         $choice = readOption -options $([ordered]@{
@@ -386,7 +445,7 @@ function readOption {
         [parameter(Mandatory = $true)]
         [System.Collections.Specialized.OrderedDictionary]$options,
         [parameter(Mandatory = $false)]
-        [string]$prompt, # Provide a specific prompt in necessary
+        [string]$prompt, # Provide a specific prompt if necessary
         [parameter(Mandatory = $false)]
         [switch]$returnKey = $false,
         [parameter(Mandatory = $false)]
@@ -458,12 +517,12 @@ function readOption {
 
                 # Calculate positions for redrawing menu items
                 $menuLen = $orderedKeys.Count
-                $menuOldPos = New-Object System.Management.Automation.Host.Coordinates(0, ($currPos.Y - ($menuLen - $oldPos)))
-                $menuNewPos = New-Object System.Management.Automation.Host.Coordinates(0, ($currPos.Y - ($menuLen - $pos)))
+                $menuOldPos = New-Object System.Management.Automation.Host.Coordinates($currPos.X, ($currPos.Y - ($menuLen - $oldPos)))
+                $menuNewPos = New-Object System.Management.Automation.Host.Coordinates($currPos.X, ($currPos.Y - ($menuLen - $pos)))
                 $oldKey = $orderedKeys[$oldPos]
                 $newKey = $orderedKeys[$pos]
             
-                # Re-draw the previously selected and newly selected options using ANSI escape sequences
+                # Re-draw the previously selected and newly selected options
                 $host.UI.RawUI.CursorPosition = $menuOldPos
                 Write-Host "  $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $($options[$orderedKeys[$oldPos]])" -ForegroundColor "Gray"
                 $host.UI.RawUI.CursorPosition = $menuNewPos
@@ -473,19 +532,22 @@ function readOption {
             }
         }
 
-        # Clear only the menu lines (without affecting content above the menu)
-        $escape = [char]27
-        $clearLines = ""
-        for ($i = 0; $i -lt $options.Count; $i++) {
-            $clearLines += "$escape[2K" # Clear the current line
-            if ($i -lt $options.Count - 1) {
-                $clearLines += "$escape[1A" # Move the cursor up (except for the last line)
+        # Clear the menu by overwriting it with spaces
+        $menuLines = $options.Count
+        $newY = $promptPos.Y + 1 # Calculate the new Y position
+        for ($i = 0; $i -lt $menuLines; $i++) {
+            # Ensure the Y position is within the terminal bounds
+            if ($newY -ge 0 -and $newY -lt $host.UI.RawUI.WindowSize.Height) {
+                $host.UI.RawUI.CursorPosition = New-Object System.Management.Automation.Host.Coordinates($promptPos.X, $newY)
+                Write-Host (" " * ($host.UI.RawUI.WindowSize.Width - 1)) # Clear each line with spaces
             }
+            $newY++ # Move to the next line
         }
-        Write-Host $clearLines -NoNewline
 
         # Move the cursor back to the prompt position
-        Write-Host "$escape[${promptPos.Y};${promptPos.X}H" -NoNewline
+        if ($promptPos.Y -ge 0 -and $promptPos.Y -lt $host.UI.RawUI.WindowSize.Height) {
+            $host.UI.RawUI.CursorPosition = $promptPos
+        }
 
         # Display the selected option on the same line as the prompt
         Write-Host "? " -NoNewline -ForegroundColor "Green"
@@ -771,5 +833,5 @@ function selectUser {
 }
 
 
-invokeScript 'toggleAdmin'
+invokeScript 'readMenu' -initialize $true
 readCommand
