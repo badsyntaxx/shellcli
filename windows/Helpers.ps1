@@ -32,7 +32,6 @@ function readMenu {
 
         Write-Host
         Write-Host ": "  -ForegroundColor "DarkCyan" -NoNewline
-        # Write-Host "Running command:" -NoNewline -ForegroundColor "DarkGray"
         Write-Host " $choice" -ForegroundColor "Gray"
 
         readCommand -command $choice
