@@ -343,7 +343,7 @@ function readOption {
         if ($lineBefore) { Write-Host }
 
         # Get current cursor position
-        # $promptPos = $host.UI.RawUI.CursorPosition
+        $promptPos = $host.UI.RawUI.CursorPosition
 
         Write-Host "? " -NoNewline -ForegroundColor "Green"
         Write-Host "$prompt "
@@ -357,13 +357,13 @@ function readOption {
         $orderedKeys = $options.Keys | ForEach-Object { $_ }
 
         # Get an array of all values
-        # $values = $options.Values
+        $values = $options.Values
 
         # Find the length of the longest key for padding
         $longestKeyLength = ($orderedKeys | ForEach-Object { "$_".Length } | Measure-Object -Maximum).Maximum
 
         # Find the length of the longest value
-        # $longestValueLength = ($values | ForEach-Object { "$_".Length } | Measure-Object -Maximum).Maximum
+        $longestValueLength = ($values | ForEach-Object { "$_".Length } | Measure-Object -Maximum).Maximum
 
         # Display single option if only one exists
         if ($orderedKeys.Count -eq 1) {
@@ -414,13 +414,15 @@ function readOption {
             }
         }
 
-        # Clear the menu using ANSI escape sequences
+        # Clear only the menu lines (without affecting content above the menu)
         $escape = [char]27
         $clearLines = ""
         for ($i = 0; $i -lt $options.Count; $i++) {
-            $clearLines += "$escape[2K$escape[1A"
+            $clearLines += "$escape[2K" # Clear the current line
+            if ($i -lt $options.Count - 1) {
+                $clearLines += "$escape[1A" # Move the cursor up (except for the last line)
+            }
         }
-        $clearLines += "$escape[2K" # Clear the last line
         Write-Host $clearLines -NoNewline
 
         # Move the cursor back to the prompt position
