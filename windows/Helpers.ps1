@@ -30,10 +30,6 @@ function readMenu {
             readCommand
         }
 
-        Write-Host
-        Write-Host ": "  -ForegroundColor "DarkCyan" -NoNewline
-        Write-Host " $choice" -ForegroundColor "Gray"
-
         readCommand -command $choice
     } catch {
         writeText -type "error" -text "readMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
