@@ -339,7 +339,6 @@ function readOption {
     )
 
     try {
-        Write-Host "Foo"
         # Add a line break before the menu if lineBefore is specified
         if ($lineBefore) { Write-Host }
 
@@ -415,7 +414,7 @@ function readOption {
             }
         }
 
-        # Clear only the menu lines (without affecting content above the menu)
+        # Clear only the menu lines (without affecting content above or below the menu)
         $escape = [char]27
         $clearLines = ""
         for ($i = 0; $i -lt $options.Count; $i++) {
