@@ -193,7 +193,7 @@ function installProgram {
                 ".exe" {
                     $exitCode = installEXE -Path $outputPath -exeArguments $Args -Wait $true
                     if ($exitCode -eq 0) {
-                        writeText -type "success" -text "Installation of $AppName completed successfully."
+                        writeText -type "success" -text "Installation of $AppName completed successfully." -lineAfter
                     } else {
                         writeText -type "error" -text "Installation of $AppName failed with exit code $exitCode."
                     }
@@ -201,7 +201,7 @@ function installProgram {
                 ".msi" {
                     $exitCode = installMSI -Path $outputPath -msiArguments $Args
                     if ($exitCode -eq 0) {
-                        writeText -type "success" -text "Installation of $AppName completed successfully."
+                        writeText -type "success" -text "Installation of $AppName completed successfully." -lineAfter
                     } else {
                         writeText -type "error" -text "Installation of $AppName failed with exit code $exitCode."
                     }
@@ -210,10 +210,23 @@ function installProgram {
                     writeText -type "notice" -text "Unsupported file type: $fileExtension"
                 }
             }
+
             # Clean up the downloaded installer
+            $timeout = 10  # Timeout in seconds
+            $startTime = Get-Date
+
+            while ((Test-Path $outputPath) -and ((Get-Date) - $startTime).TotalSeconds -lt $timeout) {
+                try {
+                    Remove-Item -Path $outputPath -Force -ErrorAction Stop
+                    writeText -type "plain" -text "Removed installer."
+                    break
+                } catch {
+                    Start-Sleep -Seconds 1
+                }
+            }
+
             if (Test-Path $outputPath) {
-                Remove-Item -Path $outputPath -Force
-                writeText -type "plain" -text "Removed installer at '$outputPath'."
+                writeText -type "error" -text "Failed to remove installer."
             }
         }        
     } catch {
