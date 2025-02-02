@@ -28,6 +28,64 @@ function getSoftware {
         writeText -type "error" -text "isrInstallApps-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
+function installEXE {
+    param (
+        [string]$Path, # Path to the .exe file
+        [string]$exeArguments, # Arguments for the installer
+        [bool]$Wait = $true # Whether to wait for the process to complete
+    )
+
+    $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $startInfo.FileName = $Path
+    $startInfo.Arguments = $exeArguments
+    $startInfo.UseShellExecute = $false  # Important for capturing exit codes
+    $startInfo.CreateNoWindow = $true    # Run the installer in the background
+
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $startInfo
+
+    writeText -type "plain" -text "Running installer."
+
+    try {
+        $process.Start() | Out-Null
+        if ($Wait) {
+            $process.WaitForExit()
+            if ($process.ExitCode -eq 0) {
+                writeText -type "plain" -text "Installer ran successfully."
+            } else {
+                writeText -type "plain" -text "Installer failed with exit code $($process.ExitCode)."
+            }
+            return $process.ExitCode  # Return the exit code
+        } else {
+            writeText -type "plain" -text "Installation of '$Path' started in the background."
+            return 0  # Return 0 if not waiting
+        }
+    } catch {
+        writeText -type "plain" -text "Failed to start the installation process. Error: $_"
+        return -1  # Return -1 to indicate a failure to start the process
+    }
+}
+function installMSI {
+    param (
+        [string]$Path, # Path to the .msi file
+        [string]$msiArguments # Additional arguments for the MSI installer
+    )
+
+    writeText -type "plain" -text "Running installer."
+
+    try {
+        $process = Start-Process "msiexec.exe" -ArgumentList "/i `"$Path`" $msiArguments" -Wait -PassThru
+        if ($process.ExitCode -eq 0) {
+            writeText -type "plain" -text "Installer ran successfully."
+        } else {
+            writeText -type "plain" -text "Installer failed with exit code $($process.ExitCode)."
+        }
+        return $process.ExitCode  # Return the exit code
+    } catch {
+        writeText -type "plain" -text "Failed to start the installation process. Error: $_"
+        return -1  # Return -1 to indicate a failure to start the process
+    }
+}
 function getBrowserSoftware {
     $installChoice = readOption -options $([ordered]@{
             "Vivaldi" = "Install Vivaldi."
@@ -35,7 +93,7 @@ function getBrowserSoftware {
             "Firefox" = "Install Firefox."
             "Chrome"  = "Install Google Chrome."
             "Exit"    = "Exit this script and go back to main command line."
-        }) -prompt "Select which apps to install:"
+        }) -prompt "Select which browser to install:"
 
     if ($installChoice -ne 2) { 
         $script:user = selectUser -prompt "Select user to install apps for:"
@@ -46,9 +104,9 @@ function getBrowserSoftware {
         $paths = @(
             "C:\Users\Badsyntax\AppData\Local\Vivaldi\Application"
         )
-        $installed = Find-ExistingInstall -Paths $paths -App $appName
+        $installed = findExisting -Paths $paths -App $appName
         if (!$installed) { 
-            Install-Program $url $appName "exe" "/silent" 
+            installProgram -url $url -AppName $appName -Args "/silent" 
         }
     }
     if ($installChoice -eq 1) { 
@@ -57,20 +115,20 @@ function getBrowserSoftware {
         $paths = @(
             "$env:ProgramFiles\BraveSoftware\Brave-Browser\Application\brave.exe"
         )
-        $installed = Find-ExistingInstall -Paths $paths -App $appName
+        $installed = findExisting -Paths $paths -App $appName
         if (!$installed) { 
-            Install-Program $url $appName "exe" "/silent" 
+            installProgram -url $url -AppName $appName -Args "/silent" 
         }
     }
     if ($installChoice -eq 2) { 
-        $url = "https://download.mozilla.org/?product=firefox-msi-latest-ssl&os=win64&lang=en-US&attribution_code=c291cmNlPXd3dy5nb29nbGUuY29tJm1lZGl1bT1yZWZlcnJhbCZjYW1wYWlnbj0obm90IHNldCkmY29udGVudD0obm90IHNldCkmZXhwZXJpbWVudD0obm90IHNldCkmdmFyaWF0aW9uPShub3Qgc2V0KSZ1YT1jaHJvbWUmY2xpZW50X2lkX2dhND0obm90IHNldCkmc2Vzc2lvbl9pZD0obm90IHNldCkmZGxzb3VyY2U9bW96b3Jn&attribution_sig=c629f49b91d2fa3e54e7b9ae8d92a74866b3980356bf1a5b70c0bca69812620b"
+        $url = "https://archive.mozilla.org/pub/firefox/releases/134.0.2/win64/en-US/Firefox Setup 134.0.2.msi"
         $appName = "Firefox"
         $paths = @(
             "$env:ProgramFiles\Mozilla Firefox\firefox.exe"
         )
-        $installed = Find-ExistingInstall -Paths $paths -App $appName
+        $installed = findExisting -Paths $paths -App $appName
         if (!$installed) { 
-            Install-Program $url $appName "msi" "/qn" 
+            installProgram -url $url -AppName $appName -Args "/qn" 
         }
     }
     if ($installChoice -eq 3) { 
@@ -81,12 +139,16 @@ function getBrowserSoftware {
             "$env:ProgramFiles (x86)\Google\Chrome\Application\chrome.exe",
             "C:\Users\$($user["Name"])\AppData\Google\Chrome\Application\chrome.exe"
         )
+        $installed = findExisting -Paths $paths -App $appName
+        if (!$installed) { 
+            installProgram -url $url -AppName $appName -Args "/qn" 
+        }
     }
 }
 function getDiagnosticSoftware {
     WriteText -type "notice" -text "Diagnostic software not yet implemented." -lineBefore
 }
-function Find-ExistingInstall {
+function findExisting {
     param (
         [parameter(Mandatory = $true)]
         [array]$Paths,
@@ -111,59 +173,48 @@ function Find-ExistingInstall {
 
     return $installationFound
 }
-function Install-Program {
+function installProgram {
     param (
         [parameter(Mandatory = $true)]
         [string]$url,
         [parameter(Mandatory = $true)]
         [string]$AppName,
         [parameter(Mandatory = $true)]
-        [string]$Extension,
-        [parameter(Mandatory = $true)]
         [string]$Args
     )
 
     try {
-        if ($Extension -eq "msi") {
-            $output = "$AppName.msi"
-        } else {
-            $output = "$AppName.exe"
-        }
+        $fileName = Split-Path -Path $url -Leaf
+        $outputPath = Join-Path -Path "$env:SystemRoot\Temp" -ChildPath $fileName
 
-        $download = getDownload -url $url -target "$env:SystemRoot\Temp\$output" 
-
-        if ($download) {
-            if ($Extension -eq "msi") {
-                $process = Start-Process -FilePath "msiexec" -ArgumentList "/i `"$env:SystemRoot\Temp\$output`" $Args" -PassThru
-            } else {
-                $process = Start-Process -FilePath "$env:SystemRoot\Temp\$output" -ArgumentList "$Args" -PassThru
+        if (getDownload -url $url -target $outputPath) {
+            $fileExtension = [System.IO.Path]::GetExtension($outputPath).ToLower()
+            switch ($fileExtension) {
+                ".exe" {
+                    $exitCode = installEXE -Path $outputPath -exeArguments $Args -Wait $true
+                    if ($exitCode -eq 0) {
+                        writeText -type "success" -text "Installation of $AppName completed successfully."
+                    } else {
+                        writeText -type "error" -text "Installation of $AppName failed with exit code $exitCode."
+                    }
+                }
+                ".msi" {
+                    $exitCode = installMSI -Path $outputPath -msiArguments $Args
+                    if ($exitCode -eq 0) {
+                        writeText -type "success" -text "Installation of $AppName completed successfully."
+                    } else {
+                        writeText -type "error" -text "Installation of $AppName failed with exit code $exitCode."
+                    }
+                }
+                default {
+                    writeText -type "notice" -text "Unsupported file type: $fileExtension"
+                }
             }
-
-            $curPos = $host.UI.RawUI.CursorPosition
-
-            while (!$process.HasExited) {
-                Write-Host -NoNewLine "`r  Installing |"
-                Start-Sleep -Milliseconds 150
-                Write-Host -NoNewLine "`r  Installing /"
-                Start-Sleep -Milliseconds 150
-                Write-Host -NoNewLine "`r  Installing $([char]0x2015)"
-                Start-Sleep -Milliseconds 150
-                Write-Host -NoNewLine "`r  Installing \"
-                Start-Sleep -Milliseconds 150
+            # Clean up the downloaded installer
+            if (Test-Path $outputPath) {
+                Remove-Item -Path $outputPath -Force
+                writeText -type "plain" -text "Removed installer at '$outputPath'."
             }
-
-            # Restore the cursor position after the installation is complete
-            [Console]::SetCursorPosition($curPos.X, $curPos.Y)
-
-            $nextPos = $host.UI.RawUI.CursorPosition
-
-            Write-Host "                                                     `r"
-
-            [Console]::SetCursorPosition($nextPos.X, $nextPos.Y)
-
-            Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\$output" | Remove-Item -ErrorAction SilentlyContinue
-
-            writeText -type "success" -text "$AppName successfully installed."
         }        
     } catch {
         writeText -type "error" -text "Installation error: $($_.Exception.Message)"

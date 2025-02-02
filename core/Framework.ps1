@@ -478,6 +478,11 @@ function getDownload {
         [switch]$hide = $false
     )
     Begin {
+        Write-Host "  From: " -NoNewline
+        Write-Host "$url" -ForegroundColor Magenta
+        Write-Host "  To: " -NoNewline
+        Write-Host "$target" -ForegroundColor Magenta
+        
         function Show-Progress {
             param (
                 [parameter(Mandatory)]
