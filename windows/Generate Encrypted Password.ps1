@@ -29,6 +29,8 @@ function generateEncryptedPassword {
     Set-Content -Path $keyFilePath -Value $encryptionKeyString
     Set-Content -Path $passwordFilePath -Value $encryptedPassword
 
+    $password = $null
+
     writeText -type "plain" -text "Encryption key saved to: $keyFilePath"
     writeText -type "plain" -text "Encrypted password saved to: $passwordFilePath"
     writeText -type "success" -text "Process complete. Files are ready for use with the 'addPremadeAccount' script."
