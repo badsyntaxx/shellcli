@@ -10,7 +10,7 @@ function generateEncryptedPassword {
     }
 
     # Prompt the user for a password
-    $password = readInput -prompt "Enter the password to encrypt" -IsSecure
+    $password = readInput -prompt "Enter the password to encrypt:" -IsSecure
 
     # Generate a random 32-byte (256-bit) encryption key
     $encryptionKey = New-Object Byte[] 32
@@ -31,7 +31,7 @@ function generateEncryptedPassword {
 
     $password = $null
 
-    writeText -type "plain" -text "Encryption key saved to: $keyFilePath"
+    writeText -type "plain" -text "Decryption key saved to: $keyFilePath"
     writeText -type "plain" -text "Encrypted password saved to: $passwordFilePath"
-    writeText -type "success" -text "Process complete. Files are ready for use with the 'addPremadeAccount' script."
+    writeText -type "success" -text "Success. An encrypted password and decryption key have been generated."
 }
