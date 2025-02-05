@@ -112,6 +112,7 @@ function filterCommands {
             "copy host gpu drivers to vm" { $commandArray = ("windows", "Share GPU with VM", "copyHostGPUDriversToVM") }
             "install host gpu drivers on vm" { $commandArray = ("windows", "Share GPU with VM", "installHostGPUDriversOnVM") }
             "partition gpu" { $commandArray = ("windows", "Share GPU with VM", "partitionGPU") }
+            "generate encrypted password" { $commandArray = ("windows", "Generate Encrypted Password", "generateEncryptedPassword") }
             default { 
                 if ($command -ne "help" -and $command -ne "" -and $command -match "^(?-i)(\w+(-\w+)*)") {
                     if (Get-command $matches[1] -ErrorAction SilentlyContinue) {
