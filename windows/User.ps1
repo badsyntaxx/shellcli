@@ -43,6 +43,8 @@ function addLocalUser {
             writeText -type 'error' -text  "$($_.Exception.Message)"
         } #>
 
+        $password = $null
+
         # Because of the bug listed above we just assume success if the script is still executing at this point.
         writeText -type "success" -text "Local user added."
     } catch {
@@ -80,6 +82,8 @@ function addADUser {
         Add-LocalGroupMember -Group $group -Member $name -ErrorAction Stop
 
         $data = getUserData -Username $name
+
+        $password = $null
 
         writeText -type "list" -List $data -lineAfter
 
@@ -152,6 +156,8 @@ function editUserPassword {
             }
 
             Get-LocalUser -Name $user["Name"] | Set-LocalUser -Password $password
+
+            $password = $null
 
             writeText -Type "success" -text $message
         } else { 
