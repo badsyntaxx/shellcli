@@ -12,7 +12,7 @@ function generateEncryptedPassword {
     # Prompt the user for a password
     $password = Read-Host "Enter the password to encrypt" -AsSecureString
 
-    # Generate a random 32-byte (256-bit) encryption keyhttps://www.youtube.com/watch?v=u1mfm900st8
+    # Generate a random 32-byte (256-bit) encryption key
     $encryptionKey = New-Object Byte[] 32
     [System.Security.Cryptography.RNGCryptoServiceProvider]::Create().GetBytes($encryptionKey)
 
@@ -31,5 +31,5 @@ function generateEncryptedPassword {
 
     writeText -type "plain" -text "Encryption key saved to: $keyFilePath"
     writeText -type "plain" -text "Encrypted password saved to: $passwordFilePath"
-    writeText -type "success" -text "Process complete. Files are ready for use with the 'addInTechAdmin' script."
+    writeText -type "success" -text "Process complete. Files are ready for use with the 'addPremadeAccount' script."
 }
