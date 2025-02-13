@@ -18,7 +18,15 @@ function invokeScript {
         $console.ForegroundColor = "Gray"
         $console.WindowTitle = "Chaste Scripts"
 
-        readCommand -command 'menu'
+        if ($initialize) {
+            Clear-Host
+            Write-Host
+            Write-Host "  Try" -NoNewline
+            Write-Host " help" -ForegroundColor "Cyan" -NoNewline
+            Write-Host " or" -NoNewline
+            Write-Host " menu" -NoNewline -ForegroundColor "Cyan"
+            Write-Host " if you don't know what to do."
+        }
 
         Invoke-Expression $script
     } catch {
