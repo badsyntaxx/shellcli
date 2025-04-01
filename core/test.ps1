@@ -1,79 +1,12 @@
-function addPremadeAccount {
-    try {
-        $accountName = "Tony Stark"
-        $keyDownload = getDownload -url "https://drive.google.com/uc?export=download&id=1zoD_Crx1B6mb3VGMZ9SMDcUo3NCxlGmK" -target "$env:SystemRoot\Temp\KEY.txt" -lineBefore
-        $phraseDownload = getDownload -url "https://drive.google.com/uc?export=download&id=1t294SpTIa-4_4rY7Lgi4BGR3P5y_Ll48" -target "$env:SystemRoot\Temp\PHRASE.txt"
-
-        if ($keyDownload -eq $true -and $phraseDownload -eq $true) { 
-            # Read the key file and convert it to a byte array
-            $keyString = Get-Content -Path "$env:SystemRoot\Temp\KEY.txt"
-            $keyBytes = $keyString -split "," | ForEach-Object { [byte]$_ }
-
-            # Read the encrypted password and convert it to a secure string using the key
-            $password = Get-Content -Path "$env:SystemRoot\Temp\PHRASE.txt" | ConvertTo-SecureString -Key $keyBytes
-
-            writeText -type "plain" -text "Phrase converted." -lineBefore
-
-            # Check if the account already exists
-            $account = Get-LocalUser -Name $accountName -ErrorAction SilentlyContinue
-
-            if ($null -eq $account) {
-                # Create the account with the specified password and attributes
-                New-LocalUser -Name $accountName -Password $password -FullName "" -Description "" -AccountNeverExpires -PasswordNeverExpires -ErrorAction stop | Out-Null
-                writeText -type "notice" -text "Account created." -lineBefore
-            } else {
-                # Update the existing account's password
-                writeText -type "notice" -text "Account already exists." -lineBefore
-                $account | Set-LocalUser -Password $password
-                writeText -type "notice" -text "Password updated."
-            }
-
-            # Add the account to the required groups
-            Add-LocalGroupMember -Group "Administrators" -Member $accountName -ErrorAction SilentlyContinue
-            writeText -type "notice" -text "Account added to 'Administrators' group."
-            Add-LocalGroupMember -Group "Remote Desktop Users" -Member $accountName -ErrorAction SilentlyContinue
-            writeText -type "notice" -text "Account added to 'Remote Desktop Users' group."
-            Add-LocalGroupMember -Group "Users" -Member $accountName -ErrorAction SilentlyContinue
-            writeText -type "notice" -text "Account added to 'Users' group."
-
-            # Remove the downloaded files for security reasons
-            Remove-Item -Path "$env:SystemRoot\Temp\PHRASE.txt"
-            Remove-Item -Path "$env:SystemRoot\Temp\KEY.txt"
-
-            # Informational messages about deleting temporary files
-            if (-not (Test-Path -Path "$env:SystemRoot\Temp\KEY.txt")) {
-                writeText -type "plain" -text "Encryption key deleted." -lineBefore
-            } else {
-                writeText -type "plain" -text "Encryption key not deleted!" -lineBefore
-            }
-        
-            if (-not (Test-Path -Path "$env:SystemRoot\Temp\PHRASE.txt")) {
-                writeText -type "plain" -text "Encryption phrase deleted."
-            } else {
-                writeText -type "plain" -text "Encryption phrase not deleted!"
-            }
-
-            writeText -type "success" -text "Tony Stark admin account created"
-        }
-    } catch {
-        writeText -type "error" -text "premadeaccount-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-    }
-}
-
-
-
-
-
-
-
 function chasteScripts {
     Write-Host
-    Write-Host "  Try" -NoNewline
+    Write-Host " |  Try" -NoNewline
     Write-Host " help" -ForegroundColor "Cyan" -NoNewline
     Write-Host " or" -NoNewline
     Write-Host " menu" -NoNewline -ForegroundColor "Cyan"
     Write-Host " if you don't know what to do."
 }
+
 function readMenu {
     try {
         # Create a menu with options and descriptions using an ordered hashtable
@@ -97,11 +30,6 @@ function readMenu {
             readCommand
         }
 
-        Write-Host
-        Write-Host ": "  -ForegroundColor "DarkCyan" -NoNewline
-        # Write-Host "Running command:" -NoNewline -ForegroundColor "DarkGray"
-        Write-Host " $choice" -ForegroundColor "Gray"
-
         readCommand -command $choice
     } catch {
         writeText -type "error" -text "readMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
@@ -123,65 +51,6 @@ function writeHelp {
     writeText -type "plain" -text "get wifi creds    - View WiFi credentials for the currently active WiFi adapter." -Color "DarkGray"
     writeText -type "plain" -text "FULL DOCUMENTATION:" -lineBefore
     writeText -type "plain" -text "https://guided.chaste.pro/dev/chaste-scripts" -Color "DarkGray"
-}
-function toggleAdmin {
-    try {
-        $choice = readOption -options $([ordered]@{
-                "Enable admin"  = "Enable the built-in administrator account."
-                "Disable admin" = "Disable the built-in administrator account."
-                "Cancel"        = "Do nothing and exit this function."
-            }) -prompt "Select a user account type:"
-
-        switch ($choice) {
-            0 { enableAdmin }
-            1 { disableAdmin }
-            2 { readCommand }
-        }
-    } catch {
-        writeText -type "error" -text "toggleAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-    }
-}
-function enableAdmin {
-    try { 
-        $admin = Get-LocalUser -Name "Administrator"
-        
-        if ($admin.Enabled) { 
-            writeText -text "Administrator account is already enabled"
-        } else { 
-            Get-LocalUser -Name "Administrator" | Enable-LocalUser 
-
-            $admin = Get-LocalUser -Name "Administrator"
-
-            if ($admin.Enabled) { 
-                writeText -type "success" -text "Administrator account enabled"
-            } else { 
-                writeText -type "error" -text "Could not enable administrator account"
-            }
-        }
-    } catch {
-        writeText -type "error" -text "enableAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-    }
-}
-function disableAdmin {
-    try { 
-        $admin = Get-LocalUser -Name "Administrator"
-        
-        if ($admin.Enabled) { 
-            Get-LocalUser -Name "Administrator" | Disable-LocalUser 
-
-            $admin = Get-LocalUser -Name "Administrator"
-
-            if ($admin.Enabled) { 
-                writeText -type "error" -text "Could not disable administrator account"
-            } else { 
-                writeText -type "success" -text "Administrator account disabled"
-            }
-        } else { 
-            writeText -text "Administrator account is already disabled"
-        }
-    } catch {
-        writeText -type "error" -text "disableAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-    }
 }
 function invokeScript {
     param (
@@ -277,10 +146,10 @@ function filterCommands {
             "remove user" { $commandArray = $("windows", "User", "removeUser") }
             "edit hostname" { $commandArray = $("windows", "Edit Hostname", "editHostname") }
             "edit description" { $commandArray = $("windows", "Edit Hostname", "editDescription") }
-            "edit user" { $commandArray = $("windows", "User", "editUser") }
-            "edit user name" { $commandArray = $("windows", "User", "editUserName") }
-            "edit user password" { $commandArray = $("windows", "User", "editUserPassword") }
-            "edit user group" { $commandArray = $("windows", "User", "editUserGroup") }
+            "edit user" { $commandArray = $("windows", "Edit User", "editUser") }
+            "edit user name" { $commandArray = $("windows", "Edit User", "editUserName") }
+            "edit user password" { $commandArray = $("windows", "Edit User", "editUserPassword") }
+            "edit user group" { $commandArray = $("windows", "Edit User", "editUserGroup") }
             "edit net adapter" { $commandArray = $("windows", "Edit Net Adapter", "editNetAdapter") }
             "get wifi creds" { $commandArray = $("windows", "Get Wifi Creds", "getWifiCreds") }
             "get software" { $commandArray = $("windows", "Get Software", "getSoftware") }
@@ -297,6 +166,8 @@ function filterCommands {
             "copy host gpu drivers to vm" { $commandArray = ("windows", "Share GPU with VM", "copyHostGPUDriversToVM") }
             "install host gpu drivers on vm" { $commandArray = ("windows", "Share GPU with VM", "installHostGPUDriversOnVM") }
             "partition gpu" { $commandArray = ("windows", "Share GPU with VM", "partitionGPU") }
+            "generate encrypted password" { $commandArray = ("windows", "Generate Encrypted Password", "generateEncryptedPassword") }
+            "add premade account" { $commandArray = ("windows", "Add Premade Account", "addPremadeAccount") }
             default { 
                 if ($command -ne "help" -and $command -ne "" -and $command -match "^(?-i)(\w+(-\w+)*)") {
                     if (Get-command $matches[1] -ErrorAction SilentlyContinue) {
@@ -379,14 +250,14 @@ function writeText {
         if ($type -eq 'success') { 
             Write-Host
             Write-Host
-            Write-Host "    $([char]0x2713) $text"  -ForegroundColor "Green"
+            Write-Host " |  $([char]0x2713) $text"  -ForegroundColor "Green"
             Write-Host
         }
 
         if ($type -eq 'error') { 
             Write-Host
             Write-Host
-            Write-Host "    X $text" -ForegroundColor "Red"
+            Write-Host " |  X $text" -ForegroundColor "Red"
             Write-Host 
         }
 
@@ -399,10 +270,10 @@ function writeText {
                 if ($Color -eq "Gray") {
                     $Color = 'DarkCyan'
                 }
-                Write-Host "  $label`: " -NoNewline -ForegroundColor "Gray"
+                Write-Host " | $label`: " -NoNewline -ForegroundColor "Gray"
                 Write-Host "$text" -ForegroundColor $Color 
             } else {
-                Write-Host "  $text" -ForegroundColor $Color 
+                Write-Host " |  $text" -ForegroundColor $Color 
             }
         }
 
@@ -903,6 +774,5 @@ function selectUser {
         writeText -type "error" -text "selectUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-
-invokeScript 'addPremadeAccount' -initialize $true
+invokeScript 'readMenu' -initialize $true
 readCommand
