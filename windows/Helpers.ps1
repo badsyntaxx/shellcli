@@ -20,7 +20,7 @@ function readMenu {
                 "get wifi creds"      = "View all saved WiFi credentials on the system."
                 "toggle context menu" = "Enable or Disable the Windows 11 context menu."
                 "repair windows"      = "Repair Windows."
-                "update window"       = "(BETA) Install Windows updates silently."
+                "update windows"      = "(BETA) Install Windows updates silently."
                 "get software"        = "Get a list of installed software that can be installed."
                 "schedule task "      = "(ALPHA) Schedule a new task."
                 "Cancel"              = "Select nothing and exit this menu."
