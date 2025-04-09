@@ -1,4 +1,4 @@
-function chasteScripts {
+function shellCLI {
     Write-Host
     Write-Host " |  Try" -NoNewline
     Write-Host " help" -ForegroundColor "Cyan" -NoNewline
@@ -107,14 +107,14 @@ function readCommand {
         $commandFile = $filteredCommand[1]
         $commandFunction = $filteredCommand[2]
 
-        New-Item -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -ItemType File -Force | Out-Null
+        New-Item -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -ItemType File -Force | Out-Null
         addScript -directory $commandDirectory -file $commandFile
         addScript -directory "core" -file "Framework"
-        Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "invokeScript '$commandFunction'"
-        Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value "readCommand"
+        Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value "invokeScript '$commandFunction'"
+        Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value "readCommand"
 
-        $chasteScript = Get-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Raw
-        Invoke-Expression $chasteScript
+        $shellCLI = Get-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Raw
+        Invoke-Expression $shellCLI
     } catch {
         writeText -type "error" -text "readCommand-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
@@ -129,7 +129,7 @@ function filterCommands {
         $commandArray = $()
 
         switch ($command) {
-            "" { $commandArray = $("windows", "Helpers", "chasteScripts") }
+            "" { $commandArray = $("windows", "Helpers", "shellCLI") }
             "help" { $commandArray = $("windows", "Helpers", "writeHelp") }
             "menu" { $commandArray = $("windows", "Helpers", "readMenu") }
             "toggle context menu" { $commandArray = $("windows", "Toggle Context Menu", "toggleContextMenu") }
@@ -205,7 +205,7 @@ function addScript {
 
         if ($download -eq $true) {
             $rawScript = Get-Content -Path "$env:SystemRoot\Temp\$file.ps1" -Raw -ErrorAction SilentlyContinue
-            Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value $rawScript
+            Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value $rawScript
 
             Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\$file.ps1" | Remove-Item -ErrorAction SilentlyContinue
         }

@@ -1,4 +1,4 @@
-function chasteScripts {
+function shellCLI {
     Write-Host
     Write-Host "  Try" -NoNewline
     Write-Host " help" -ForegroundColor "Cyan" -NoNewline

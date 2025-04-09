@@ -8,26 +8,26 @@ function initializeChasteScripts {
         }
         
         # Create the main script file
-        New-Item -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -ItemType File -Force | Out-Null
+        New-Item -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -ItemType File -Force | Out-Null
 
-        $url = "https://raw.githubusercontent.com/badsyntaxx/chaste-scripts/main"
+        $url = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main"
 
         # Download the script
         $download = getScript -Url "$url/core/Framework.ps1" -Target "$env:SystemRoot\Temp\Framework.ps1"
         if ($download) { 
             # Append the script to the main script
             $rawScript = Get-Content -Path "$env:SystemRoot\Temp\Framework.ps1" -Raw -ErrorAction SilentlyContinue
-            Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value $rawScript
+            Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value $rawScript
 
             # Remove the script file
             Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\Framework.ps1" | Remove-Item -ErrorAction SilentlyContinue
 
             # Add a final line that will invoke the desired function
-            Add-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Value 'invokeScript -script "readCommand -command `"menu`"" -initialize $true'
+            Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value 'invokeScript -script "readCommand -command `"menu`"" -initialize $true'
 
             # Execute the combined script
-            $chasteScript = Get-Content -Path "$env:SystemRoot\Temp\CHASTE-Script.ps1" -Raw
-            Invoke-Expression $chasteScript
+            $shellCLI = Get-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Raw
+            Invoke-Expression $shellCLI
         }
     } catch {
         Write-Host "  initializeChasteScripts-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -ForegroundColor "Red"
