@@ -1,7 +1,6 @@
 ### A powershell scripts library
 
-# Chaste Scripts
-
+# Shell CLI
 This is my PowerShell script library for various Windows tasks. No need to download anything; just enter a command and gain access. Chaste Scripts is particularly useful for IT professionals who need to perform tasks on the backend without disrupting the user. It can handle tasks such as modifying user data (including groups and passwords), making changes to the network adapter, and more.
 
 ## Before we begin
