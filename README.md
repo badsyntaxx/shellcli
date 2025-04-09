@@ -23,7 +23,7 @@ The above command is shorthand Powershell. It is the same as\
 ## Using the menu
 
 If you don't know any commands, you can just enter the `menu` command. Once in the menu, you can use the _up_ and _down_ arrow keys to make selections and then the enter key to confirm your selection.\
-![Chaste scripts menu](https://guided.chaste.pro/images/chaste-scripts/chaste-scripts.png)
+![Chaste scripts menu](https://wkey.pro/images/chaste-scripts/chaste-scripts.png)
 
 ## Using commands
 
