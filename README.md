@@ -8,7 +8,7 @@ user data (including groups and passwords), making changes to the network adapte
 
 ## Before we begin
 
-NOTE There are some anti-virus softwares that block Chaste Scripts. Some do and some don't. If you encounter an av software that does there are some
+NOTE There are some anti-virus softwares that block Shell CLI. Some do and some don't. If you encounter an av software that does there are some
 [steps you can take](https://github.com/badsyntaxx/chaste-scripts?tab=readme-ov-file#bypass-anti-virus).
 
 You may also need to enable running powershell scripts on your system.
@@ -27,7 +27,7 @@ The above command is shorthand Powershell. It is the same as\
 
 If you don't know any commands, you can just enter the `menu` command. Once in the menu, you can use the _up_ and _down_ arrow keys to make selections
 and then the enter key to confirm your selection.\
-![Chaste scripts menu](https://wkey.pro/images/chaste-scripts/chaste-scripts.png)
+![Shell CLI menu](https://wkey.pro/images/chaste-scripts/chaste-scripts.png)
 
 ## Using commands
 
@@ -101,10 +101,10 @@ Set the execution policy to unrestricted. `Set-ExecutionPolicy Unrestricted`
 
 ## Bypass anti-virus
 
-Some anti-virus programs will block the use of Chaste Scripts. Most of the time the inital connection command is what triggers the anti-virus. Thats
+Some anti-virus programs will block the use of Shell CLI. Most of the time the inital connection command is what triggers the anti-virus. Thats
 because of the irm (Invoke-RestMethod) portion of the command. The reason anti-virus softwares will sometimes block this command is because it can be
-used to send and retrieve information over the internet. In this case you retrieve the root powershell functions of Chaste Scripts.
+used to send and retrieve information over the internet. In this case you retrieve the root powershell functions of Shell CLI.
 
-To bypass this problem you can download and run or paste in the root functions of Chaste Scripts.
+To bypass this problem you can download and run or paste in the root functions of Shell CLI.
 
-[Chaste Scripts Root](https://raw.githubusercontent.com/badsyntaxx/chaste-scripts/main/core/init.ps1)
+[Shell CLI Root](https://raw.githubusercontent.com/badsyntaxx/chaste-scripts/main/core/init.ps1)

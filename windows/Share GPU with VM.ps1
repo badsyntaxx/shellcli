@@ -6,7 +6,7 @@ function shareGPUWithVM {
                 "install host gpu drivers on vm" = "Install drivers. (RUN ON VM)"
                 "partition gpu"                  = "Partition GPU. (RUN ON HOST WHILE VM IS OFF)"
                 "Cancel"                         = "Select nothing and exit this menu."
-            }) -prompt "Select a Chaste Scripts function:" -returnKey
+            }) -prompt "Select a ShellCLI function:" -returnKey
 
         if ($choice -eq "Cancel") {
             readCommand

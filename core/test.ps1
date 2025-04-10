@@ -6,59 +6,7 @@ function shellCLI {
     Write-Host " menu" -NoNewline -ForegroundColor "Cyan"
     Write-Host " if you don't know what to do."
 }
-
-function readMenu {
-    try {
-        # Create a menu with options and descriptions using an ordered hashtable
-        $choice = readOption -options $([ordered]@{
-                "toggle admin"        = "Toggle the Windows built in administrator account."
-                "add user"            = "Add a user to the system."
-                "remove user"         = "Remove a user from the system."
-                "edit user"           = "Edit a users."
-                "edit hostname"       = "Edit this computers name and description."
-                "edit net adapter"    = "(BETA) Edit a network adapter."
-                "get wifi creds"      = "View all saved WiFi credentials on the system."
-                "toggle context menu" = "Enable or Disable the Windows 11 context menu."
-                "repair windows"      = "Repair Windows."
-                "update window"       = "(BETA) Install Windows updates silently."
-                "get software"        = "Get a list of installed software that can be installed."
-                "schedule task "      = "(ALPHA) Schedule a new task."
-                "Cancel"              = "Select nothing and exit this menu."
-            }) -prompt "Select a Chaste Scripts function:" -returnKey
-
-        if ($choice -eq "Cancel") {
-            readCommand
-        }
-
-        readCommand -command $choice
-    } catch {
-        writeText -type "error" -text "readMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-    }
-}
-function writeHelp {
-    writeText -type "plain" -text "USER COMMANDS:" -lineBefore
-    writeText -type "plain" -text "add [local,ad] user              - Add a local or domain user to the system." -Color "DarkGray"
-    writeText -type "plain" -text "remove user                      - Add a local or domain user to the system." -Color "DarkGray"
-    writeText -type "plain" -text "edit user [name,password,group]  - Edit user account settings." -Color "DarkGray"
-    writeText -type "plain" -text "SYSTEM COMMANDS:" -lineBefore
-    writeText -type "plain" -text "edit hostname        - Edit the computers hostname and description." -Color "DarkGray"
-    writeText -type "plain" -text "repair windows       - Repair Windows." -Color "DarkGray"
-    writeText -type "plain" -text "update windows      - Install Windows updates. All or just severe." -Color "DarkGray"
-    writeText -type "plain" -text "schedule task        - Create a task in the task scheduler." -Color "DarkGray"
-    writeText -type "plain" -text "toggle context menu  - Disable the Windows 11 context menu." -Color "DarkGray"
-    writeText -type "plain" -text "NETWORK COMMANDS:" -lineBefore
-    writeText -type "plain" -text "edit net adapter  - Edit network adapters." -Color "DarkGray"
-    writeText -type "plain" -text "get wifi creds    - View WiFi credentials for the currently active WiFi adapter." -Color "DarkGray"
-    writeText -type "plain" -text "FULL DOCUMENTATION:" -lineBefore
-    writeText -type "plain" -text "https://guided.chaste.pro/dev/chaste-scripts" -Color "DarkGray"
-}
 function invokeScript {
-    param (
-        [parameter(Mandatory = $true)]
-        [string]$script,
-        [parameter(Mandatory = $false)]
-        [boolean]$initialize = $false
-    ) 
 
     try {
         if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]"Administrator")) {
@@ -70,19 +18,21 @@ function invokeScript {
         $console = $host.UI.RawUI
         $console.BackgroundColor = "Black"
         $console.ForegroundColor = "Gray"
-        $console.WindowTitle = "Chaste Scripts"
+        $console.WindowTitle = "ShellCLI"
 
-        if ($initialize) {
-            Clear-Host
-            Write-Host
-            Write-Host "  Try" -NoNewline
-            Write-Host " help" -ForegroundColor "Cyan" -NoNewline
-            Write-Host " or" -NoNewline
-            Write-Host " menu" -NoNewline -ForegroundColor "Cyan"
-            Write-Host " if you don't know what to do."
-        }
+   
+        Clear-Host
+        Write-Host
+        Write-Host " $([char]0x250C)" -NoNewline -ForegroundColor "DarkGray"
+        Write-Host " Try" -NoNewline
+        Write-Host " help" -ForegroundColor "Cyan" -NoNewline
+        Write-Host " or" -NoNewline
+        Write-Host " menu" -NoNewline -ForegroundColor "Cyan"
+        Write-Host " if you don't know what to do."
+        Write-Host " $([char]0x2502)" -ForegroundColor "DarkGray"
+        
 
-        Invoke-Expression $script
+        readMenu
     } catch {
         writeText -type "error" -text "invokeScript-$($_.InvocationInfo.ScriptLineNumber) | $script"
     }
@@ -94,10 +44,13 @@ function readCommand {
     )
 
     try {
-        Write-Host
+        Write-Host " $([char]0x2502)" -ForegroundColor "DarkGray"
         if ($command -eq "") { 
-            Write-Host "$([char]0x203A) " -NoNewline
+            Write-Host " $([char]0x2502)" -ForegroundColor "DarkGray"
+            Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "DarkGray"
+            Write-Host " $([char]0x203A) " -NoNewline  -ForegroundColor "Cyan"
             $command = Read-Host 
+            Write-Host " $([char]0x2502)" -ForegroundColor "DarkGray"
         }
 
         $command = $command.ToLower()
@@ -106,15 +59,8 @@ function readCommand {
         $commandDirectory = $filteredCommand[0]
         $commandFile = $filteredCommand[1]
         $commandFunction = $filteredCommand[2]
-
-        New-Item -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -ItemType File -Force | Out-Null
-        addScript -directory $commandDirectory -file $commandFile
-        addScript -directory "core" -file "Framework"
-        Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value "invokeScript '$commandFunction'"
-        Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value "readCommand"
-
-        $shellCLI = Get-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Raw
-        Invoke-Expression $shellCLI
+        
+        Invoke-Expression $commandFunction
     } catch {
         writeText -type "error" -text "readCommand-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
@@ -237,7 +183,7 @@ function writeText {
 
     try {
         # Add a new line before output if specified
-        if ($lineBefore) { Write-Host }
+        if ($lineBefore) { Write-Host " $([char]0x2502)" -ForegroundColor "DarkGray" }
 
         # Format output based on the specified Type
         if ($type -eq "header") {
@@ -248,21 +194,24 @@ function writeText {
         }
 
         if ($type -eq 'success') { 
-            Write-Host
-            Write-Host
-            Write-Host " |  $([char]0x2713) $text"  -ForegroundColor "Green"
-            Write-Host
+            Write-Host " $([char]0x2502)" -ForegroundColor "DarkGray"
+            Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "DarkGray"
+            Write-Host " $([char]0x2713) $text"  -ForegroundColor "Green"
+            Write-Host " $([char]0x2502)" -ForegroundColor "DarkGray"
         }
 
         if ($type -eq 'error') { 
-            Write-Host
-            Write-Host
-            Write-Host " |  X $text" -ForegroundColor "Red"
-            Write-Host 
+            Write-Host " $([char]0x2502)" -ForegroundColor "DarkGray"
+            Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "DarkGray"
+            Write-Host " X $text" -ForegroundColor "Red"
+            Write-Host " $([char]0x2502)" -ForegroundColor "DarkGray"
         }
 
         if ($type -eq 'notice') { 
-            Write-Host "! $text" -ForegroundColor "Yellow" 
+            Write-Host " $([char]0x2502)" -ForegroundColor "DarkGray"
+            Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "DarkGray"
+            Write-Host " ! $text" -ForegroundColor "Yellow" 
+            Write-Host " $([char]0x2502)" -ForegroundColor "DarkGray"
         }
 
         if ($type -eq 'plain') {
@@ -298,7 +247,7 @@ function writeText {
         }
 
         # Add a new line after output if specified
-        if ($lineAfter) { Write-Host }
+        if ($lineAfter) { Write-Host " $([char]0x2502)" -ForegroundColor "DarkGray" }
     } catch {
         writeText -type "error" -text "writeText-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
@@ -325,13 +274,14 @@ function readInput {
 
     try {
         # Add a new line before prompt if specified
-        if ($lineBefore) { Write-Host }
+        if ($lineBefore) { Write-Host " $([char]0x2502)" -ForegroundColor "DarkGray" }
 
         # Get current cursor position
         $currPos = $host.UI.RawUI.CursorPosition
 
-        Write-Host "? " -NoNewline -ForegroundColor "Green"
-        Write-Host "$prompt " -NoNewline
+        Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "DarkGray"
+        # Write-Host " ? " -NoNewline -ForegroundColor "Cyan"
+        Write-Host "   $prompt " -NoNewline -ForegroundColor "DarkGray"
 
         if ($IsSecure) { $userInput = Read-Host -AsSecureString } 
         else { $userInput = Read-Host }
@@ -361,16 +311,17 @@ function readInput {
         # Reset cursor position
         [Console]::SetCursorPosition($currPos.X, $currPos.Y)
         
-        Write-Host "? " -ForegroundColor "Green" -NoNewline
+        Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "DarkGray"
+        # Write-Host " ? " -ForegroundColor "Cyan" -NoNewline
         if ($IsSecure -and ($userInput.Length -eq 0)) { 
-            Write-Host "$prompt                                                "
+            Write-Host "   $prompt                                                "
         } else { 
-            Write-Host "$prompt " -NoNewline
+            Write-Host "   $prompt " -NoNewline -ForegroundColor "DarkGray"
             Write-Host "$userInput                                             " -ForegroundColor "DarkCyan"
         }
 
         # Add a new line after prompt if specified
-        if ($lineAfter) { Write-Host }
+        if ($lineAfter) { Write-Host " $([char]0x2502)" -ForegroundColor "DarkGray" }
     
         # Return the validated user input
         return $userInput
@@ -396,13 +347,14 @@ function readOption {
 
     try {
         # Add a line break before the menu if lineBefore is specified
-        if ($lineBefore) { Write-Host }
+        if ($lineBefore) { Write-Host " $([char]0x2502)" -ForegroundColor "DarkGray" }
 
         # Get current cursor position
         $promptPos = $host.UI.RawUI.CursorPosition
 
-        Write-Host "? " -NoNewline -ForegroundColor "Green"
-        Write-Host "$prompt "
+        Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "DarkGray"
+        # Write-Host " ? " -NoNewline -ForegroundColor "Cyan"
+        Write-Host " $prompt "
 
         # Initialize variables for user input handling
         $vkeycode = 0
@@ -423,18 +375,21 @@ function readOption {
 
         # Display single option if only one exists
         if ($orderedKeys.Count -eq 1) {
-            Write-Host "$([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline
-            Write-Host "  $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($options[$orderedKeys])" -ForegroundColor "DarkCyan"
+            Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "DarkGray"
+            Write-Host " $([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline
+            Write-Host " $([char]0x2502)   $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($options[$orderedKeys])" -ForegroundColor "DarkCyan"
         } else {
             # Loop through each option and display with padding and color
             for ($i = 0; $i -lt $orderedKeys.Count; $i++) {
                 $key = $orderedKeys[$i]
                 $padding = " " * ($longestKeyLength - $key.Length)
                 if ($i -eq $pos) { 
-                    Write-Host "$([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline  
+                    Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "DarkGray"
+                    Write-Host " $([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline  
                     Write-Host " $key $padding - $($options[$key])" -ForegroundColor "DarkCyan"
                 } else { 
-                    Write-Host "  $key $padding - $($options[$key])" -ForegroundColor "Gray" 
+                    Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "DarkGray"
+                    Write-Host "   $key $padding - $($options[$key])" -ForegroundColor "DarkGray" 
                 }
             }
         }
@@ -462,15 +417,17 @@ function readOption {
             
                 # Re-draw the previously selected and newly selected options
                 $host.UI.RawUI.CursorPosition = $menuOldPos
-                Write-Host "  $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $($options[$orderedKeys[$oldPos]])" -ForegroundColor "Gray"
+                Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "DarkGray"
+                Write-Host "   $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $($options[$orderedKeys[$oldPos]])" -ForegroundColor "DarkGray"
                 $host.UI.RawUI.CursorPosition = $menuNewPos
-                Write-Host "$([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline
+                Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "DarkGray"
+                Write-Host " $([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline
                 Write-Host " $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($options[$orderedKeys[$pos]])" -ForegroundColor "DarkCyan"
                 $host.UI.RawUI.CursorPosition = $currPos
             }
         }
 
-        # Clear the menu by overwriting it with spaces
+        <# # Clear the menu by overwriting it with spaces
         $menuLines = $options.Count
         $newY = $promptPos.Y + 1 # Calculate the new Y position
         for ($i = 0; $i -lt $menuLines; $i++) {
@@ -490,10 +447,10 @@ function readOption {
         # Display the selected option on the same line as the prompt
         Write-Host "? " -NoNewline -ForegroundColor "Green"
         Write-Host "$prompt " -NoNewline
-        Write-Host "$($orderedKeys[$pos])" -ForegroundColor "DarkCyan"
+        Write-Host "$($orderedKeys[$pos])" -ForegroundColor "DarkCyan" #>
 
         # Add a line break after the menu if lineAfter is specified
-        if ($lineAfter) { Write-Host }
+        if ($lineAfter) { Write-Host " $([char]0x2502)" -ForegroundColor "DarkGray" }
 
         # Handle function return values (key, value, menu position) based on parameters
         if ($returnKey) { 
@@ -608,7 +565,7 @@ function getDownload {
                 $reader = $response.GetResponseStream()
                 $writer = new-object System.IO.FileStream $target, "Create"
                 
-                if ($lineBefore) { Write-Host }
+                if ($lineBefore) { Write-Host " $([char]0x2502)" -ForegroundColor "DarkGray" }
 
                 if (-not $hide -and $label -ne "") {
                     Write-Host  "  $label" -ForegroundColor "Yellow"
@@ -709,7 +666,7 @@ function selectUser {
 
     try {
         # Add a line break before the menu if lineBefore is specified
-        if ($lineBefore) { Write-Host }
+        if ($lineBefore) { Write-Host " $([char]0x2502)" -ForegroundColor "DarkGray" }
          
         # Initialize empty array to store user names
         $userNames = @()
@@ -766,7 +723,7 @@ function selectUser {
         }
 
         # Add a line break after the menu if lineAfter is specified
-        if ($lineAfter) { Write-Host }
+        if ($lineAfter) { Write-Host " $([char]0x2502)" -ForegroundColor "DarkGray" }
 
         # Return the user data dictionary
         return $data
@@ -774,5 +731,657 @@ function selectUser {
         writeText -type "error" -text "selectUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-invokeScript 'readMenu' -initialize $true
+function toggleAdmin {
+    try {
+        $choice = readOption -options $([ordered]@{
+                "enable admin"  = "Enable the built-in administrator account."
+                "disable admin" = "Disable the built-in administrator account."
+                "Cancel"        = "Do nothing and exit this function."
+            }) -prompt "Select a user account type:"
+
+        switch ($choice) {
+            0 { enableAdmin }
+            1 { disableAdmin }
+            2 { readCommand }
+        }
+    } catch {
+        writeText -type "error" -text "toggleAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+function enableAdmin {
+    try { 
+        $admin = Get-LocalUser -Name "Administrator"
+        
+        if ($admin.Enabled) { 
+            writeText -text "Administrator account is already enabled"
+        } else { 
+            Get-LocalUser -Name "Administrator" | Enable-LocalUser 
+
+            $admin = Get-LocalUser -Name "Administrator"
+
+            if ($admin.Enabled) { 
+                writeText -type "success" -text "Administrator account enabled"
+            } else { 
+                writeText -type "error" -text "Could not enable administrator account"
+            }
+        }
+    } catch {
+        writeText -type "error" -text "enableAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+function disableAdmin {
+    try { 
+        $admin = Get-LocalUser -Name "Administrator"
+        
+        if ($admin.Enabled) { 
+            Get-LocalUser -Name "Administrator" | Disable-LocalUser 
+
+            $admin = Get-LocalUser -Name "Administrator"
+
+            if ($admin.Enabled) { 
+                writeText -type "error" -text "Could not disable administrator account"
+            } else { 
+                writeText -type "success" -text "Administrator account disabled"
+            }
+        } else { 
+            writeText -text "Administrator account is already disabled"
+        }
+    } catch {
+        writeText -type "error" -text "disableAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+function addUser {
+    try {
+        $choice = readOption -options $([ordered]@{
+                "Add local user"  = "Add a local user to the system."
+                "Add domain user" = "Add a domain user to the system."
+                "Cancel"          = "Do nothing and exit this function."
+            }) -prompt "Select a user account type" -lineAfter
+
+        switch ($choice) {
+            0 { addLocalUser }
+            1 { addADUser }
+            2 { readCommand }
+        }
+    } catch {
+        writeText -type "error" -text "addUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+function addLocalUser {
+    try {
+        Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "DarkGray"
+        Write-Host " Enter user credentials" -ForegroundColor "Gray"
+
+        $name = readInput -prompt "Enter a user name:" -Validate "^([a-zA-Z0-9 ._\-]{1,64})$" -CheckExistingUser
+        $password = readInput -prompt "Enter a password or leave blank:" -IsSecure -lineAfter
+
+        # Create the new local user and add to the specified group
+        New-LocalUser $name -Password $password -description "Local User" -AccountNeverExpires -PasswordNeverExpires -ErrorAction Stop | Out-Null
+
+        $group = readOption -options $([ordered]@{
+                "Administrators" = "Set this user's group membership to administrators."
+                "Users"          = "Set this user's group membership to standard users."
+            }) -prompt "Select a user group" -returnKey -lineAfter
+          
+        Add-LocalGroupMember -Group $group -Member $name -ErrorAction Stop | Out-Null
+        
+        $newUser = Get-LocalUser -Name $name
+        if ($null -eq $newUser) {
+            # User creation failed, exit with error
+            writeText -type 'error' -text "Failed to create user $name. Please check the logs for details."
+        }
+
+        # There is a powershell bug with Get-LocalGroupMember So we can't do a manual check.
+        <# if ((Get-LocalGroupMember -Group $group -Name $name).Count -gt 0) {
+            writeText -type "success" -text "$name has been assigned to the $group group." -lineAfter
+        } else {
+            writeText -type 'error' -text  "$($_.Exception.Message)"
+        } #>
+
+        $password = $null
+
+        # Because of the bug listed above we just assume success if the script is still executing at this point.
+        writeText -type "success" -text "Local user added."
+    } catch {
+        writeText -type "error" -text "addLocalUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+function addADUser {
+    try {
+        $name = readInput -prompt "Enter a user name:" -Validate "^([a-zA-Z0-9 _\-]{1,64})$"  -CheckExistingUser
+        $nameParts = $name -split ' '
+        $GivenName = $nameParts[0]
+        $Surname = $nameParts[-1]
+        $samAccountName = readInput -prompt "Enter a sam name:" -Validate "^([a-zA-Z0-9 _\-]{1,20})$"  -CheckExistingUser
+        $password = readInput -prompt "Enter a password:" -IsSecure
+        $choice = readOption -options $([ordered]@{
+                "Administrator" = "Create admin user"
+                "Standard user" = "Create standard user"
+            }) -prompt "Set group membership"
+        $domainName = $env:USERDNSDOMAIN
+        
+        if ($choice -eq 0) { 
+            $group = 'Administrators' 
+        } else { 
+            $group = "Users" 
+        }
+
+        New-ADUser -Name $name 
+        -SamAccountName $samAccountName 
+        -GivenName $GivenName
+        -Surname $Surname
+        -UserPrincipalName "$samAccountName@$domainName.com" 
+        -AccountPassword $password 
+        -Enabled $true
+
+        Add-LocalGroupMember -Group $group -Member $name -ErrorAction Stop
+
+        $data = getUserData -Username $name
+
+        $password = $null
+
+        writeText -type "list" -List $data -lineAfter
+
+        writeText -type "success" -text "The user account was created."
+    } catch {
+        writeText -type "error" -text "addADUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+function editUser {
+    try {
+        $choice = readOption -options $([ordered]@{
+                "Edit user name"     = "Edit an existing users name."
+                "Edit user password" = "Edit an existing users password."
+                "Edit user group"    = "Edit an existing users group membership."
+                "Cancel"             = "Do nothing and exit this function."
+            }) -prompt "What would you like to edit?"
+
+        switch ($choice) {
+            0 { editUserName }
+            1 { editUserPassword }
+            2 { editUserGroup }
+            3 { readCommand }
+        }
+    } catch {
+        writeText -type "error" -text "editUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+function editUserName {
+    try {
+        $user = selectUser
+
+        if ($user["Source"] -eq "MicrosoftAccount") { 
+            writeText -type "notice" -text "Cannot edit Microsoft accounts."
+        }
+
+        if ($user["Source"] -eq "Local") { 
+            $newName = readInput -prompt "Enter username:" -Validate "^(\s*|[a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser
+    
+            Rename-LocalUser -Name $user["Name"] -NewName $newName
+
+            $newUser = Get-LocalUser -Name $newName
+
+            if ($null -ne $newUser) { 
+                writeText -type "success" -text "Account name changed"
+            } else {
+                writeText -type "error" -text "Unknown error"
+            }
+        } else { 
+            writeText -type "notice" -text "Editing domain users doesn't work yet."
+        }
+    } catch {
+        writeText -type "error" -text "editUser-name-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+function editUserPassword {
+    try {
+        $user = selectUser
+
+        if ($user["Source"] -eq "MicrosoftAccount") { 
+            writeText -type "notice" -text "Cannot edit Microsoft accounts."
+        }
+
+        if ($user["Source"] -eq "Local") { 
+            $password = readInput -prompt "Enter password or leave blank:" -IsSecure $true
+
+            if ($password.Length -eq 0) { 
+                $message = "Password removed" 
+            } else { 
+                $message = "Password changed" 
+            }
+
+            Get-LocalUser -Name $user["Name"] | Set-LocalUser -Password $password
+
+            $password = $null
+
+            writeText -Type "success" -text $message
+        } else { 
+            writeText -type "plain" -text "Editing domain users doesn't work yet."
+        }
+    } catch {
+        writeText -type "error" -text "editUserPassword-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+function editUserGroup {
+    try {
+        $user = selectUser
+
+        if ($user["Source"] -eq "MicrosoftAccount") { 
+            writeText -type "notice" -text "Cannot edit Microsoft accounts."
+        }
+
+        if ($user["Source"] -eq "Local") { 
+            $choice = readOption -options $([ordered]@{
+                    "Add"    = "Add this user to more groups"
+                    "Remove" = "Remove this user from certain groups"
+                    "Cancel" = "Do nothing and exit this function."
+                }) -prompt "Do you want to add or remove this user from groups?"
+
+            switch ($choice) {
+                0 { addGroups -username $user["Name"] }
+                1 { removeGroups -username $user["Name"] }
+                2 { readCommand }
+            }
+
+            writeText -type "success" -text "Group membership updated."
+        } else { 
+            writeText -type "plain" -text "Editing domain users doesn't work yet."
+        }
+    } catch {
+        writeText -type "error" -text "editUserGroup-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+} 
+function addGroups {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$username
+    )
+    
+    $default = Get-LocalGroup | ForEach-Object {
+        $description = $_.Description
+        @{ $_.Name = $description }
+    } | Sort-Object -Property Name
+
+    $groups = [ordered]@{}
+    foreach ($group in $default) { 
+        # $groups += $group
+        switch ($group.Keys) {
+            "Performance Monitor Users" { $groups["$($group.Keys)"] = "Access local performance counter data." }
+            "Power Users" { $groups["$($group.Keys)"] = "Limited administrative privileges." }
+            "Network Configuration Operators" { $groups["$($group.Keys)"] = "Privileges for managing network configuration." }
+            "Performance Log Users" { $groups["$($group.Keys)"] = "Schedule performance counter logging." }
+            "Remote Desktop Users" { $groups["$($group.Keys)"] = "Log on remotely." }
+            "System Managed Accounts Group" { $groups["$($group.Keys)"] = "Managed by the system." }
+            "Users" { $groups["$($group.Keys)"] = "Prevented from making system-wide changes." }
+            "Remote Management Users" { $groups["$($group.Keys)"] = "Access WMI resources over management protocols." }
+            "Replicator" { $groups["$($group.Keys)"] = "Supports file replication in a domain." }
+            "IIS_IUSRS" { $groups["$($group.Keys)"] = "Used by Internet Information Services (IIS)." }
+            "Backup Operators" { $groups["$($group.Keys)"] = "Override security restrictions for backup purposes." }
+            "Cryptographic Operators" { $groups["$($group.Keys)"] = "Perform cryptographic operations." }
+            "Access Control Assistance Operators" { $groups["$($group.Keys)"] = "Remotely query authorization attributes and permissions." }
+            "Administrators" { $groups["$($group.Keys)"] = "Complete, unrestricted access to the computer/domain." }
+            "Device Owners" { $groups["$($group.Keys)"] = "Can change system-wide settings." }
+            "Guests" { $groups["$($group.Keys)"] = "Similar access to members of the Users group by default." }
+            "Hyper-V Administrators" { $groups["$($group.Keys)"] = "Complete and unrestricted access to all Hyper-V features." }
+            "Distributed COM Users" { $groups["$($group.Keys)"] = "Authorized for Distributed Component Object Model (DCOM) operations." }
+        }
+    }
+
+    $groups["Cancel"] = "Select nothing and exit this function."
+    $selectedGroups = @()
+    $selectedGroups += readOption -options $groups -prompt "Select a group:" -returnKey
+
+    if ($selectedGroups -eq "Cancel") {
+        readCommand
+    }
+
+    $groupsList = [ordered]@{}
+    $groupsList["Done"] = "Stop selecting groups and move to the next step."
+    $groupsList += $groups
+
+    while ($selectedGroups -notcontains 'Done') {
+        $availableGroups = [ordered]@{}
+        foreach ($key in $groupsList.Keys) {
+            if ($selectedGroups -notcontains $key) {
+                $availableGroups[$key] = $groupsList[$key]
+            }
+        }
+
+        $selectedGroups += readOption -options $availableGroups -prompt "Select another group or 'Done':" -ReturnKey
+        if ($selectedGroups -eq "Cancel") {
+            readCommand
+        }
+    }
+
+    foreach ($group in $selectedGroups) {
+        if ($group -ne "Done") {
+            Add-LocalGroupMember -Group $group -Member $username -ErrorAction SilentlyContinue | Out-Null 
+        }
+    }
+}
+function removeGroups {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$username
+    )
+
+    try {
+        $groups = [ordered]@{}
+
+        $allGroups = Get-LocalGroup
+
+        # Check each group for the user's membership
+        foreach ($group in $allGroups) {
+            try {
+                $members = Get-LocalGroupMember -Group $group.Name -ErrorAction Stop
+                $isMember = $members | Where-Object {
+                    $_.Name -eq $Username -or 
+                    $_.SID.Value -eq $Username -or 
+                    $_ -eq $Username -or 
+                    $_ -like "*\$Username"
+                }
+            
+                if ($isMember) {
+                    $description = $group.Description
+                    if ($description.Length -gt 72) { 
+                        $description = $description.Substring(0, 72) + "..." 
+                    }
+                    $groups[$group.Name] = $description
+                }
+            } catch {
+                # If there's an error (e.g., access denied), we skip this group
+                Write-Verbose "Couldn't check membership for group $($group.Name): $_"
+            }
+        }
+
+        $groups
+
+        foreach ($group in $groups) { 
+            switch ($group.Name) {
+                "Performance Monitor Users" { $groups["$($group.Name)"] = "Access local performance counter data." }
+                "Power Users" { $groups["$($group.Name)"] = "Limited administrative privileges." }
+                "Network Configuration Operators" { $groups["$($group.Name)"] = "Privileges for managing network configuration." }
+                "Performance Log Users" { $groups["$($group.Name)"] = "Schedule performance counter logging." }
+                "Remote Desktop Users" { $groups["$($group.Name)"] = "Log on remotely." }
+                "System Managed Accounts Group" { $groups["$($group.Name)"] = "Managed by the system." }
+                "Users" { $groups["$($group.Name)"] = "Prevented from making system-wide changes." }
+                "Remote Management Users" { $groups["$($group.Name)"] = "Access WMI resources over management protocols." }
+                "Replicator" { $groups["$($group.Name)"] = "Supports file replication in a domain." }
+                "IIS_IUSRS" { $groups["$($group.Name)"] = "Used by Internet Information Services (IIS)." }
+                "Backup Operators" { $groups["$($group.Name)"] = "Override security restrictions for backup purposes." }
+                "Cryptographic Operators" { $groups["$($group.Name)"] = "Perform cryptographic operations." }
+                "Access Control Assistance Operators" { $groups["$($group.Name)"] = "Remotely query authorization attributes and permissions." }
+                "Administrators" { $groups["$($group.Name)"] = "Complete, unrestricted access to the computer/domain." }
+                "Device Owners" { $groups["$($group.Name)"] = "Can change system-wide settings." }
+                "Guests" { $groups["$($group.Name)"] = "Similar access to members of the Users group by default." }
+                "Hyper-V Administrators" { $groups["$($group.Name)"] = "Complete and unrestricted access to all Hyper-V features." }
+                "Distributed COM Users" { $groups["$($group.Name)"] = "Authorized for Distributed Component Object Model (DCOM) operations." }
+            }
+        }
+
+        if ($groups.Count -eq 0) {
+            Write-Host "The user $Username is not a member of any local groups, or we don't have permission to check."
+        }
+
+        # Add a "Cancel" option
+        $groups["Cancel"] = "Select nothing and exit this function."
+
+        $selectedGroups = @()
+        $selectedGroups += readOption -options $groups -prompt "Select a group:" -returnKey
+
+        if ($selectedGroups -eq "Cancel") {
+            readCommand
+        }
+
+        $groupsList = [ordered]@{}
+        $groupsList["Done"] = "Stop selecting groups and move to the next step."
+        $groupsList += $groups
+
+        while ($selectedGroups -notcontains 'Done') {
+            $availableGroups = [ordered]@{}
+
+            foreach ($key in $groupsList.Keys) {
+                if ($selectedGroups -notcontains $key) {
+                    $availableGroups[$key] = $groupsList[$key]
+                }
+            }
+
+            $selectedGroups += readOption -options $availableGroups -prompt "Select another group or 'Done':" -ReturnKey
+
+            if ($selectedGroups -eq "Cancel") {
+                readCommand
+            }
+        }
+
+        foreach ($group in $selectedGroups) {
+            if ($group -ne "Done") {
+                Remove-LocalGroupMember -Group $group -Member $username -ErrorAction SilentlyContinue
+            }
+        }
+    } catch {
+        writeText -type "error" -text "remove-group-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+function removeUser {
+    try {
+        $user = selectUser -prompt "Select an account to remove" -lineAfter
+        $userSid = (Get-LocalUser $user["Name"]).Sid
+        $userProfile = Get-CimInstance Win32_UserProfile -Filter "SID = '$userSid'"
+        $dir = $userProfile.LocalPath
+
+        $choice = readOption -options $([ordered]@{
+                "Delete" = "Also delete the users data."
+                "Keep"   = "Do not delete the users data."
+                "Cancel" = "Do not delete anything and exit this function."
+            }) -prompt "Do you also want to delete the users data?" -lineAfter
+
+        if ($choice -eq 2) {
+            return
+        }
+
+        Remove-LocalUser -Name $user["Name"] | Out-Null
+
+        $response = "The user has been removed"
+        if ($choice -eq 0 -and $dir) { 
+            try {
+                # Attempt to take ownership and grant full control
+                $acl = Get-Acl $dir
+                $rule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+                    [System.Security.Principal.WindowsIdentity]::GetCurrent().User, 
+                    "FullControl", 
+                    "ContainerInherit,ObjectInherit", 
+                    "None", 
+                    "Allow"
+                )
+                $acl.SetAccessRule($rule)
+                Set-Acl $dir $acl
+
+                # Remove files with full permissions
+                Remove-Item -Path $dir -Recurse -Force -ErrorAction Stop
+                
+                # Verify profile folder deletion
+                $profileStillExists = Get-CimInstance Win32_UserProfile -Filter "SID = '$userSid'" -ErrorAction SilentlyContinue
+
+                if ($null -eq $profileStillExists) {
+                    $response += " as well as their data."
+                } else {
+                    writeText -type 'error' -text "Unable to delete user data for unknown reasons."
+                    $response += " but their data could not be fully deleted."
+                }
+            } catch {
+                writeText -type 'error' -text "Failed to delete user profile folder: $($_.Exception.Message)"
+                $response += " but their data could not be deleted."
+            }
+        } elseif ($choice -eq 1) {
+            $response += " but not their data."
+        }
+
+        writeText -type 'success' -text $response
+    } catch {
+        writeText -type "error" -text "removeUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+function listUsers {
+    try {
+        # Initialize empty array to store user names
+        $userNames = @()
+
+        # Get all local users on the system
+        $localUsers = Get-LocalUser
+
+        # Define a list of accounts to exclude from selection
+        $excludedAccounts = @("DefaultAccount", "WDAGUtilityAccount", "Guest", "defaultuser0")
+
+        # Check if the "Administrator" account is disabled and add it to excluded list if so
+        $adminEnabled = Get-LocalUser -Name "Administrator" | Select-Object -ExpandProperty Enabled
+        if (!$adminEnabled) { 
+            $excludedAccounts += "Administrator" 
+        }
+
+        # Filter local users to exclude predefined accounts
+        foreach ($user in $localUsers) {
+            if ($user.Name -notin $excludedAccounts) { 
+                $userNames += $user.Name 
+            }
+        }
+
+        # Create an ordered dictionary to store username and group information
+        $accounts = [ordered]@{}
+        foreach ($name in $userNames) {
+            # Get details for the current username
+            $username = Get-LocalUser -Name $name
+            
+            # Find groups the user belongs to
+            $groups = Get-LocalGroup | Where-Object { $username.SID -in ($_ | Get-LocalGroupMember | Select-Object -ExpandProperty "SID") } | Select-Object -ExpandProperty "Name"
+            # Convert groups to a semicolon-separated string
+            $groupString = $groups -join ';'
+
+            # Get the users source
+            $source = Get-LocalUser -Name $username | Select-Object -ExpandProperty PrincipalSource
+
+            # Add username and group string to the dictionary
+            $accounts["$username"] = "$source | $groupString"
+        }
+
+        Write-Host
+        # Display user data as a list
+        writeText -type "list" -List $accounts
+        
+    } catch {
+        writeText -type "error" -text "listUsers-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+function readMenu {
+    try {
+        # Create a menu with options and descriptions using an ordered hashtable
+        $choice = readOption -options $([ordered]@{
+                "toggle admin"        = "Toggle the Windows built in administrator account."
+                "add user"            = "Add a user to the system."
+                "remove user"         = "Remove a user from the system."
+                "edit user"           = "Edit a users."
+                "edit hostname"       = "Edit this computers name and description."
+                "edit net adapter"    = "(BETA) Edit a network adapter."
+                "get wifi creds"      = "View all saved WiFi credentials on the system."
+                "toggle context menu" = "Enable or Disable the Windows 11 context menu."
+                "repair windows"      = "Repair Windows."
+                "update windows"      = "(BETA) Install Windows updates silently."
+                "get software"        = "Get a list of installed software that can be installed."
+                "schedule task "      = "(ALPHA) Schedule a new task."
+                "Cancel"              = "Select nothing and exit this menu."
+            }) -prompt "Select a function" -returnKey
+
+        if ($choice -eq "Cancel") {
+            readCommand
+        }
+
+        readCommand -command $choice
+    } catch {
+        writeText -type "error" -text "readMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+function writeHelp {
+    writeText -type "plain" -text "USER COMMANDS:" -lineBefore
+    writeText -type "plain" -text "add [local,ad] user              - Add a local or domain user to the system." -Color "DarkGray"
+    writeText -type "plain" -text "remove user                      - Add a local or domain user to the system." -Color "DarkGray"
+    writeText -type "plain" -text "edit user [name,password,group]  - Edit user account settings." -Color "DarkGray"
+    writeText -type "plain" -text "SYSTEM COMMANDS:" -lineBefore
+    writeText -type "plain" -text "edit hostname        - Edit the computers hostname and description." -Color "DarkGray"
+    writeText -type "plain" -text "repair windows       - Repair Windows." -Color "DarkGray"
+    writeText -type "plain" -text "update windows      - Install Windows updates. All or just severe." -Color "DarkGray"
+    writeText -type "plain" -text "schedule task        - Create a task in the task scheduler." -Color "DarkGray"
+    writeText -type "plain" -text "toggle context menu  - Disable the Windows 11 context menu." -Color "DarkGray"
+    writeText -type "plain" -text "NETWORK COMMANDS:" -lineBefore
+    writeText -type "plain" -text "edit net adapter  - Edit network adapters." -Color "DarkGray"
+    writeText -type "plain" -text "get wifi creds    - View WiFi credentials for the currently active WiFi adapter." -Color "DarkGray"
+    writeText -type "plain" -text "FULL DOCUMENTATION:" -lineBefore
+    writeText -type "plain" -text "https://guided.chaste.pro/dev/chaste-scripts" -Color "DarkGray"
+}
+function editHostname {
+    try {
+        $currentHostname = $env:COMPUTERNAME
+        $hostname = readInput -prompt "Enter the desired hostname:" -Validate "^(\s*|[a-zA-Z0-9 _\-?]{1,15})$" -Value $currentHostname
+        
+        if ($hostname -eq "") { 
+            $hostname = $currentHostname 
+        } 
+
+        if ($hostname -ne "") {
+            Remove-ItemProperty -path "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" -name "Hostname" 
+            Remove-ItemProperty -path "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" -name "NV Hostname" 
+            Set-ItemProperty -path "HKLM:\SYSTEM\CurrentControlSet\Control\Computername\Computername" -name "Computername" -value $hostname
+            Set-ItemProperty -path "HKLM:\SYSTEM\CurrentControlSet\Control\Computername\ActiveComputername" -name "Computername" -value $hostname
+            Set-ItemProperty -path "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" -name "Hostname" -value $hostname
+            Set-ItemProperty -path "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" -name "NV Hostname" -value  $hostname
+            Set-ItemProperty -path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "AltDefaultDomainName" -value $hostname
+            Set-ItemProperty -path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -name "DefaultDomainName" -value $hostname
+            $env:COMPUTERNAME = $hostname
+        } 
+
+
+        $hostnameChanged = $currentHostname -ne $env:COMPUTERNAME
+
+        if ($hostnameChanged) {
+            writeText -type "success" -text "Hostname changed."
+        } else {
+            writeText -type "success" -text "Hostname unchanged."
+        }
+
+        $choice = readOption -options $([ordered]@{
+                "Yes" = "Change the description of the PC."
+                "No"  = "Do not change the description of the PC."
+            }) -prompt "Do you also want to change the computer description?"
+
+        switch ($choice) {
+            0 { editDescription }
+            1 { readCommand }
+        }
+    } catch {
+        writeText -type "error" -text "editHostname-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+function editDescription {
+    try {
+        $currentDescription = (Get-WmiObject -Class Win32_OperatingSystem).Description
+        $description = readInput -prompt "Enter a desired description:" -Validate "^(\s*|[a-zA-Z0-9[\] |_\-?']{1,64})$" -Value $currentDescription
+        
+        if ($description -eq "") { 
+            $description = $currentDescription 
+        } 
+
+        if ($description -ne "") {
+            Set-CimInstance -Query 'Select * From Win32_OperatingSystem' -Property @{Description = $description }
+        } 
+
+        $descriptionChanged = $currentDescription -ne (Get-WmiObject -Class Win32_OperatingSystem).Description
+
+        if ($descriptionChanged) {
+            writeText -type "success" -text "Description changed."
+        } else {
+            writeText -type "success" -text "Description unchanged."
+        }
+    } catch {
+        writeText -type "error" -text "editDescription-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+invokeScript
 readCommand

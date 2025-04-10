@@ -24,7 +24,7 @@ function readMenu {
                 "get software"        = "Get a list of installed software that can be installed."
                 "schedule task "      = "(ALPHA) Schedule a new task."
                 "Cancel"              = "Select nothing and exit this menu."
-            }) -prompt "Select a Chaste Scripts function:" -returnKey
+            }) -prompt "Select a function" -returnKey
 
         if ($choice -eq "Cancel") {
             readCommand
@@ -35,6 +35,7 @@ function readMenu {
         writeText -type "error" -text "readMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
+
 function writeHelp {
     writeText -type "plain" -text "USER COMMANDS:" -lineBefore
     writeText -type "plain" -text "add [local,ad] user              - Add a local or domain user to the system." -Color "DarkGray"
@@ -50,5 +51,5 @@ function writeHelp {
     writeText -type "plain" -text "edit net adapter  - Edit network adapters." -Color "DarkGray"
     writeText -type "plain" -text "get wifi creds    - View WiFi credentials for the currently active WiFi adapter." -Color "DarkGray"
     writeText -type "plain" -text "FULL DOCUMENTATION:" -lineBefore
-    writeText -type "plain" -text "https://guided.chaste.pro/dev/chaste-scripts" -Color "DarkGray"
+    writeText -type "plain" -text "https://wkey.pro/dev/shellcli" -Color "DarkGray"
 }

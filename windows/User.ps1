@@ -4,7 +4,7 @@ function addUser {
                 "Add local user"  = "Add a local user to the system."
                 "Add domain user" = "Add a domain user to the system."
                 "Cancel"          = "Do nothing and exit this function."
-            }) -prompt "Select a user account type:"
+            }) -prompt "Select a user account type" -lineAfter
 
         switch ($choice) {
             0 { addLocalUser }
@@ -17,8 +17,11 @@ function addUser {
 }
 function addLocalUser {
     try {
+        Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "DarkGray"
+        Write-Host " Enter user credentials" -ForegroundColor "Gray"
+
         $name = readInput -prompt "Enter a user name:" -Validate "^([a-zA-Z0-9 ._\-]{1,64})$" -CheckExistingUser
-        $password = readInput -prompt "Enter a password or leave blank:" -IsSecure
+        $password = readInput -prompt "Enter a password or leave blank:" -IsSecure -lineAfter
 
         # Create the new local user and add to the specified group
         New-LocalUser $name -Password $password -description "Local User" -AccountNeverExpires -PasswordNeverExpires -ErrorAction Stop | Out-Null
@@ -26,7 +29,7 @@ function addLocalUser {
         $group = readOption -options $([ordered]@{
                 "Administrators" = "Set this user's group membership to administrators."
                 "Users"          = "Set this user's group membership to standard users."
-            }) -prompt "Select a user group:" -returnKey
+            }) -prompt "Select a user group" -returnKey -lineAfter
           
         Add-LocalGroupMember -Group $group -Member $name -ErrorAction Stop | Out-Null
         
@@ -369,7 +372,7 @@ function removeGroups {
 }
 function removeUser {
     try {
-        $user = selectUser -prompt "Select an account to remove:"
+        $user = selectUser -prompt "Select an account to remove" -lineAfter
         $userSid = (Get-LocalUser $user["Name"]).Sid
         $userProfile = Get-CimInstance Win32_UserProfile -Filter "SID = '$userSid'"
         $dir = $userProfile.LocalPath
@@ -378,7 +381,7 @@ function removeUser {
                 "Delete" = "Also delete the users data."
                 "Keep"   = "Do not delete the users data."
                 "Cancel" = "Do not delete anything and exit this function."
-            }) -prompt "Do you also want to delete the users data?"
+            }) -prompt "Do you also want to delete the users data?" -lineAfter
 
         if ($choice -eq 2) {
             return
