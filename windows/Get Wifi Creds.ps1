@@ -27,6 +27,7 @@ function getWifiCreds {
                 $password = "N/A"
             }
 
+            Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
             Write-Host "  ${ssid}: " -NoNewLine  -ForegroundColor DarkGray
             Write-Host "$password"
         }
