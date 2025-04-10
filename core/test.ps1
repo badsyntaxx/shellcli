@@ -1199,6 +1199,8 @@ function removeUser {
         }
 
         writeText -type 'success' -text $response
+
+        removeUser
     } catch {
         writeText -type "error" -text "removeUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
