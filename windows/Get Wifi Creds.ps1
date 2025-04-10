@@ -18,8 +18,7 @@ function getWifiCreds {
             readCommand
         }
 
-        Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
-        Write-Host " Found $($wifiList.Count) Wi-Fi Connection settings stored on the system:" -lineAfter
+        writeText -type "prompt" -text "Found $($wifiList.Count) Wi-Fi Connection settings stored on the system"
 
         foreach ($ssid in $wifiList) {
             try {

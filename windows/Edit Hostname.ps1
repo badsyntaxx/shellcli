@@ -1,7 +1,6 @@
 function editHostname {
     try {
-        Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
-        Write-Host " Enter a new hostname for the target PC." -ForegroundColor "Gray"
+        writeText -type "prompt" -text "Enter a new hostname for the target PC."
 
         $currentHostname = $env:COMPUTERNAME
         $hostname = readInput -prompt "Hostname:" -Validate "^(\s*|[a-zA-Z0-9 _\-?]{1,15})$" -Value $currentHostname
@@ -46,8 +45,7 @@ function editHostname {
 }
 function editDescription {
     try {
-        Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
-        Write-Host " Enter a new description for the target PC. This can be blank." -ForegroundColor "Gray"
+        writeText -type "prompt" -text "Enter a new description for the target PC."
 
         $currentDescription = (Get-WmiObject -Class Win32_OperatingSystem).Description
         $description = readInput -prompt "Description:" -Validate "^(\s*|[a-zA-Z0-9[\] |_\-?']{1,64})$" -Value $currentDescription

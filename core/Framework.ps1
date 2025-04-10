@@ -198,6 +198,11 @@ function writeText {
             Write-host "$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l" -ForegroundColor "Cyan"
         }
 
+        if ($type -eq "prompt") {
+            Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
+            Write-Host " $text" -ForegroundColor "Gray"
+        }
+
         if ($type -eq 'success') { 
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
             Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"

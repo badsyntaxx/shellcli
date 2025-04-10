@@ -17,8 +17,7 @@ function addUser {
 }
 function addLocalUser {
     try {
-        Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
-        Write-Host " Enter user credentials." -ForegroundColor "Gray"
+        writeText -type "prompt" -text "Enter user credentials."
 
         $name = readInput -prompt "Username:" -Validate "^([a-zA-Z0-9 ._\-]{1,64})$" -CheckExistingUser
         $password = readInput -prompt "Password:" -IsSecure -lineAfter
@@ -123,8 +122,7 @@ function editUserName {
     )
         
     try {
-        Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
-        Write-Host " Enter new username." -ForegroundColor "Gray"
+        writeText -type "prompt" -text "Enter a new username."
 
         if ($user["Source"] -eq "MicrosoftAccount") { 
             writeText -type "notice" -text "Cannot edit Microsoft accounts."
@@ -156,8 +154,7 @@ function editUserPassword {
     )
 
     try {
-        Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
-        Write-Host " Enter new password." -ForegroundColor "Gray"
+        writeText -type "prompt" -text "Enter a new password."
 
         if ($user["Source"] -eq "MicrosoftAccount") { 
             writeText -type "notice" -text "Cannot edit Microsoft accounts."
