@@ -31,8 +31,6 @@ function getWifiCreds {
             Write-Host "  ${ssid}: " -NoNewLine  -ForegroundColor DarkGray
             Write-Host "$password"
         }
-   
-        Write-Host
     } catch {
         writeText -type "error" -text "getWifiCreds-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
