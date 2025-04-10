@@ -1,4 +1,4 @@
-function initializeSHELLCLI {
+function initializeShellCLI {
     try {
         # Check if user has administrator privileges
         if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]"Administrator")) {
@@ -30,7 +30,7 @@ function initializeSHELLCLI {
             Invoke-Expression $shellCLI
         }
     } catch {
-        Write-Host "  initializeSHELLCLI-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -ForegroundColor "Red"
+        Write-Host "  initializeShellCLI-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -ForegroundColor "Red"
     }
 }
 
@@ -87,5 +87,5 @@ function getScript {
     }
 }
 
-# Invoke the root of CHASTE scripts
-initializeSHELLCLI
+# Invoke the root of Shell CLI
+initializeShellCLI
