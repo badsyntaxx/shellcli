@@ -357,7 +357,7 @@ function readOption {
         if ($lineBefore) { Write-Host " $([char]0x2502)" -ForegroundColor "Gray" }
 
         # Get current cursor position
-        $promptPos = $host.UI.RawUI.CursorPosition
+        # $promptPos = $host.UI.RawUI.CursorPosition
 
         Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
         # Write-Host " ? " -NoNewline -ForegroundColor "Cyan"
