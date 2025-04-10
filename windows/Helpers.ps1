@@ -26,7 +26,7 @@ function readMenu {
                 "get software"        = "Get a list of installed software that can be installed."
                 "schedule task "      = "(ALPHA) Schedule a new task."
                 "Cancel"              = "Select nothing and exit this menu."
-            }) -prompt "Select a function" -returnKey
+            }) -prompt "Select a function." -returnKey
 
         if ($choice -eq "Cancel") {
             readCommand
