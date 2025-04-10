@@ -173,7 +173,7 @@ function writeText {
         [parameter(Mandatory = $false)]
         [string]$type = "plain",
         [parameter(Mandatory = $false)]
-        [string]$Color = "Gray",
+        [string]$Color = "DarkGray",
         [parameter(Mandatory = $false)]
         [switch]$lineBefore = $false, # Add a new line before output if specified
         [parameter(Mandatory = $false)]
@@ -224,10 +224,12 @@ function writeText {
                 if ($Color -eq "Gray") {
                     $Color = 'DarkCyan'
                 }
-                Write-Host " | $label`: " -NoNewline -ForegroundColor "Gray"
+                Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
+                Write-Host " $label`: " -NoNewline -ForegroundColor "Gray"
                 Write-Host "$text" -ForegroundColor $Color 
             } else {
-                Write-Host " |  $text" -ForegroundColor $Color 
+                Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
+                Write-Host "  $text" -ForegroundColor $Color 
             }
         }
 

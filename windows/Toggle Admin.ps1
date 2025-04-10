@@ -4,7 +4,7 @@ function toggleAdmin {
                 "enable admin"  = "Enable the built-in administrator account."
                 "disable admin" = "Disable the built-in administrator account."
                 "Cancel"        = "Do nothing and exit this function."
-            }) -prompt "Select a user account type:"
+            }) -prompt "Select a user account type." -lineAfter
 
         switch ($choice) {
             0 { enableAdmin }
@@ -20,16 +20,16 @@ function enableAdmin {
         $admin = Get-LocalUser -Name "Administrator"
         
         if ($admin.Enabled) { 
-            writeText -text "Administrator account is already enabled"
+            writeText -text "Administrator account is already enabled."
         } else { 
             Get-LocalUser -Name "Administrator" | Enable-LocalUser 
 
             $admin = Get-LocalUser -Name "Administrator"
 
             if ($admin.Enabled) { 
-                writeText -type "success" -text "Administrator account enabled"
+                writeText -type "success" -text "Administrator account enabled."
             } else { 
-                writeText -type "error" -text "Could not enable administrator account"
+                writeText -type "error" -text "Could not enable administrator account."
             }
         }
     } catch {
@@ -46,12 +46,12 @@ function disableAdmin {
             $admin = Get-LocalUser -Name "Administrator"
 
             if ($admin.Enabled) { 
-                writeText -type "error" -text "Could not disable administrator account"
+                writeText -type "error" -text "Could not disable administrator account."
             } else { 
-                writeText -type "success" -text "Administrator account disabled"
+                writeText -type "success" -text "Administrator account disabled."
             }
         } else { 
-            writeText -text "Administrator account is already disabled"
+            writeText -text "Administrator account is already disabled."
         }
     } catch {
         writeText -type "error" -text "disableAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
