@@ -5,7 +5,7 @@ function repairWindows {
                 "Cleanup & restore"      = "Scans for and repairs the Windows image."
                 "Restart update service" = "Restart the Windows update service."
                 "Cancel"                 = "Do nothing and exit this function."
-            }) -prompt "Select a user account type:"
+            }) -prompt "Select a repair tool."
 
         switch ($choice) {
             0 { & "C:\Windows\System32\cmd.exe" /c sfc /scannow } 

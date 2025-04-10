@@ -6,7 +6,7 @@ function getSoftware {
                 "Productivity"  = "Get a list of productivity software."
                 "Customization" = "Get a list of customization software."
                 "Exit"          = "Exit this script and go back to main command line."
-            }) -prompt "Select which apps to install:"
+            }) -prompt "Select which apps to install." -lineAfter
 
         if ($installChoice -eq 0) { 
             getBrowserSoftware
@@ -95,7 +95,7 @@ function getBrowserSoftware {
             "Exit"    = "Exit this script and go back to main command line."
         }) -prompt "Select which browser to install:"
 
-    if ($installChoice -ne 2) { 
+    if ($installChoice -ne 4) { 
         $script:user = selectUser -prompt "Select user to install apps for:"
     }
     if ($installChoice -eq 0) { 
