@@ -1,13 +1,3 @@
-function shellCLI {
-    Write-Host
-    Write-Host " $([char]0x250C)" -NoNewline -ForegroundColor "Gray"
-    Write-Host " Try" -NoNewline
-    Write-Host " help" -ForegroundColor "Cyan" -NoNewline
-    Write-Host " or" -NoNewline
-    Write-Host " menu" -NoNewline -ForegroundColor "Cyan"
-    Write-Host " if you get stuck."
-    Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
-}
 function invokeScript {
     try {
         if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]"Administrator")) {
@@ -136,29 +126,6 @@ function filterCommands {
         return $commandArray
     } catch {
         writeText -type "error" -text "filterCommands-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-    }
-}
-function addScript {
-    param (
-        [Parameter(Mandatory)]
-        [string]$directory,
-        [Parameter(Mandatory)]
-        [string]$file
-    )
-
-    try {
-        $url = "https://raw.githubusercontent.com/badsyntaxx/chaste-scripts/main"
-
-        $download = getDownload -url "$url/$directory/$file.ps1" -target "$env:SystemRoot\Temp\$file.ps1" -hide
-
-        if ($download -eq $true) {
-            $rawScript = Get-Content -Path "$env:SystemRoot\Temp\$file.ps1" -Raw -ErrorAction SilentlyContinue
-            Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value $rawScript
-
-            Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\$file.ps1" | Remove-Item -ErrorAction SilentlyContinue
-        }
-    } catch {
-        writeText -type "error" -text "addScript-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 function writeText {
@@ -782,5 +749,19 @@ function writeHelp {
     writeText -type "plain" -text "FULL DOCUMENTATION:" -lineBefore
     writeText -type "plain" -text "https://wkey.pro/dev/shellcli" -Color "DarkGray"
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 invokeScript
 readCommand

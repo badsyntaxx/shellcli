@@ -97,6 +97,8 @@ function addADUser {
 }
 function editUser {
     try {
+        $user = selectUser -lineAfter
+
         $choice = readOption -options $([ordered]@{
                 "Edit user name"     = "Edit an existing users name."
                 "Edit user password" = "Edit an existing users password."
@@ -105,9 +107,9 @@ function editUser {
             }) -prompt "What would you like to edit?" -lineAfter
 
         switch ($choice) {
-            0 { editUserName }
-            1 { editUserPassword }
-            2 { editUserGroup }
+            0 { editUserName -user $user }
+            1 { editUserPassword -user $user }
+            2 { editUserGroup -user $user }
             3 { readCommand }
         }
     } catch {
@@ -115,9 +117,12 @@ function editUser {
     }
 }
 function editUserName {
+    param (
+        [parameter(Mandatory = $true)]
+        [System.Collections.Specialized.OrderedDictionary]$user
+    )
+        
     try {
-        $user = selectUser -lineAfter
-
         Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
         Write-Host " Enter new username." -ForegroundColor "Gray"
 
@@ -145,9 +150,12 @@ function editUserName {
     }
 }
 function editUserPassword {
-    try {
-        $user = selectUser -lineAfter
+    param (
+        [parameter(Mandatory = $true)]
+        [System.Collections.Specialized.OrderedDictionary]$user
+    )
 
+    try {
         Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
         Write-Host " Enter new password." -ForegroundColor "Gray"
 
@@ -177,9 +185,12 @@ function editUserPassword {
     }
 }
 function editUserGroup {
-    try {
-        $user = selectUser -lineAfter
+    param (
+        [parameter(Mandatory = $true)]
+        [System.Collections.Specialized.OrderedDictionary]$user
+    )
 
+    try {
         if ($user["Source"] -eq "MicrosoftAccount") { 
             writeText -type "notice" -text "Cannot edit Microsoft accounts."
         }
@@ -378,7 +389,7 @@ function removeGroups {
 }
 function removeUser {
     try {
-        $user = selectUser -prompt "Select an account to remove" -lineAfter
+        $user = selectUser -prompt "Select an account to remove." -lineAfter
         $userSid = (Get-LocalUser $user["Name"]).Sid
         $userProfile = Get-CimInstance Win32_UserProfile -Filter "SID = '$userSid'"
         $dir = $userProfile.LocalPath
@@ -395,7 +406,7 @@ function removeUser {
 
         Remove-LocalUser -Name $user["Name"] | Out-Null
 
-        $response = "The user has been removed"
+        $response = "The user has been removed."
         if ($choice -eq 0 -and $dir) { 
             try {
                 # Attempt to take ownership and grant full control
