@@ -21,22 +21,21 @@ function addLocalUser {
 
         $name = readInput -prompt "Username:" -Validate "^([a-zA-Z0-9 ._\-]{1,64})$" -CheckExistingUser
         $password = readInput -prompt "Password:" -IsSecure -lineAfter
-
-        # Create the new local user and add to the specified group
-        New-LocalUser $name -Password $password -description "Local User" -AccountNeverExpires -PasswordNeverExpires -ErrorAction Stop | Out-Null
-
         $group = readOption -options $([ordered]@{
                 "Administrators" = "Set this user's group membership to administrators."
                 "Users"          = "Set this user's group membership to standard users."
             }) -prompt "Select a user group" -returnKey -lineAfter
-          
-        Add-LocalGroupMember -Group $group -Member $name -ErrorAction Stop | Out-Null
-        
+
+        # Create the new local user and add to the specified group
+        New-LocalUser $name -Password $password -description "Local User" -AccountNeverExpires -PasswordNeverExpires -ErrorAction Stop | Out-Null
+
         $newUser = Get-LocalUser -Name $name
         if ($null -eq $newUser) {
             # User creation failed, exit with error
             writeText -type 'error' -text "Failed to create user $name. Please check the logs for details."
         }
+
+        Add-LocalGroupMember -Group $group -Member $name -ErrorAction Stop | Out-Null
 
         # There is a powershell bug with Get-LocalGroupMember So we can't do a manual check.
         <# if ((Get-LocalGroupMember -Group $group -Name $name).Count -gt 0) {
