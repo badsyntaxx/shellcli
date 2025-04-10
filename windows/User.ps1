@@ -4,7 +4,7 @@ function addUser {
                 "Add local user"  = "Add a local user to the system."
                 "Add domain user" = "Add a domain user to the system."
                 "Cancel"          = "Do nothing and exit this function."
-            }) -prompt "Select a user account type" -lineAfter
+            }) -prompt "Select a user account type." -lineAfter
 
         switch ($choice) {
             0 { addLocalUser }
@@ -17,11 +17,11 @@ function addUser {
 }
 function addLocalUser {
     try {
-        Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "DarkGray"
-        Write-Host " Enter user credentials" -ForegroundColor "Gray"
+        Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
+        Write-Host " Enter user credentials." -ForegroundColor "Gray"
 
-        $name = readInput -prompt "Enter a user name:" -Validate "^([a-zA-Z0-9 ._\-]{1,64})$" -CheckExistingUser
-        $password = readInput -prompt "Enter a password or leave blank:" -IsSecure -lineAfter
+        $name = readInput -prompt "Username:" -Validate "^([a-zA-Z0-9 ._\-]{1,64})$" -CheckExistingUser
+        $password = readInput -prompt "Password:" -IsSecure -lineAfter
 
         # Create the new local user and add to the specified group
         New-LocalUser $name -Password $password -description "Local User" -AccountNeverExpires -PasswordNeverExpires -ErrorAction Stop | Out-Null
@@ -102,7 +102,7 @@ function editUser {
                 "Edit user password" = "Edit an existing users password."
                 "Edit user group"    = "Edit an existing users group membership."
                 "Cancel"             = "Do nothing and exit this function."
-            }) -prompt "What would you like to edit?"
+            }) -prompt "What would you like to edit?" -lineAfter
 
         switch ($choice) {
             0 { editUserName }
@@ -116,14 +116,17 @@ function editUser {
 }
 function editUserName {
     try {
-        $user = selectUser
+        $user = selectUser -lineAfter
+
+        Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
+        Write-Host " Enter new username." -ForegroundColor "Gray"
 
         if ($user["Source"] -eq "MicrosoftAccount") { 
             writeText -type "notice" -text "Cannot edit Microsoft accounts."
         }
 
         if ($user["Source"] -eq "Local") { 
-            $newName = readInput -prompt "Enter username:" -Validate "^(\s*|[a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser
+            $newName = readInput -prompt "Username:" -Validate "^(\s*|[a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser
     
             Rename-LocalUser -Name $user["Name"] -NewName $newName
 
@@ -143,14 +146,17 @@ function editUserName {
 }
 function editUserPassword {
     try {
-        $user = selectUser
+        $user = selectUser -lineAfter
+
+        Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
+        Write-Host " Enter new password." -ForegroundColor "Gray"
 
         if ($user["Source"] -eq "MicrosoftAccount") { 
             writeText -type "notice" -text "Cannot edit Microsoft accounts."
         }
 
         if ($user["Source"] -eq "Local") { 
-            $password = readInput -prompt "Enter password or leave blank:" -IsSecure $true
+            $password = readInput -prompt "Password:" -IsSecure $true
 
             if ($password.Length -eq 0) { 
                 $message = "Password removed" 
@@ -172,7 +178,7 @@ function editUserPassword {
 }
 function editUserGroup {
     try {
-        $user = selectUser
+        $user = selectUser -lineAfter
 
         if ($user["Source"] -eq "MicrosoftAccount") { 
             writeText -type "notice" -text "Cannot edit Microsoft accounts."
@@ -183,7 +189,7 @@ function editUserGroup {
                     "Add"    = "Add this user to more groups"
                     "Remove" = "Remove this user from certain groups"
                     "Cancel" = "Do nothing and exit this function."
-                }) -prompt "Do you want to add or remove this user from groups?"
+                }) -prompt "Do you want to add or remove this user from groups?" -lineAfter
 
             switch ($choice) {
                 0 { addGroups -username $user["Name"] }
@@ -471,7 +477,6 @@ function listUsers {
             $accounts["$username"] = "$source | $groupString"
         }
 
-        Write-Host
         # Display user data as a list
         writeText -type "list" -List $accounts
         

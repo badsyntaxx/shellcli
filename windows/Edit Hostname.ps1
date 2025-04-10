@@ -1,7 +1,10 @@
 function editHostname {
     try {
+        Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
+        Write-Host " Enter a new hostname for the target PC." -ForegroundColor "Gray"
+
         $currentHostname = $env:COMPUTERNAME
-        $hostname = readInput -prompt "Enter the desired hostname:" -Validate "^(\s*|[a-zA-Z0-9 _\-?]{1,15})$" -Value $currentHostname
+        $hostname = readInput -prompt "Hostname:" -Validate "^(\s*|[a-zA-Z0-9 _\-?]{1,15})$" -Value $currentHostname
         
         if ($hostname -eq "") { 
             $hostname = $currentHostname 
@@ -31,7 +34,7 @@ function editHostname {
         $choice = readOption -options $([ordered]@{
                 "Yes" = "Change the description of the PC."
                 "No"  = "Do not change the description of the PC."
-            }) -prompt "Do you also want to change the computer description?"
+            }) -prompt "Do you also want to change the description for the target PC?" -lineAfter
 
         switch ($choice) {
             0 { editDescription }
@@ -41,27 +44,19 @@ function editHostname {
         writeText -type "error" -text "editHostname-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-
 function editDescription {
     try {
+        Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
+        Write-Host " Enter a new description for the target PC. This can be blank." -ForegroundColor "Gray"
+
         $currentDescription = (Get-WmiObject -Class Win32_OperatingSystem).Description
-        $description = readInput -prompt "Enter a desired description:" -Validate "^(\s*|[a-zA-Z0-9[\] |_\-?']{1,64})$" -Value $currentDescription
-        
-        if ($description -eq "") { 
-            $description = $currentDescription 
-        } 
+        $description = readInput -prompt "Description:" -Validate "^(\s*|[a-zA-Z0-9[\] |_\-?']{1,64})$" -Value $currentDescription
 
         if ($description -ne "") {
             Set-CimInstance -Query 'Select * From Win32_OperatingSystem' -Property @{Description = $description }
         } 
 
-        $descriptionChanged = $currentDescription -ne (Get-WmiObject -Class Win32_OperatingSystem).Description
-
-        if ($descriptionChanged) {
-            writeText -type "success" -text "Description changed."
-        } else {
-            writeText -type "success" -text "Description unchanged."
-        }
+        writeText -type "success" -text "Description changed."
     } catch {
         writeText -type "error" -text "editDescription-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
