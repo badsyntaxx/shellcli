@@ -20,7 +20,7 @@ function readMenu {
             readCommand
         }
 
-        readCommand -command $choice
+        readCommand -command "plugins $choice"
     } catch {
         writeText -type "error" -text "readMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
