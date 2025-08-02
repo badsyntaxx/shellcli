@@ -9,7 +9,7 @@ user data (including groups and passwords), making changes to the network adapte
 ## Before we begin
 
 NOTE There are some anti-virus softwares that block Shell CLI. Some do and some don't. If you encounter an av software that does there are some
-[steps you can take](https://github.com/badsyntaxx/chaste-scripts?tab=readme-ov-file#bypass-anti-virus).
+[steps you can take](https://github.com/badsyntaxx/shellcli?tab=readme-ov-file#bypass-anti-virus).
 
 You may also need to enable running powershell scripts on your system.
 
@@ -27,7 +27,7 @@ The above command is shorthand Powershell. It is the same as\
 
 If you don't know any commands, you can just enter the `menu` command. Once in the menu, you can use the _up_ and _down_ arrow keys to make selections
 and then the enter key to confirm your selection.\
-![Shell CLI menu](https://wkey.pro/images/chaste-scripts/chaste-scripts.png)
+![Shell CLI menu](https://wkey.pro/images/shellcli/shellcli.png)
 
 ## Using commands
 
@@ -107,4 +107,4 @@ used to send and retrieve information over the internet. In this case you retrie
 
 To bypass this problem you can download and run or paste in the root functions of Shell CLI.
 
-[Shell CLI Root](https://raw.githubusercontent.com/badsyntaxx/chaste-scripts/main/core/init.ps1)
+[Shell CLI Root](https://raw.githubusercontent.com/badsyntaxx/shellcli/main/core/init.ps1)
