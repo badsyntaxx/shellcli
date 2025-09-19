@@ -195,7 +195,7 @@ function writeText {
         if ($type -eq "header") {
             $l = $([char]0x2500)
             Write-Host
-            Write-Host " $([char]0x250C)" -NoNewline -ForegroundColor "Gray"
+            Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
             Write-Host " # " -ForegroundColor "Cyan" -NoNewline
             Write-Host "$text" -ForegroundColor "White" 
             Write-Host " $([char]0x250C)" -NoNewline -ForegroundColor "Gray"

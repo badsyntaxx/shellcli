@@ -27,7 +27,7 @@ function readMenu {
     }
 }
 function writeHelp {
-    writeText -type "header" -text "COMMANDS:" -lineBefore
+    writeText -type "header" -text "COMMANDS:"
     writeText -type "plain" -text "plugins massgravel    - https://github.com/massgravel/Microsoft-Activation-Scripts" -Color "DarkGray"
     writeText -type "plain" -text "plugins reclaimw11    - Credit needed" -Color "DarkGray"
     writeText -type "plain" -text "plugins win11debloat  - https://github.com/Raphire/Win11Debloat" -Color "DarkGray"
