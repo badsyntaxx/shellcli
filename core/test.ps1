@@ -113,12 +113,12 @@ function filterCommands {
                         readCommand
                     }
                 }
-                Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
-                Write-Host "  Unrecognized command `"$command`". Try" -NoNewline
+                Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
+                Write-Host "  Unrecognized command `"$command`". Try" -NoNewline -ForegroundColor "White"
                 Write-Host " help" -ForegroundColor "Cyan" -NoNewline
-                Write-Host " or" -NoNewline
+                Write-Host " or" -NoNewline -ForegroundColor "White"
                 Write-Host " menu" -NoNewline -ForegroundColor "Cyan"
-                Write-Host " to learn more."
+                Write-Host " to learn more." -ForegroundColor "White"
                 readCommand 
             }
         }
