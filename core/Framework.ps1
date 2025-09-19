@@ -307,6 +307,7 @@ function readInput {
         $vkeycode = 0
 
         while ($vkeycode -eq 27) {
+            Write-Host "Hitting Esc"
             readCommand
         }
 
