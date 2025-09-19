@@ -303,6 +303,12 @@ function readInput {
         if ($IsSecure) { $userInput = Read-Host -AsSecureString } 
         else { $userInput = Read-Host }
 
+        $vkeycode = 0
+
+        if ($vkeycode -ne 27) {
+            readCommand
+        }
+
         # Check for existing user if requested
         if ($CheckExistingUser) {
             $account = Get-LocalUser -Name $userInput -ErrorAction SilentlyContinue
