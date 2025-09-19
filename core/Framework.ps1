@@ -206,21 +206,21 @@ function writeText {
 
         if ($type -eq 'success') { 
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
-            Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
+            Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
             Write-Host " $([char]0x2713) $text"  -ForegroundColor "Green"
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
         }
 
         if ($type -eq 'error') { 
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
-            Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
+            Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
             Write-Host " X $text" -ForegroundColor "Red"
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
         }
 
         if ($type -eq 'notice') { 
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
-            Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
+            Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
             Write-Host " ! $text" -ForegroundColor "Yellow" 
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
         }
@@ -230,11 +230,11 @@ function writeText {
                 if ($Color -eq "Gray") {
                     $Color = 'DarkCyan'
                 }
-                Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
+                Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
                 Write-Host " $label`: " -NoNewline -ForegroundColor "Gray"
                 Write-Host "$text" -ForegroundColor $Color 
             } else {
-                Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
+                Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
                 Write-Host "  $text" -ForegroundColor $Color 
             }
         }
