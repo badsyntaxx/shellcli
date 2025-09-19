@@ -193,15 +193,10 @@ function writeText {
 
         # Format output based on the specified Type
         if ($type -eq "header") {
-            $l = $([char]0x2500)
+            # $l = $([char]0x2500)
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
             Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
-            Write-host "$l$l$l$l$l$l$l$l$l" -ForegroundColor "White" -NoNewline
-            # Write-Host " # " -NoNewline -ForegroundColor "Cyan"
-            Write-Host " $text " -ForegroundColor "White" -NoNewline
-            Write-host "$l$l$l$l$l$l$l$l$l" -ForegroundColor "White"
-            # Write-Host " $([char]0x2502)" -ForegroundColor "Gray" -NoNewline
-            # Write-host " $l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l" -ForegroundColor "Cyan"
+            Write-Host " $text " -ForegroundColor "White"
         }
 
         if ($type -eq "prompt") {
