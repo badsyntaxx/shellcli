@@ -1,5 +1,5 @@
 function plugins {
-    Write-Host
+    Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
     Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
     Write-Host "  Try" -NoNewline
     Write-Host " plugins help" -ForegroundColor "Cyan" -NoNewline
