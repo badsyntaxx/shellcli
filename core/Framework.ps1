@@ -193,10 +193,12 @@ function writeText {
 
         # Format output based on the specified Type
         if ($type -eq "header") {
-            # $l = $([char]0x2500)
+            $l = $([char]0x2500)
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
             Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
+            Write-Host " # " -NoNewline -ForegroundColor "Cyan"
             Write-Host " $text" -ForegroundColor "White" 
+            Write-host "$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l" -ForegroundColor "Cyan"
         }
 
         if ($type -eq "prompt") {
@@ -230,11 +232,11 @@ function writeText {
                 if ($Color -eq "Gray") {
                     $Color = 'DarkCyan'
                 }
-                Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
+                Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
                 Write-Host " $label`: " -NoNewline -ForegroundColor "Gray"
                 Write-Host "$text" -ForegroundColor $Color 
             } else {
-                Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
+                Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
                 Write-Host "  $text" -ForegroundColor $Color 
             }
         }
