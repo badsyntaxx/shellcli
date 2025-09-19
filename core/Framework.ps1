@@ -311,6 +311,7 @@ function readInput {
         }
 
         if ($userInput -eq "" -or $userInput.Length -eq 0) { 
+            writeText -type "warning" -text "Input was blank returning to command line." 
             readCommand
         } 
 
