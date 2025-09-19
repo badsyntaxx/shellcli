@@ -199,7 +199,7 @@ function writeText {
             Write-Host " # " -NoNewline -ForegroundColor "Cyan"
             Write-Host "$text" -ForegroundColor "White" 
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray" -NoNewline
-            Write-host "  $l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l" -ForegroundColor "Cyan"
+            Write-host " $l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l" -ForegroundColor "Cyan"
         }
 
         if ($type -eq "prompt") {
