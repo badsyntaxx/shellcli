@@ -110,7 +110,7 @@ function filterCommands {
             "plugins" { $commandArray = $("plugins", "Helpers", "plugins") }
             "plugins menu" { $commandArray = $("plugins", "Helpers", "readMenu") }
             "plugins help" { $commandArray = $("plugins", "Helpers", "writeHelp") }
-            "plugins reclaim" { $commandArray = $("plugins", "ReclaimW11", "reclaim") }
+            "plugins reclaimw11" { $commandArray = $("plugins", "ReclaimW11", "reclaimw11") }
             "plugins massgravel" { $commandArray = $("plugins", "massgravel", "massgravel") }
             "plugins win11debloat" { $commandArray = $("plugins", "win11Debloat", "win11Debloat") }
             "share gpu with vm" { $commandArray = ("windows", "Share GPU with VM", "shareGPUWithVM") }
@@ -194,9 +194,12 @@ function writeText {
         # Format output based on the specified Type
         if ($type -eq "header") {
             $l = $([char]0x2500)
-            Write-Host "# " -ForegroundColor "Cyan" -NoNewline
+            Write-Host
+            Write-Host " $([char]0x250C)" -NoNewline -ForegroundColor "Gray"
+            Write-Host " # " -ForegroundColor "Cyan" -NoNewline
             Write-Host "$text" -ForegroundColor "White" 
-            Write-host "$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l" -ForegroundColor "Cyan"
+            Write-Host " $([char]0x250C)" -NoNewline -ForegroundColor "Gray"
+            Write-host " $l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l$l" -ForegroundColor "Cyan"
         }
 
         if ($type -eq "prompt") {

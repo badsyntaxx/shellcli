@@ -39,7 +39,7 @@ function readMenu {
 }
 
 function writeHelp {
-    writeText -type "plain" -text "USER COMMANDS:" -lineBefore
+    writeText -type "header" -text "USER COMMANDS:" -lineBefore
     writeText -type "plain" -text "add [local,ad] user              - Add a local or domain user to the system." -Color "DarkGray"
     writeText -type "plain" -text "remove user                      - Add a local or domain user to the system." -Color "DarkGray"
     writeText -type "plain" -text "edit user [name,password,group]  - Edit user account settings." -Color "DarkGray"
