@@ -301,14 +301,10 @@ function readInput {
         # Write-Host " ? " -NoNewline -ForegroundColor "Cyan"
         Write-Host "   $prompt " -NoNewline
 
-        if ($IsSecure) { $userInput = Read-Host -AsSecureString } 
-        else { $userInput = Read-Host }
-
-        $vkeycode = 0
-
-        while ($vkeycode -eq 27) {
-            Write-Host "Hitting Esc"
-            readCommand
+        if ($IsSecure) { 
+            $userInput = Read-Host -AsSecureString 
+        } else { 
+            $userInput = Read-Host 
         }
 
         # Check for existing user if requested
@@ -317,8 +313,14 @@ function readInput {
             if ($null -ne $account) { $ErrorMessage = "An account with that name already exists." }
         }
 
+        if ($userInput -eq "" -or $userInput.Length -eq 0) { 
+            readCommand
+        } 
+
         # Validate user input against provided regular expression
-        if ($userInput -notmatch $Validate) { $ErrorMessage = "Invalid input. Please try again." } 
+        if ($userInput -notmatch $Validate) { 
+            $ErrorMessage = "Invalid input. Please try again." 
+        } 
 
         # Display error message if encountered
         if ($ErrorMessage -ne "") {
