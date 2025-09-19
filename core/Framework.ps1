@@ -306,7 +306,7 @@ function readInput {
 
         $vkeycode = 0
 
-        if ($vkeycode -ne 27) {
+        while ($vkeycode -eq 27) {
             readCommand
         }
 
