@@ -27,7 +27,7 @@ The above command is shorthand Powershell. It is the same as\
 
 If you don't know any commands, you can just enter the `menu` command. Once in the menu, you can use the _up_ and _down_ arrow keys to make selections
 and then the enter key to confirm your selection.\
-![Shell CLI menu](https://wkey.pro/images/shellcli/shellcli.png)
+![Shell CLI menu](https://otdxeogkplcwxljyshyd.supabase.co/storage/v1/object/public/images/shellcli/shellcli.webp)
 
 ## Using commands
 
