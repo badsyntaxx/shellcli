@@ -107,4 +107,4 @@ used to send and retrieve information over the internet. In this case you retrie
 
 To bypass this problem you can download and run or paste in the root functions of Shell CLI.
 
-[Shell CLI Root](https://raw.githubusercontent.com/badsyntaxx/shellcli/main/core/init.ps1)
+[Shell CLI Root](https://raw.githubusercontent.com/badsyntaxx/shellcli/refs/heads/main/core/Init.ps1)
