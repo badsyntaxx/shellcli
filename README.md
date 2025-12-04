@@ -110,6 +110,7 @@ Some anti-virus programs will block the use of Shell CLI. Most of the time the i
 because of the irm (Invoke-RestMethod) portion of the command. The reason anti-virus software will sometimes block this command is because it can be
 used to send and retrieve information over the internet. In this case you retrieve the root powershell functions of Shell CLI.
 
-To bypass this problem you can download and run or paste in the root functions of Shell CLI.
+You should be able to bypass most anti-virus programs by pasting the ShellCLI initializer into an admin powershell or terminal directly. The link to
+the initializer is below.
 
-[Shell CLI Root](https://raw.githubusercontent.com/badsyntaxx/shellcli/refs/heads/main/core/Init.ps1)
+[Shell CLI Initializer](https://raw.githubusercontent.com/badsyntaxx/shellcli/refs/heads/main/core/Init.ps1)
