@@ -15,7 +15,7 @@ You may also need to enable running powershell scripts on your system.
 
 ## Getting started
 
-Open powershell as an administrator, paste in the command below and hit Enter. Thats it!
+Open powershell as an administrator, paste in the command below and hit Enter. That's it!
 
 Getting started\
 `irm shellcli.com | iex`
@@ -89,8 +89,13 @@ Edit network adapter settings on the target computer.\
 
 ### GET WIFI CREDENTIALS
 
-View WiFi ssid and passwords for the currently enabled NIC's.\
+View WiFi SSID and passwords for the currently enabled NIC's.\
 `get wifi creds`
+
+### REPAIR WINDOWS
+
+Run common Windows repair commands like system file checks and cleanup & restore.\
+`repair windows`
 
 ## Enable running powershell
 
@@ -101,8 +106,8 @@ Set the execution policy to unrestricted. `Set-ExecutionPolicy Unrestricted`
 
 ## Bypass anti-virus
 
-Some anti-virus programs will block the use of Shell CLI. Most of the time the inital connection command is what triggers the anti-virus. Thats
-because of the irm (Invoke-RestMethod) portion of the command. The reason anti-virus softwares will sometimes block this command is because it can be
+Some anti-virus programs will block the use of Shell CLI. Most of the time the initial connection command is what triggers the anti-virus. That's
+because of the irm (Invoke-RestMethod) portion of the command. The reason anti-virus software will sometimes block this command is because it can be
 used to send and retrieve information over the internet. In this case you retrieve the root powershell functions of Shell CLI.
 
 To bypass this problem you can download and run or paste in the root functions of Shell CLI.
