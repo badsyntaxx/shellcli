@@ -62,7 +62,7 @@ function reclaimw11 {
         "UninstallThirdPartyBloat",
         "DisableXboxFeatures",
         #"InstallLinuxSubsystem",      # "UninstallLinuxSubsystem",
-        "SetPhotoViewerAssociation", # "UnsetPhotoViewerAssociation",
+        # "SetPhotoViewerAssociation", # "UnsetPhotoViewerAssociation",
         "AddPhotoViewerOpenWith", # "RemovePhotoViewerOpenWith",
         "DisableSearchAppInStore" # "EnableSearchAppInStore",
         #"EnableF8BootMenu",             # "DisableF8BootMenu",
