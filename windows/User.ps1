@@ -5,7 +5,7 @@ function userMenu {
             "remove user"  = "Remove a user from the system."
             "edit user"    = "Edit a users."
             "Cancel"       = "Select nothing and exit this menu."
-        }) -prompt "Select a function." -returnKey
+        }) -prompt "Select a function."
 
     switch ($choice) {
         0 { toggleAdmin }
