@@ -50,6 +50,8 @@ function repairSystem {
             }
             6 { & "C:\Windows\System32\cmd.exe" /c mdsched.exe }
         }
+
+        repairWindows
     } catch {
         writeText -type "error" -text "repairWindows-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
@@ -79,6 +81,8 @@ function repairNetwork {
                 & "C:\Windows\System32\cmd.exe" /c ipconfig /flushdns
             }
         }
+
+        repairWindows
     } catch {
         writeText -type "error" -text "repairWindows-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }

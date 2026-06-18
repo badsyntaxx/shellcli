@@ -1,3 +1,21 @@
+function userMenu {
+    $choice = readOption -options $([ordered]@{
+            "toggle admin" = "Toggle the Windows built in administrator account."
+            "add user"     = "Add a user to the system."
+            "remove user"  = "Remove a user from the system."
+            "edit user"    = "Edit a users."
+            "Cancel"       = "Select nothing and exit this menu."
+        }) -prompt "Select a function." -returnKey
+
+    switch ($choice) {
+        0 { toggleAdmin }
+        1 { addUser }
+        2 { removeUser }
+        3 { editUser }
+        4 { readMenu }
+    }
+}
+
 function addUser {
     try {
         $choice = readOption -options $([ordered]@{
@@ -9,7 +27,7 @@ function addUser {
         switch ($choice) {
             0 { addLocalUser }
             1 { addADUser }
-            2 { readCommand }
+            2 { userMenu }
         }
     } catch {
         writeText -type "error" -text "addUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
@@ -108,7 +126,7 @@ function editUser {
             0 { editUserName -user $user }
             1 { editUserPassword -user $user }
             2 { editUserGroup -user $user }
-            3 { readCommand }
+            3 { userMenu }
         }
     } catch {
         writeText -type "error" -text "editUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
@@ -491,5 +509,66 @@ function listUsers {
         
     } catch {
         writeText -type "error" -text "listUsers-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+
+function toggleAdmin {
+    try {
+        $choice = readOption -options $([ordered]@{
+                "enable admin"  = "Enable the built-in administrator account."
+                "disable admin" = "Disable the built-in administrator account."
+                "Cancel"        = "Do nothing and exit this function."
+            }) -prompt "Select a user account type." -lineAfter
+
+        switch ($choice) {
+            0 { enableAdmin }
+            1 { disableAdmin }
+            2 { userMenu }
+        }
+    } catch {
+        writeText -type "error" -text "toggleAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+
+function enableAdmin {
+    try { 
+        $admin = Get-LocalUser -Name "Administrator"
+        
+        if ($admin.Enabled) { 
+            writeText -text "Administrator account is already enabled."
+        } else { 
+            Get-LocalUser -Name "Administrator" | Enable-LocalUser 
+
+            $admin = Get-LocalUser -Name "Administrator"
+
+            if ($admin.Enabled) { 
+                writeText -type "success" -text "Administrator account enabled."
+            } else { 
+                writeText -type "error" -text "Could not enable administrator account."
+            }
+        }
+    } catch {
+        writeText -type "error" -text "enableAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+function disableAdmin {
+    try { 
+        $admin = Get-LocalUser -Name "Administrator"
+        
+        if ($admin.Enabled) { 
+            Get-LocalUser -Name "Administrator" | Disable-LocalUser 
+
+            $admin = Get-LocalUser -Name "Administrator"
+
+            if ($admin.Enabled) { 
+                writeText -type "error" -text "Could not disable administrator account."
+            } else { 
+                writeText -type "success" -text "Administrator account disabled."
+            }
+        } else { 
+            writeText -text "Administrator account is already disabled."
+        }
+    } catch {
+        writeText -type "error" -text "disableAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
