@@ -12,7 +12,7 @@ function userMenu {
         1 { addUser }
         2 { removeUser }
         3 { editUser }
-        4 { readMenu }
+        4 { readCommand }
     }
 }
 
