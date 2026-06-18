@@ -31,7 +31,10 @@ function repairSystem {
         switch ($choice) {
             0 { & "C:\Windows\System32\cmd.exe" /c sfc /scannow } 
             1 { & "C:\Windows\System32\cmd.exe" /c DISM /Online /Cleanup-Image /RestoreHealth } 
-            2 { restartUpdateService }
+            2 {
+                & "C:\Windows\System32\cmd.exe" /c net stop wuauserv 
+                & "C:\Windows\System32\cmd.exe" /c net start appidsvc  
+            }
             3 { & "C:\Windows\System32\cmd.exe" /c chkdsk /f /r }
             4 {
                 & "C:\Windows\System32\cmd.exe" /c bootrec /fixmbr
@@ -55,21 +58,28 @@ function repairSystem {
 function repairNetwork {
     try {
         $choice = readOption -options $([ordered]@{
-                "Reset Winsock" = "Resets the Winsock catalog to its default state."
-                "Flush DNS"     = "Clears the DNS client cache."
-                "Cancel"        = "Do nothing and exit this function."
+                "Reset Winsock"          = "Resets the Winsock catalog to its default state.(Requires reboot to take effect.)"
+                "Reset IP configuration" = "Resets the IP configuration.(Requires reboot to take effect.)"
+                "Release and Renew IP"   = "Releases and renews the IP configuration."
+                "Flush DNS"              = "Clears the DNS client cache."
+                "Reset network stack"    = "Do all the above."
+                "Cancel"                 = "Do nothing and exit this function."
             }) -prompt "Select a repair tool."
 
         switch ($choice) {
-            0 { & "C:\Windows\System32\cmd.exe" netsh winsock reset } 
-            1 { & "C:\Windows\System32\cmd.exe" ipconfig /flushdns } 
+            
+            1 { & "C:\Windows\System32\cmd.exe" /c netsh winsock reset }  
+            2 { & "C:\Windows\System32\cmd.exe" /c netsh int ip reset } 
+            3 { & "C:\Windows\System32\cmd.exe" /c "ipconfig /release && ipconfig /renew" } 
+            4 { & "C:\Windows\System32\cmd.exe" /c ipconfig /flushdns } 
+            5 { 
+                & "C:\Windows\System32\cmd.exe" /c netsh winsock reset
+                & "C:\Windows\System32\cmd.exe" /c netsh int ip reset
+                & "C:\Windows\System32\cmd.exe" /c "ipconfig /release && ipconfig /renew"
+                & "C:\Windows\System32\cmd.exe" /c ipconfig /flushdns
+            }
         }
     } catch {
         writeText -type "error" -text "repairWindows-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
-}
-
-function restartUpdateService {
-    & "C:\Windows\System32\cmd.exe" /c net stop wuauserv 
-    & "C:\Windows\System32\cmd.exe" /c net start appidsvc 
 }
