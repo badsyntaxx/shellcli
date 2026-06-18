@@ -21,10 +21,9 @@ function repairSystem {
                 "System file check"             = "Scans for and repairs corrupted system files."
                 "Cleanup & restore"             = "Scans for and repairs the Windows image."
                 "Restart update service"        = "Restart the Windows update service."
-                "Check disk"                    = "Scans and repairs disk errors and bad sectors."
-                "Fix boot records"              = "Rebuilds BCD and fixes MBR boot issues."
+                "Check disk"                    = "Scans and repairs disk errors and bad sectors.(Requires reboot)"
                 "Clear temporary files"         = "Removes Windows temporary and cache files."
-                "Run Windows Memory Diagnostic" = "Tests RAM for errors."
+                "Run Windows Memory Diagnostic" = "Tests RAM for errors.(Requires reboot)"
                 "Cancel"                        = "Do nothing and exit this function."
             }) -prompt "Select a repair tool."
 
@@ -37,15 +36,9 @@ function repairSystem {
             }
             3 { & "C:\Windows\System32\cmd.exe" /c chkdsk /f /r }
             4 {
-                & "C:\Windows\System32\cmd.exe" /c bootrec /fixmbr
-                & "C:\Windows\System32\cmd.exe" /c bootrec /fixboot
-                & "C:\Windows\System32\cmd.exe" /c bootrec /scanos
-                & "C:\Windows\System32\cmd.exe" /c bootrec /rebuildbcd
-            }
-            5 {
                 clearTempFiles
             }
-            6 { & "C:\Windows\System32\cmd.exe" /c mdsched.exe }
+            5 { & "C:\Windows\System32\cmd.exe" /c mdsched.exe }
         }
 
         repairWindows
