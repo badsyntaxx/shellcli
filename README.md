@@ -106,8 +106,8 @@ Set the execution policy to unrestricted. `Set-ExecutionPolicy Unrestricted`
 
 ## Bypass anti-virus
 
-Some anti-virus programs will block the use of Shell CLI. Most of the time the initial connection command is what triggers the anti-virus. That's
-because of the irm (Invoke-RestMethod) portion of the command. The reason anti-virus software will sometimes block this command is because it can be
+Some antivirus programs may block the use of ShellCLI. Typically when they do, it's the initial connection command triggers the warning or the block. 
+That's because of the irm (Invoke-RestMethod) portion of the command. The reason anti-virus software will sometimes block this command is because it can be
 used to send and retrieve information over the internet. In this case you retrieve the root powershell functions of Shell CLI.
 
 You should be able to bypass most anti-virus programs by pasting the ShellCLI initializer into an admin powershell or terminal directly. The link to
