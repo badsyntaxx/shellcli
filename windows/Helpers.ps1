@@ -40,8 +40,10 @@ function readMenu {
 
 function writeHelp {
     writeText -type "header" -text "Here are some commands to get you started:"
+    writeText -type "plain" -text "USER COMMANDS:" -lineBefore
+    writeText -type "plain" -text "menu                             - Display a menu with some available functions." -Color "DarkGray"
     writeText -type "plain" -text "add [local,ad] user              - Add a local or domain user to the system." -Color "DarkGray"
-    writeText -type "plain" -text "remove user                      - Add a local or domain user to the system." -Color "DarkGray"
+    writeText -type "plain" -text "remove user                      - Remove a user from the system." -Color "DarkGray"
     writeText -type "plain" -text "edit user [name,password,group]  - Edit user account settings." -Color "DarkGray"
     writeText -type "plain" -text "SYSTEM COMMANDS:" -lineBefore
     writeText -type "plain" -text "edit hostname        - Edit the computers hostname and description." -Color "DarkGray"
@@ -53,5 +55,5 @@ function writeHelp {
     writeText -type "plain" -text "edit net adapter  - Edit network adapters." -Color "DarkGray"
     writeText -type "plain" -text "get wifi creds    - View WiFi credentials for the currently active WiFi adapter." -Color "DarkGray"
     writeText -type "plain" -text "FULL DOCUMENTATION:" -lineBefore
-    writeText -type "plain" -text "https://wkey.pro/dev/shellcli" -Color "DarkGray"
+    writeText -type "plain" -text "There are more functions. Check https://wkey.pro/dev/shellcli for docs." -Color "DarkGray"
 }
