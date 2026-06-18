@@ -13,10 +13,7 @@ function readMenu {
     try {
         # Create a menu with options and descriptions using an ordered hashtable
         $choice = readOption -options $([ordered]@{
-                "toggle admin"        = "Toggle the Windows built in administrator account."
-                "add user"            = "Add a user to the system."
-                "remove user"         = "Remove a user from the system."
-                "edit user"           = "Edit a users."
+                "user menu"           = "View the user management menu."
                 "edit hostname"       = "Edit this computers name and description."
                 "edit net adapter"    = "(BETA) Edit a network adapter."
                 "get wifi creds"      = "View all saved WiFi credentials on the system."
