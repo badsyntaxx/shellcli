@@ -74,12 +74,12 @@ function repairNetwork {
             1 { & "C:\Windows\System32\cmd.exe" /c netsh winsock reset }  
             2 { & "C:\Windows\System32\cmd.exe" /c netsh int ip reset } 
             3 { & "C:\Windows\System32\cmd.exe" /c "ipconfig /release && ipconfig /renew" } 
-            4 { & "C:\Windows\System32\cmd.exe" /c ipconfig /flushdns } 
+            4 { & "C:\Windows\System32\cmd.exe" /c "ipconfig /flushdns" } 
             5 { 
                 & "C:\Windows\System32\cmd.exe" /c netsh winsock reset
                 & "C:\Windows\System32\cmd.exe" /c netsh int ip reset
                 & "C:\Windows\System32\cmd.exe" /c "ipconfig /release && ipconfig /renew"
-                & "C:\Windows\System32\cmd.exe" /c ipconfig /flushdns
+                & "C:\Windows\System32\cmd.exe" /c "ipconfig /flushdns"
             }
         }
 
