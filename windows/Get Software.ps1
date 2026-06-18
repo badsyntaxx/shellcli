@@ -146,8 +146,35 @@ function getBrowserSoftware {
     }
 }
 function getDiagnosticSoftware {
-    WriteText -type "notice" -text "Diagnostic software not yet implemented." -lineBefore
+    $installChoice = readOption -options $([ordered]@{
+            "Revo Uninstaller" = "Install Revo Uninstaller."
+            "Exit"             = "Exit this script and go back to main command line."
+        }) -prompt "Select which browser to install:"
+
+    if ($installChoice -ne 1) { 
+        $script:user = selectUser -prompt "Select user to install apps for:"
+    }
+    if ($installChoice -eq 0) { 
+        $url = "https://revouninstaller.b-cdn.net/ruf270/revosetup.exe"
+        $appName = "Revo Uninstaller"
+        $paths = @(
+            "C:\Program Files\VS Revo Group\Revo Uninstaller\RevoUnin.exe"
+        )
+        $installed = findExisting -Paths $paths -App $appName
+        if (!$installed) { 
+            installProgram -url $url -AppName $appName -Args "/silent" 
+        }
+    }
 }
+
+function getProductivitySoftware {
+    WriteText -type "notice" -text "Productivity software not yet implemented." -lineBefore
+}
+
+function getCustomizationSoftware {
+    WriteText -type "notice" -text "Customization software not yet implemented." -lineBefore
+}
+
 function findExisting {
     param (
         [parameter(Mandatory = $true)]

@@ -43,10 +43,7 @@ function repairSystem {
                 & "C:\Windows\System32\cmd.exe" /c bootrec /rebuildbcd
             }
             5 {
-                & "C:\Windows\System32\cmd.exe" /c cleanmgr /sagerun:1
-                Remove-Item -Path "$env:TEMP\*" -Recurse -Force -ErrorAction SilentlyContinue
-                Remove-Item -Path "C:\Windows\Temp\*" -Recurse -Force -ErrorAction SilentlyContinue
-                Remove-Item -Path "C:\Windows\Prefetch\*" -Recurse -Force -ErrorAction SilentlyContinue
+                clearTempFiles
             }
             6 { & "C:\Windows\System32\cmd.exe" /c mdsched.exe }
         }
@@ -54,6 +51,17 @@ function repairSystem {
         repairWindows
     } catch {
         writeText -type "error" -text "repairWindows-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+
+function clearTempFiles {
+    try {
+        & "C:\Windows\System32\cmd.exe" /c cleanmgr /sagerun:1
+        Remove-Item -Path "$env:TEMP\*" -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item -Path "C:\Windows\Temp\*" -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item -Path "C:\Windows\Prefetch\*" -Recurse -Force -ErrorAction SilentlyContinue
+    } catch {
+        writeText -type "error" -text "clearTempFiles-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 

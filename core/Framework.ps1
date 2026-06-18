@@ -107,6 +107,7 @@ function filterCommands {
             "get software" { $commandArray = $("windows", "Get Software", "getSoftware") }
             "schedule task" { $commandArray = $("windows", "Schedule Task", "scheduleTask") }
             "update windows" { $commandArray = $("windows", "Update Windows", "updateWindows") }
+            "clear temp files" { $commandArray = $("windows", "Repair Windows", "clearTempFiles") }
             "repair windows" { $commandArray = $("windows", "Repair Windows", "repairWindows") }
             "plugins" { $commandArray = $("plugins", "Helpers", "plugins") }
             "plugins menu" { $commandArray = $("plugins", "Helpers", "readMenu") }

@@ -20,6 +20,7 @@ function readMenu {
                 "toggle context menu" = "Enable or Disable the Windows 11 context menu."
                 "repair windows"      = "Repair Windows."
                 "update windows"      = "(BETA) Install Windows updates silently."
+                "clear temp files"    = "Removes Windows temporary and cache files."
                 "get software"        = "Get a list of installed software that can be installed."
                 "schedule task "      = "(ALPHA) Schedule a new task."
                 "Cancel"              = "Select nothing and exit this menu."
