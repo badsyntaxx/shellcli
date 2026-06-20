@@ -134,11 +134,15 @@ function editUser {
 }
 function editUserName {
     param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory = $false)]
         [System.Collections.Specialized.OrderedDictionary]$user
     )
         
     try {
+        if (-not $user) { 
+            $user = selectUser -prompt "Select a user to edit the password for." -lineAfter
+        }
+
         writeText -type "prompt" -text "Enter a new username."
 
         if ($user["Source"] -eq "MicrosoftAccount") { 
@@ -166,11 +170,15 @@ function editUserName {
 }
 function editUserPassword {
     param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory = $false)]
         [System.Collections.Specialized.OrderedDictionary]$user
     )
 
     try {
+        if (-not $user) { 
+            $user = selectUser -prompt "Select a user to edit the password for." -lineAfter
+        }
+
         writeText -type "prompt" -text "Enter a new password."
 
         if ($user["Source"] -eq "MicrosoftAccount") { 
@@ -178,7 +186,7 @@ function editUserPassword {
         }
 
         if ($user["Source"] -eq "Local") { 
-            $password = readInput -prompt "Password:" -IsSecure $true -allowBlank $true
+            $password = readInput -prompt "Password:" -IsSecure:$true -allowBlank:$true
 
             if ($password.Length -eq 0) { 
                 $message = "Password removed" 
@@ -186,7 +194,7 @@ function editUserPassword {
                 $message = "Password changed" 
             }
 
-            Get-LocalUser -Name $user["Name"] | Set-LocalUser -Password $password
+            Get-LocalUser -Name $user["Name"] | Set-LocalUser -Password $password -PasswordNeverExpires $true
 
             $password = $null
 
@@ -200,11 +208,15 @@ function editUserPassword {
 }
 function editUserGroup {
     param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory = $false)]
         [System.Collections.Specialized.OrderedDictionary]$user
     )
 
     try {
+        if (-not $user) { 
+            $user = selectUser -prompt "Select a user to edit the password for." -lineAfter
+        }
+
         if ($user["Source"] -eq "MicrosoftAccount") { 
             writeText -type "notice" -text "Cannot edit Microsoft accounts."
         }

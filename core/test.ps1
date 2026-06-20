@@ -1,4 +1,3 @@
-
 function invokeScript {
     param (
         [parameter(Mandatory = $true)]
@@ -108,6 +107,7 @@ function filterCommands {
             "get software" { $commandArray = $("windows", "Get Software", "getSoftware") }
             "schedule task" { $commandArray = $("windows", "Schedule Task", "scheduleTask") }
             "update windows" { $commandArray = $("windows", "Update Windows", "updateWindows") }
+            "clear temp files" { $commandArray = $("windows", "Repair Windows", "clearTempFiles") }
             "repair windows" { $commandArray = $("windows", "Repair Windows", "repairWindows") }
             "plugins" { $commandArray = $("plugins", "Helpers", "plugins") }
             "plugins menu" { $commandArray = $("plugins", "Helpers", "readMenu") }
@@ -286,7 +286,9 @@ function readInput {
         [parameter(Mandatory = $false)]
         [switch]$lineBefore = $false, # Add a new line before prompt if specified
         [parameter(Mandatory = $false)]
-        [switch]$lineAfter = $false # Add a new line after prompt if specified
+        [switch]$lineAfter = $false, # Add a new line after prompt if specified
+        [parameter(Mandatory = $false)]
+        [switch]$allowBlank = $false # Allow blank input
     )
 
     try {
@@ -312,10 +314,12 @@ function readInput {
             if ($null -ne $account) { $ErrorMessage = "An account with that name already exists." }
         }
 
-        if ($userInput -eq "" -or $userInput.Length -eq 0) { 
-            writeText -type "notice" -text "Input was blank returning to command line." 
-            readCommand
-        } 
+        if ($allowBlank -eq $false) {
+            if ($userInput -eq "" -or $userInput.Length -eq 0) { 
+                writeText -type "notice" -text "Input was blank returning to command line." 
+                readCommand
+            } 
+        }
 
         # Validate user input against provided regular expression
         if ($userInput -notmatch $Validate) { 
@@ -761,6 +765,40 @@ function selectUser {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function userMenu {
     $choice = readOption -options $([ordered]@{
             "toggle admin" = "Toggle the Windows built in administrator account."
@@ -769,8 +807,6 @@ function userMenu {
             "edit user"    = "Edit a users."
             "Cancel"       = "Select nothing and exit this menu."
         }) -prompt "Select a function."
-
-    Write-Host $choice
 
     switch ($choice) {
         0 { toggleAdmin }
@@ -899,11 +935,15 @@ function editUser {
 }
 function editUserName {
     param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory = $false)]
         [System.Collections.Specialized.OrderedDictionary]$user
     )
         
     try {
+        if (-not $user) { 
+            $user = selectUser -prompt "Select a user to edit the password for." -lineAfter
+        }
+
         writeText -type "prompt" -text "Enter a new username."
 
         if ($user["Source"] -eq "MicrosoftAccount") { 
@@ -931,11 +971,15 @@ function editUserName {
 }
 function editUserPassword {
     param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory = $false)]
         [System.Collections.Specialized.OrderedDictionary]$user
     )
 
     try {
+        if (-not $user) { 
+            $user = selectUser -prompt "Select a user to edit the password for." -lineAfter
+        }
+
         writeText -type "prompt" -text "Enter a new password."
 
         if ($user["Source"] -eq "MicrosoftAccount") { 
@@ -943,7 +987,7 @@ function editUserPassword {
         }
 
         if ($user["Source"] -eq "Local") { 
-            $password = readInput -prompt "Password:" -IsSecure $true
+            $password = readInput -prompt "Password:" -IsSecure:$true -allowBlank:$true
 
             if ($password.Length -eq 0) { 
                 $message = "Password removed" 
@@ -951,7 +995,7 @@ function editUserPassword {
                 $message = "Password changed" 
             }
 
-            Get-LocalUser -Name $user["Name"] | Set-LocalUser -Password $password
+            Get-LocalUser -Name $user["Name"] | Set-LocalUser -Password $password -PasswordNeverExpires $true
 
             $password = $null
 
@@ -965,11 +1009,15 @@ function editUserPassword {
 }
 function editUserGroup {
     param (
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory = $false)]
         [System.Collections.Specialized.OrderedDictionary]$user
     )
 
     try {
+        if (-not $user) { 
+            $user = selectUser -prompt "Select a user to edit the password for." -lineAfter
+        }
+
         if ($user["Source"] -eq "MicrosoftAccount") { 
             writeText -type "notice" -text "Cannot edit Microsoft accounts."
         }
@@ -1342,5 +1390,28 @@ function disableAdmin {
 
 
 
-invokeScript
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+invokeScript -script "listUsers"
 readCommand
