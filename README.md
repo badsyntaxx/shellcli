@@ -2,9 +2,9 @@
 
 # Shell CLI
 
-This is my PowerShell script library for various Windows tasks. No need to download anything; just enter a command and gain access. Shell CLI is
-particularly useful for IT professionals who need to perform tasks on the backend without disrupting the user. It can handle tasks such as modifying
-user data (including groups and passwords), making changes to the network adapter, and more.
+ShellCLI aims to simplify running PowerShell commands. It is no different from a regular PowerShell session, 
+but it provides a more user-friendly interface, simpler commands and interactive menus. The idea is to streamlines 
+tasks on Windows computers such as user, system and network management, by providing short, intuitive commands and/or menus.
 
 ## Before we begin
 
@@ -106,8 +106,8 @@ Set the execution policy to unrestricted. `Set-ExecutionPolicy Unrestricted`
 
 ## Bypass anti-virus
 
-Some anti-virus programs will block the use of Shell CLI. Most of the time the initial connection command is what triggers the anti-virus. That's
-because of the irm (Invoke-RestMethod) portion of the command. The reason anti-virus software will sometimes block this command is because it can be
+Some antivirus programs may block the use of ShellCLI. Typically when they do, it's the initial connection command triggers the warning or the block. 
+That's because of the irm (Invoke-RestMethod) portion of the command. The reason anti-virus software will sometimes block this command is because it can be
 used to send and retrieve information over the internet. In this case you retrieve the root powershell functions of Shell CLI.
 
 You should be able to bypass most anti-virus programs by pasting the ShellCLI initializer into an admin powershell or terminal directly. The link to

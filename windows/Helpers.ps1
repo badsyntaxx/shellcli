@@ -13,16 +13,14 @@ function readMenu {
     try {
         # Create a menu with options and descriptions using an ordered hashtable
         $choice = readOption -options $([ordered]@{
-                "toggle admin"        = "Toggle the Windows built in administrator account."
-                "add user"            = "Add a user to the system."
-                "remove user"         = "Remove a user from the system."
-                "edit user"           = "Edit a users."
+                "user menu"           = "View the user management menu."
                 "edit hostname"       = "Edit this computers name and description."
                 "edit net adapter"    = "(BETA) Edit a network adapter."
                 "get wifi creds"      = "View all saved WiFi credentials on the system."
                 "toggle context menu" = "Enable or Disable the Windows 11 context menu."
                 "repair windows"      = "Repair Windows."
                 "update windows"      = "(BETA) Install Windows updates silently."
+                "clear temp files"    = "Removes Windows temporary and cache files."
                 "get software"        = "Get a list of installed software that can be installed."
                 "schedule task "      = "(ALPHA) Schedule a new task."
                 "Cancel"              = "Select nothing and exit this menu."
@@ -40,8 +38,10 @@ function readMenu {
 
 function writeHelp {
     writeText -type "header" -text "Here are some commands to get you started:"
+    writeText -type "plain" -text "USER COMMANDS:" -lineBefore
+    writeText -type "plain" -text "menu                             - Display a menu with some available functions." -Color "DarkGray"
     writeText -type "plain" -text "add [local,ad] user              - Add a local or domain user to the system." -Color "DarkGray"
-    writeText -type "plain" -text "remove user                      - Add a local or domain user to the system." -Color "DarkGray"
+    writeText -type "plain" -text "remove user                      - Remove a user from the system." -Color "DarkGray"
     writeText -type "plain" -text "edit user [name,password,group]  - Edit user account settings." -Color "DarkGray"
     writeText -type "plain" -text "SYSTEM COMMANDS:" -lineBefore
     writeText -type "plain" -text "edit hostname        - Edit the computers hostname and description." -Color "DarkGray"
@@ -53,5 +53,5 @@ function writeHelp {
     writeText -type "plain" -text "edit net adapter  - Edit network adapters." -Color "DarkGray"
     writeText -type "plain" -text "get wifi creds    - View WiFi credentials for the currently active WiFi adapter." -Color "DarkGray"
     writeText -type "plain" -text "FULL DOCUMENTATION:" -lineBefore
-    writeText -type "plain" -text "https://wkey.pro/dev/shellcli" -Color "DarkGray"
+    writeText -type "plain" -text "There are more functions. Check https://wkey.pro/dev/shellcli for docs." -Color "DarkGray"
 }
