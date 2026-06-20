@@ -21,7 +21,6 @@ function editHostname {
             $env:COMPUTERNAME = $hostname
         } 
 
-
         $hostnameChanged = $currentHostname -ne $env:COMPUTERNAME
 
         if ($hostnameChanged) {
