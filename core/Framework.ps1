@@ -314,7 +314,7 @@ function readInput {
             if ($null -ne $account) { $ErrorMessage = "An account with that name already exists." }
         }
 
-        if (!$allowBlank) {
+        if ($allowBlank -eq $false) {
             if ($userInput -eq "" -or $userInput.Length -eq 0) { 
                 writeText -type "notice" -text "Input was blank returning to command line." 
                 readCommand
