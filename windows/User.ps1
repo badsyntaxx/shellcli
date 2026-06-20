@@ -178,7 +178,7 @@ function editUserPassword {
         }
 
         if ($user["Source"] -eq "Local") { 
-            $password = readInput -prompt "Password:" -IsSecure $true
+            $password = readInput -prompt "Password:" -IsSecure $true -allowBlank $true
 
             if ($password.Length -eq 0) { 
                 $message = "Password removed" 

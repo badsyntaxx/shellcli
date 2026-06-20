@@ -286,7 +286,9 @@ function readInput {
         [parameter(Mandatory = $false)]
         [switch]$lineBefore = $false, # Add a new line before prompt if specified
         [parameter(Mandatory = $false)]
-        [switch]$lineAfter = $false # Add a new line after prompt if specified
+        [switch]$lineAfter = $false, # Add a new line after prompt if specified
+        [parameter(Mandatory = $false)]
+        [switch]$allowBlank = $false # Allow blank input
     )
 
     try {
@@ -312,10 +314,12 @@ function readInput {
             if ($null -ne $account) { $ErrorMessage = "An account with that name already exists." }
         }
 
-        if ($userInput -eq "" -or $userInput.Length -eq 0) { 
-            writeText -type "notice" -text "Input was blank returning to command line." 
-            readCommand
-        } 
+        if (!$allowBlank) {
+            if ($userInput -eq "" -or $userInput.Length -eq 0) { 
+                writeText -type "notice" -text "Input was blank returning to command line." 
+                readCommand
+            } 
+        }
 
         # Validate user input against provided regular expression
         if ($userInput -notmatch $Validate) { 
