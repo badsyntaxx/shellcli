@@ -162,7 +162,7 @@ function getDiagnosticSoftware {
         )
         $installed = findExisting -Paths $paths -App $appName
         if (!$installed) { 
-            installProgram -url $url -AppName $appName -Args "/silent" 
+            installProgram -url $url -AppName $appName -Args "/VERYSILENT /NORESTART" 
         }
     }
 }
