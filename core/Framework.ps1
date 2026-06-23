@@ -105,6 +105,8 @@ function filterCommands {
             "edit net adapter" { $commandArray = $("windows", "Edit Net Adapter", "editNetAdapter") }
             "get wifi creds" { $commandArray = $("windows", "Get Wifi Creds", "getWifiCreds") }
             "get software" { $commandArray = $("windows", "Get Software", "getSoftware") }
+            "get windirstat" { $commandArray = $("windows", "Get Software", "getWinDirStat") }
+            "get revouninstaller" { $commandArray = $("windows", "Get Software", "getRevoUninstaller") }
             "schedule task" { $commandArray = $("windows", "Schedule Task", "scheduleTask") }
             "update windows" { $commandArray = $("windows", "Update Windows", "updateWindows") }
             "clear temp files" { $commandArray = $("windows", "Repair Windows", "clearTempFiles") }

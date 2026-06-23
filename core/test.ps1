@@ -109,6 +109,8 @@ function filterCommands {
             "update windows" { $commandArray = $("windows", "Update Windows", "updateWindows") }
             "clear temp files" { $commandArray = $("windows", "Repair Windows", "clearTempFiles") }
             "repair windows" { $commandArray = $("windows", "Repair Windows", "repairWindows") }
+            "optimize windows" { $commandArray = $("windows", "Optimize", "optimizeWindows") }
+            "set best performance" { $commandArray = $("windows", "Optimize", "setBestPerformance") }
             "plugins" { $commandArray = $("plugins", "Helpers", "plugins") }
             "plugins menu" { $commandArray = $("plugins", "Helpers", "readMenu") }
             "plugins help" { $commandArray = $("plugins", "Helpers", "writeHelp") }
@@ -1032,14 +1034,25 @@ function getRevoUninstaller {
     )
     $installed = findExisting -Paths $paths -App $appName
     if (!$installed) { 
-        installProgram -url $url -AppName $appName -Args "/VERYSILENT /NORESTART" 
-        Remove-Item -Path "C:\Users\$env:USERNAME\Desktop\Revo Uninstaller" -Recurse -Force -ErrorAction SilentlyContinue
+        installProgram -url $url -AppName $appName -Args "/VERYSILENT /NORESTART"
+    }
+    
+    # Remove from PUBLIC Desktop (where it actually is)
+    $publicDesktopLink = "C:\Users\Public\Desktop\Revo Uninstaller.lnk"
+    if (Test-Path $publicDesktopLink) {
+        Remove-Item -Path $publicDesktopLink -Force
+    }
+    
+    # Also remove from Start Menu folder if it exists
+    $startMenuFolder = "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Revo Uninstaller"
+    if (Test-Path $startMenuFolder) {
+        Remove-Item -Path $startMenuFolder -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 
 function getWinDirStat {
     try {
-        $url = "https://release-assets.githubusercontent.com/github-production-release-asset/55435293/5a98b34e-c6fc-489e-976f-fd8a173da100?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-06-23T14%3A00%3A47Z&rscd=attachment%3B+filename%3DWinDirStat.zip&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-06-23T13%3A00%3A31Z&ske=2026-06-23T14%3A00%3A47Z&sks=b&skv=2018-11-09&sig=esDS5AIIbUvWCXBqzgSZFPMMzP3%2BC8qu9%2BQsRdUnlQc%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc4MjIyMDg2NSwibmJmIjoxNzgyMjIwNTY1LCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.HQHfLckHFvDZZQqBV7RFtdqCqpVyV-ZK0kAojfSsojk&response-content-disposition=attachment%3B%20filename%3DWinDirStat.zip"
+        $url = "https://github.com/windirstat/windirstat/releases/latest/download/WinDirStat.zip"
 
         # Define paths
         $tempDir = "C:\Temp"
