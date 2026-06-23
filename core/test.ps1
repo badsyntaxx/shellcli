@@ -1033,6 +1033,7 @@ function getRevoUninstaller {
     $installed = findExisting -Paths $paths -App $appName
     if (!$installed) { 
         installProgram -url $url -AppName $appName -Args "/VERYSILENT /NORESTART" 
+        Remove-Item -Path "C:\Users\$env:USERNAME\Desktop\Revo Uninstaller" -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 
@@ -1055,7 +1056,6 @@ function getWinDirStat {
         if (!(Test-Path $exePath)) {
             # Download the zip file - pass the FULL file path
             if (getDownload -url $url -target $zipPath) {
-                # <-- FIXED: pass zipPath, not tempDir
                 # Verify the zip file was downloaded
                 if (Test-Path $zipPath) {
                     # Extract the zip file
@@ -1067,6 +1067,8 @@ function getWinDirStat {
                         Move-Item -Path $extractedExe -Destination $exePath -Force
                         # Clean up the x64 folder
                         Remove-Item -Path (Join-Path -Path $tempDir -ChildPath "x64") -Recurse -Force -ErrorAction SilentlyContinue
+                        Remove-Item -Path (Join-Path -Path $tempDir -ChildPath "x86") -Recurse -Force -ErrorAction SilentlyContinue
+                        Remove-Item -Path (Join-Path -Path $tempDir -ChildPath "Arm64") -Recurse -Force -ErrorAction SilentlyContinue
                     } else {
                         writeText -type "warning" -text "WinDirStat.exe not found in the expected x64 subfolder"
                     }
