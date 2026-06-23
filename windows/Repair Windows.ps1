@@ -49,12 +49,18 @@ function repairSystem {
 
 function clearTempFiles {
     try {
-        & "C:\Windows\System32\cmd.exe" /c cleanmgr /sagerun:1
+        writeText -type "info" -text "Clearing temporary files at $env:TEMP"
         Remove-Item -Path "$env:TEMP\*" -Recurse -Force -ErrorAction SilentlyContinue
+        writeText -type "info" -text "Clearing temporary files at C:\Windows\Temp"
         Remove-Item -Path "C:\Windows\Temp\*" -Recurse -Force -ErrorAction SilentlyContinue
+        writeText -type "info" -text "Clearing temporary files at C:\Windows\Prefetch"
         Remove-Item -Path "C:\Windows\Prefetch\*" -Recurse -Force -ErrorAction SilentlyContinue
+        writeText -type "info" -text "Clearing temporary files at C:\Users\$env:USERNAME\AppData\Local\Temp"
         Remove-Item -Path "C:\Users\$env:USERNAME\AppData\Local\Temp\*" -Recurse -Force -ErrorAction SilentlyContinue
+        writeText -type "info" -text "Clearing temporary files at C:\Users\$env:USERNAME\AppData\Roaming\Temp"
         Remove-Item -Path "C:\Users\$env:USERNAME\AppData\Roaming\Temp\*" -Recurse -Force -ErrorAction SilentlyContinue
+        writeText -type "info" -text "Running Disk Cleanup utility to remove temporary files and system cache."
+        & "C:\Windows\System32\cmd.exe" /c cleanmgr /sagerun:1
         readCommand
     } catch {
         writeText -type "error" -text "clearTempFiles-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
