@@ -146,20 +146,16 @@ function getBrowserSoftware {
     }
 }
 function getDiagnosticSoftware {
-    try {
-        $installChoice = readOption -options $([ordered]@{
-                "Revo Uninstaller" = "Install Revo Uninstaller."
-                "WinDirStat"       = "Install WinDirStat."
-                "Exit"             = "Exit this script and go back to main command line."
-            }) -prompt "Select which diagnostic tool to install:"
+    $installChoice = readOption -options $([ordered]@{
+            "Revo Uninstaller" = "Install Revo Uninstaller."
+            "WinDirStat"       = "Install WinDirStat."
+            "Exit"             = "Exit this script and go back to main command line."
+        }) -prompt "Select which diagnostic tool to install:"
 
-        switch ($installChoice) {
-            0 { getRevoUninstaller }
-            1 { getWinDirStat }
-            2 { readCommand }
-        }
-    } catch {
-        writeText -type "error" -text "isrInstallApps-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+    switch ($installChoice) {
+        0 { getRevoUninstaller }
+        1 { getWinDirStat }
+        2 { readCommand }
     }
 }
 
@@ -176,51 +172,55 @@ function getRevoUninstaller {
 }
 
 function getWinDirStat {
-    $url = "https://release-assets.githubusercontent.com/github-production-release-asset/55435293/5a98b34e-c6fc-489e-976f-fd8a173da100?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-06-23T14%3A00%3A47Z&rscd=attachment%3B+filename%3DWinDirStat.zip&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-06-23T13%3A00%3A31Z&ske=2026-06-23T14%3A00%3A47Z&sks=b&skv=2018-11-09&sig=esDS5AIIbUvWCXBqzgSZFPMMzP3%2BC8qu9%2BQsRdUnlQc%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc4MjIyMDg2NSwibmJmIjoxNzgyMjIwNTY1LCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.HQHfLckHFvDZZQqBV7RFtdqCqpVyV-ZK0kAojfSsojk&response-content-disposition=attachment%3B%20filename%3DWinDirStat.zip"
+    try {
+        $url = "https://release-assets.githubusercontent.com/github-production-release-asset/55435293/5a98b34e-c6fc-489e-976f-fd8a173da100?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-06-23T14%3A00%3A47Z&rscd=attachment%3B+filename%3DWinDirStat.zip&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-06-23T13%3A00%3A31Z&ske=2026-06-23T14%3A00%3A47Z&sks=b&skv=2018-11-09&sig=esDS5AIIbUvWCXBqzgSZFPMMzP3%2BC8qu9%2BQsRdUnlQc%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc4MjIyMDg2NSwibmJmIjoxNzgyMjIwNTY1LCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.HQHfLckHFvDZZQqBV7RFtdqCqpVyV-ZK0kAojfSsojk&response-content-disposition=attachment%3B%20filename%3DWinDirStat.zip"
 
-    # Define paths
-    $tempDir = "C:\Temp"
-    $zipPath = Join-Path -Path $tempDir -ChildPath "WinDirStat.zip"  # FULL path with filename
-    $exePath = Join-Path -Path $tempDir -ChildPath "WinDirStat.exe"
+        # Define paths
+        $tempDir = "C:\Temp"
+        $zipPath = Join-Path -Path $tempDir -ChildPath "WinDirStat.zip"  # FULL path with filename
+        $exePath = Join-Path -Path $tempDir -ChildPath "WinDirStat.exe"
 
-    # Create directory if it doesn't exist
-    if (!(Test-Path $tempDir)) {
-        New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
-        writeText -type "info" -text "Created directory: $tempDir"
-    }          
+        # Create directory if it doesn't exist
+        if (!(Test-Path $tempDir)) {
+            New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+            writeText -type "info" -text "Created directory: $tempDir"
+        }          
     
-    # Check if WinDirStat.exe already exists
-    if (!(Test-Path $exePath)) {
-        # Download the zip file - pass the FULL file path
-        if (getDownload -url $url -target $zipPath) {
-            # <-- FIXED: pass zipPath, not tempDir
-            # Verify the zip file was downloaded
-            if (Test-Path $zipPath) {
-                # Extract the zip file
-                Expand-Archive -Path $zipPath -DestinationPath $tempDir -Force
+        # Check if WinDirStat.exe already exists
+        if (!(Test-Path $exePath)) {
+            # Download the zip file - pass the FULL file path
+            if (getDownload -url $url -target $zipPath) {
+                # <-- FIXED: pass zipPath, not tempDir
+                # Verify the zip file was downloaded
+                if (Test-Path $zipPath) {
+                    # Extract the zip file
+                    Expand-Archive -Path $zipPath -DestinationPath $tempDir -Force
                         
-                # Move WinDirStat.exe from x64 subfolder to root
-                $extractedExe = Join-Path -Path $tempDir -ChildPath "x64\WinDirStat.exe"
-                if (Test-Path $extractedExe) {
-                    Move-Item -Path $extractedExe -Destination $exePath -Force
-                    # Clean up the x64 folder
-                    Remove-Item -Path (Join-Path -Path $tempDir -ChildPath "x64") -Recurse -Force -ErrorAction SilentlyContinue
+                    # Move WinDirStat.exe from x64 subfolder to root
+                    $extractedExe = Join-Path -Path $tempDir -ChildPath "x64\WinDirStat.exe"
+                    if (Test-Path $extractedExe) {
+                        Move-Item -Path $extractedExe -Destination $exePath -Force
+                        # Clean up the x64 folder
+                        Remove-Item -Path (Join-Path -Path $tempDir -ChildPath "x64") -Recurse -Force -ErrorAction SilentlyContinue
+                    } else {
+                        writeText -type "warning" -text "WinDirStat.exe not found in the expected x64 subfolder"
+                    }
+                        
+                    # Clean up the zip file
+                    Remove-Item -Path $zipPath -Force -ErrorAction SilentlyContinue
+                        
+                    writeText -type "success" -text "WinDirStat.exe has been placed in: $tempDir"
                 } else {
-                    writeText -type "warning" -text "WinDirStat.exe not found in the expected x64 subfolder"
+                    writeText -type "error" -text "Download failed or zip file not found at: $zipPath"
                 }
-                        
-                # Clean up the zip file
-                Remove-Item -Path $zipPath -Force -ErrorAction SilentlyContinue
-                        
-                writeText -type "success" -text "WinDirStat.exe has been placed in: $tempDir"
             } else {
-                writeText -type "error" -text "Download failed or zip file not found at: $zipPath"
+                writeText -type "error" -text "Failed to download WinDirStat.zip"
             }
         } else {
-            writeText -type "error" -text "Failed to download WinDirStat.zip"
+            writeText -type "warning" -text "WinDirStat.exe already exists in: $tempDir. Skipping download and extraction."
         }
-    } else {
-        writeText -type "warning" -text "WinDirStat.exe already exists in: $tempDir. Skipping download and extraction."
+    } catch {
+        writeText -type "error" -text "getWinDirStat-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
 
