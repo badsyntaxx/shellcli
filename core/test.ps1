@@ -1049,9 +1049,9 @@ function getWinDirStat {
         # Create directory if it doesn't exist
         if (!(Test-Path $tempDir)) {
             New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
-            writeText -type "info" -text "Created directory: $tempDir"
+            writeText -type "notice" -text "Created directory: $tempDir"
         }          
-    
+
         # Check if WinDirStat.exe already exists
         if (!(Test-Path $exePath)) {
             # Download the zip file - pass the FULL file path
@@ -1070,7 +1070,7 @@ function getWinDirStat {
                         Remove-Item -Path (Join-Path -Path $tempDir -ChildPath "x86") -Recurse -Force -ErrorAction SilentlyContinue
                         Remove-Item -Path (Join-Path -Path $tempDir -ChildPath "Arm64") -Recurse -Force -ErrorAction SilentlyContinue
                     } else {
-                        writeText -type "warning" -text "WinDirStat.exe not found in the expected x64 subfolder"
+                        writeText -type "notice" -text "WinDirStat.exe not found in the expected x64 subfolder"
                     }
                         
                     # Clean up the zip file
@@ -1084,8 +1084,9 @@ function getWinDirStat {
                 writeText -type "error" -text "Failed to download WinDirStat.zip"
             }
         } else {
-            writeText -type "warning" -text "WinDirStat.exe already exists in: $tempDir. Skipping download and extraction."
+            writeText -type "notice" -text "WinDirStat.exe already exists in: $tempDir. Skipping download and extraction."
         }
+
     } catch {
         writeText -type "error" -text "getWinDirStat-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
