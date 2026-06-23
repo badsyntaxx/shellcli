@@ -148,8 +148,9 @@ function getBrowserSoftware {
 function getDiagnosticSoftware {
     $installChoice = readOption -options $([ordered]@{
             "Revo Uninstaller" = "Install Revo Uninstaller."
+            "WinDirStat"       = "Install WinDirStat."
             "Exit"             = "Exit this script and go back to main command line."
-        }) -prompt "Select which browser to install:"
+        }) -prompt "Select which diagnostic tool to install:"
 
     if ($installChoice -ne 1) { 
         $script:user = selectUser -prompt "Select user to install apps for:"
@@ -163,6 +164,46 @@ function getDiagnosticSoftware {
         $installed = findExisting -Paths $paths -App $appName
         if (!$installed) { 
             installProgram -url $url -AppName $appName -Args "/VERYSILENT /NORESTART" 
+        }
+    }
+    if ($installChoice -eq 2) { 
+        $url = "https://release-assets.githubusercontent.com/github-production-release-asset/55435293/5a98b34e-c6fc-489e-976f-fd8a173da100?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-06-23T14%3A00%3A47Z&rscd=attachment%3B+filename%3DWinDirStat.zip&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-06-23T13%3A00%3A31Z&ske=2026-06-23T14%3A00%3A47Z&sks=b&skv=2018-11-09&sig=esDS5AIIbUvWCXBqzgSZFPMMzP3%2BC8qu9%2BQsRdUnlQc%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc4MjIyMDg2NSwibmJmIjoxNzgyMjIwNTY1LCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.HQHfLckHFvDZZQqBV7RFtdqCqpVyV-ZK0kAojfSsojk&response-content-disposition=attachment%3B%20filename%3DWinDirStat.zip"
+        $appName = "WinDirStat"
+    
+        # Create C:\Temp if it doesn't exist
+        $tempDir = "C:\Temp"
+        if (!(Test-Path $tempDir)) {
+            New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+        }
+    
+        # Define paths
+        $zipPath = "$tempDir\WinDirStat.zip"
+        $exePath = "$tempDir\WinDirStat.exe"
+    
+        # Check if WinDirStat.exe already exists
+        if (!(Test-Path $exePath)) {
+            # Download the zip using curl
+            Write-Host "Downloading WinDirStat.zip..."
+            curl -L -o $zipPath $url
+        
+            # Extract WinDirStat.exe from the zip
+            Write-Host "Extracting WinDirStat.exe..."
+            Expand-Archive -Path $zipPath -DestinationPath $tempDir -Force
+        
+            # Move WinDirStat.exe from x64 subfolder to C:\Temp root
+            $extractedExe = "$tempDir\x64\WinDirStat.exe"
+            if (Test-Path $extractedExe) {
+                Move-Item -Path $extractedExe -Destination $exePath -Force
+                # Clean up the x64 folder
+                Remove-Item -Path "$tempDir\x64" -Recurse -Force -ErrorAction SilentlyContinue
+            }
+        
+            # Clean up the zip file
+            Remove-Item -Path $zipPath -Force -ErrorAction SilentlyContinue
+        
+            writeText -type "success" -text "WinDirStat.exe has been placed in C:\Temp"
+        } else {
+            writeText -type "warning" -text "WinDirStat.exe already exists in C:\Temp. Skipping download and extraction."
         }
     }
 }
