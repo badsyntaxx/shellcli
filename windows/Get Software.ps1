@@ -170,7 +170,7 @@ function getRevoUninstaller {
         installProgram -url $url -AppName $appName -Args "/VERYSILENT /NORESTART" 
     }
     if (!(Test-Path Join-Path -Path $env:USERPROFILE -ChildPath "Desktop\Revo Uninstaller.lnk")) {
-        Remove-Item -Path (Join-Path -Path $env:USERPROFILE -ChildPath "Desktop\Revo Uninstaller.lnk") -Force
+        Remove-Item -Path ("$env:USERPROFILE\Desktop\Revo Uninstaller.lnk") -Force
     }
 }
 
