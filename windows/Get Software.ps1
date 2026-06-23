@@ -175,12 +175,6 @@ function getRevoUninstaller {
     if (Test-Path $publicDesktopLink) {
         Remove-Item -Path $publicDesktopLink -Force
     }
-    
-    # Also remove from Start Menu folder if it exists
-    $startMenuFolder = "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Revo Uninstaller"
-    if (Test-Path $startMenuFolder) {
-        Remove-Item -Path $startMenuFolder -Recurse -Force -ErrorAction SilentlyContinue
-    }
 }
 
 function getWinDirStat {
