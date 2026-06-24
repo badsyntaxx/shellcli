@@ -764,3 +764,122 @@ function selectUser {
         writeText -type "error" -text "selectUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
+function installEXE {
+    param (
+        [string]$Path, # Path to the .exe file
+        [string]$exeArguments, # Arguments for the installer
+        [bool]$Wait = $true # Whether to wait for the process to complete
+    )
+
+    $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $startInfo.FileName = $Path
+    $startInfo.Arguments = $exeArguments
+    $startInfo.UseShellExecute = $false  # Important for capturing exit codes
+    $startInfo.CreateNoWindow = $true    # Run the installer in the background
+
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $startInfo
+
+    writeText -type "plain" -text "Running installer."
+
+    try {
+        $process.Start() | Out-Null
+        if ($Wait) {
+            $process.WaitForExit()
+            if ($process.ExitCode -eq 0) {
+                writeText -type "plain" -text "Installer ran successfully."
+            } else {
+                writeText -type "plain" -text "Installer failed with exit code $($process.ExitCode)."
+            }
+            return $process.ExitCode  # Return the exit code
+        } else {
+            writeText -type "plain" -text "Installation of '$Path' started in the background."
+            return 0  # Return 0 if not waiting
+        }
+    } catch {
+        writeText -type "plain" -text "Failed to start the installation process. Error: $_"
+        return -1  # Return -1 to indicate a failure to start the process
+    }
+}
+function installMSI {
+    param (
+        [string]$Path, # Path to the .msi file
+        [string]$msiArguments # Additional arguments for the MSI installer
+    )
+
+    writeText -type "plain" -text "Running installer."
+
+    try {
+        $process = Start-Process "msiexec.exe" -ArgumentList "/i `"$Path`" $msiArguments" -Wait -PassThru
+        if ($process.ExitCode -eq 0) {
+            writeText -type "plain" -text "Installer ran successfully."
+        } else {
+            writeText -type "plain" -text "Installer failed with exit code $($process.ExitCode)."
+        }
+        return $process.ExitCode  # Return the exit code
+    } catch {
+        writeText -type "plain" -text "Failed to start the installation process. Error: $_"
+        return -1  # Return -1 to indicate a failure to start the process
+    }
+}
+function installProgram {
+    param (
+        [parameter(Mandatory = $true)]
+        [string]$url,
+        [parameter(Mandatory = $true)]
+        [string]$AppName,
+        [parameter(Mandatory = $true)]
+        [string]$Args
+    )
+
+    try {
+        $fileName = Split-Path -Path $url -Leaf
+        $outputPath = Join-Path -Path "$env:SystemRoot\Temp" -ChildPath $fileName
+
+        if (getDownload -url $url -target $outputPath) {
+            $fileExtension = [System.IO.Path]::GetExtension($outputPath).ToLower()
+            switch ($fileExtension) {
+                ".exe" {
+                    $exitCode = installEXE -Path $outputPath -exeArguments $Args -Wait $true
+                    if ($exitCode -eq 0) {
+                        writeText -type "success" -text "Installation of $AppName completed successfully." -lineAfter
+                    } else {
+                        writeText -type "error" -text "Installation of $AppName failed with exit code $exitCode."
+                    }
+                }
+                ".msi" {
+                    $exitCode = installMSI -Path $outputPath -msiArguments $Args
+                    if ($exitCode -eq 0) {
+                        writeText -type "success" -text "Installation of $AppName completed successfully." -lineAfter
+                    } else {
+                        writeText -type "error" -text "Installation of $AppName failed with exit code $exitCode."
+                    }
+                }
+                default {
+                    writeText -type "notice" -text "Unsupported file type: $fileExtension"
+                }
+            }
+
+            # Clean up the downloaded installer
+            $timeout = 10  # Timeout in seconds
+            $startTime = Get-Date
+
+            while ((Test-Path $outputPath) -and ((Get-Date) - $startTime).TotalSeconds -lt $timeout) {
+                try {
+                    Remove-Item -Path $outputPath -Force -ErrorAction Stop
+                    writeText -type "plain" -text "Removed installer."
+                    break
+                } catch {
+                    Start-Sleep -Seconds 1
+                }
+            }
+
+            if (Test-Path $outputPath) {
+                writeText -type "error" -text "Failed to remove installer."
+            }
+        }        
+    } catch {
+        writeText -type "error" -text "Installation error: $($_.Exception.Message)"
+        writeText "Skipping $AppName installation."
+    }
+}

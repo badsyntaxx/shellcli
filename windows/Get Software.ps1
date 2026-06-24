@@ -28,64 +28,6 @@ function getSoftware {
         writeText -type "error" -text "isrInstallApps-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
 }
-function installEXE {
-    param (
-        [string]$Path, # Path to the .exe file
-        [string]$exeArguments, # Arguments for the installer
-        [bool]$Wait = $true # Whether to wait for the process to complete
-    )
-
-    $startInfo = New-Object System.Diagnostics.ProcessStartInfo
-    $startInfo.FileName = $Path
-    $startInfo.Arguments = $exeArguments
-    $startInfo.UseShellExecute = $false  # Important for capturing exit codes
-    $startInfo.CreateNoWindow = $true    # Run the installer in the background
-
-    $process = New-Object System.Diagnostics.Process
-    $process.StartInfo = $startInfo
-
-    writeText -type "plain" -text "Running installer."
-
-    try {
-        $process.Start() | Out-Null
-        if ($Wait) {
-            $process.WaitForExit()
-            if ($process.ExitCode -eq 0) {
-                writeText -type "plain" -text "Installer ran successfully."
-            } else {
-                writeText -type "plain" -text "Installer failed with exit code $($process.ExitCode)."
-            }
-            return $process.ExitCode  # Return the exit code
-        } else {
-            writeText -type "plain" -text "Installation of '$Path' started in the background."
-            return 0  # Return 0 if not waiting
-        }
-    } catch {
-        writeText -type "plain" -text "Failed to start the installation process. Error: $_"
-        return -1  # Return -1 to indicate a failure to start the process
-    }
-}
-function installMSI {
-    param (
-        [string]$Path, # Path to the .msi file
-        [string]$msiArguments # Additional arguments for the MSI installer
-    )
-
-    writeText -type "plain" -text "Running installer."
-
-    try {
-        $process = Start-Process "msiexec.exe" -ArgumentList "/i `"$Path`" $msiArguments" -Wait -PassThru
-        if ($process.ExitCode -eq 0) {
-            writeText -type "plain" -text "Installer ran successfully."
-        } else {
-            writeText -type "plain" -text "Installer failed with exit code $($process.ExitCode)."
-        }
-        return $process.ExitCode  # Return the exit code
-    } catch {
-        writeText -type "plain" -text "Failed to start the installation process. Error: $_"
-        return -1  # Return -1 to indicate a failure to start the process
-    }
-}
 function getBrowserSoftware {
     $installChoice = readOption -options $([ordered]@{
             "Vivaldi" = "Install Vivaldi."
