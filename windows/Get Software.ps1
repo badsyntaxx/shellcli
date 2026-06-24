@@ -175,6 +175,7 @@ function getRevoUninstaller {
     if (Test-Path $publicDesktopLink) {
         Remove-Item -Path $publicDesktopLink -Force
     }
+    getDiagnosticSoftware
 }
 
 function getWinDirStat {
@@ -226,7 +227,7 @@ function getWinDirStat {
         } else {
             writeText -type "notice" -text "WinDirStat.exe already exists in: $tempDir. Skipping download and extraction."
         }
-
+        getDiagnosticSoftware
     } catch {
         writeText -type "error" -text "getWinDirStat-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
     }
