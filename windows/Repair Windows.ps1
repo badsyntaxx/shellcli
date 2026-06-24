@@ -60,8 +60,8 @@ function clearTempFiles {
         writeText -type "plain" -text "Clearing temporary files at C:\Users\$env:USERNAME\AppData\Roaming\Temp"
         Remove-Item -Path "C:\Users\$env:USERNAME\AppData\Roaming\Temp\*" -Recurse -Force -ErrorAction SilentlyContinue
         writeText -type "plain" -text "Running Disk Cleanup utility to remove temporary files and system cache."
-        & "C:\Windows\System32\cmd.exe" /c cleanmgr /sagerun:1
-        readCommand
+        & "C:\Windows\System32\cmd.exe" /c cleanmgr
+        repairWindows
     } catch {
         writeText -type "error" -text "clearTempFiles-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
