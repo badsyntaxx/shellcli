@@ -92,7 +92,7 @@ function getDiagnosticSoftware {
             "Revo Uninstaller" = "Install Revo Uninstaller."
             "WinDirStat"       = "Install WinDirStat."
             "Exit"             = "Exit this script and go back to main command line."
-        }) -prompt "Select which diagnostic tool to install:"
+        }) -prompt "Select which diagnostic tool to install:" -lineAfter
 
     switch ($installChoice) {
         0 { getRevoUninstaller }

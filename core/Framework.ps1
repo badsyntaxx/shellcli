@@ -552,10 +552,10 @@ function getDownload {
 
             if ($complete) {
                 # Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
-                Write-Host -NoNewLine "`r $([char]0x2502) $progbar Complete" -ForegroundColor White
+                Write-Host -NoNewLine "`r $([char]0x2502) $progbar Complete" -ForegroundColor "Gray"
             } else {
                 # Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
-                Write-Host -NoNewLine "`r $([char]0x2502) $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%" -ForegroundColor White
+                Write-Host -NoNewLine "`r $([char]0x2502) $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%" -ForegroundColor "Gray"
             }         
         }
     }
