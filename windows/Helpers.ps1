@@ -36,11 +36,7 @@ function readMenu {
     }
 }
 
-function writeHelp {
-    param(
-        $commands = $null  # Accept commands as parameter
-    )
-    
+function writeHelp {   
     writeText -type "header" -text "Here are some commands to get you started:"
     writeText -type "plain" -text "USER COMMANDS:" -lineBefore
     writeText -type "plain" -text "menu                             - Display a menu with some available functions." -Color "DarkGray"
