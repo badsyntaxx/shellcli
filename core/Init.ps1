@@ -26,12 +26,16 @@ function initializeShellCLI {
             Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value 'invokeScript -script "readCommand -command `"help`"" -initialize $true'
 
             # Execute the combined script
-            & "$env:SystemRoot\Temp\SHELLCLI.ps1"
+            $shellCLI = Get-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Raw
+            Invoke-Expression $shellCLI
         }
     } catch {
         Write-Host "  initializeShellCLI-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -ForegroundColor "Red"
     }
 }
+
+# Invoke the root of Shell CLI
+initializeShellCLI
 
 function getScript {
     param (
