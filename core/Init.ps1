@@ -9,12 +9,6 @@ function initializeShellCLI {
         # Create the main script file
         New-Item -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -ItemType File -Force | Out-Null
 
-        # Initialize commands before building main script
-        $commandsLoaded = Initialize-Commands
-        if (-not $commandsLoaded) {
-            Write-Host "Failed to load command definitions. Using fallback mode." -ForegroundColor Yellow
-        }
-
         $url = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main"
 
         # Download the framework script
@@ -38,6 +32,9 @@ function initializeShellCLI {
         Write-Host "  initializeShellCLI-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -ForegroundColor "Red"
     }
 }
+
+# Invoke the root of Shell CLI
+initializeShellCLI
 
 function getScript {
     param (

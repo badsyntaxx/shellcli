@@ -1,6 +1,7 @@
 $script:Commands = $null
-$script:CommandsUrl = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main/commands.json"
+$script:CommandsUrl = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main/core/commands.json"
 $script:CommandCache = @{}
+$script:CommandsInitialized = $false
 
 function invokeScript {
     param (
@@ -80,21 +81,90 @@ function Initialize-Commands {
     )
     
     try {
+        if ($script:CommandsInitialized) {
+            return $true
+        }
+        
         if ($CommandsPath -and (Test-Path $CommandsPath)) {
             # Load from local file
             $json = Get-Content $CommandsPath -Raw
             $script:Commands = $json | ConvertFrom-Json
         } else {
-            # Download from GitHub
-            Write-Host "Downloading command definitions..." -ForegroundColor Gray
-            $json = Invoke-RestMethod -Uri $script:CommandsUrl -ErrorAction Stop
-            $script:Commands = $json
+            # Check if we have a cached version
+            $cachePath = "$env:TEMP\shellcli_commands_cache.json"
+            $cacheAge = if (Test-Path $cachePath) {
+                (Get-Date) - (Get-Item $cachePath).LastWriteTime
+            } else {
+                [TimeSpan]::MaxValue
+            }
+            
+            # Use cache if less than 1 hour old
+            if (Test-Path $cachePath -and $cacheAge.TotalHours -lt 1) {
+                Write-Host "Loading commands from cache..." -ForegroundColor Gray
+                $json = Get-Content $cachePath -Raw
+                $script:Commands = $json | ConvertFrom-Json
+            } else {
+                # Download from GitHub
+                Write-Host "Downloading command definitions..." -ForegroundColor Gray
+                $json = Invoke-RestMethod -Uri $script:CommandsUrl -ErrorAction Stop
+                $script:Commands = $json
+                
+                # Cache the commands
+                $json | ConvertTo-Json | Set-Content $cachePath
+            }
         }
         
+        $script:CommandsInitialized = $true
         Write-Host "Loaded $($script:Commands.commands.Count) commands" -ForegroundColor Green
         return $true
     } catch {
         Write-Host "Failed to load commands: $($_.Exception.Message)" -ForegroundColor Red
+        
+        # Try to load fallback commands if download fails
+        return Initialize-FallbackCommands
+    }
+}
+
+function Initialize-FallbackCommands {
+    try {
+        Write-Host "Loading fallback commands..." -ForegroundColor Yellow
+        
+        # Minimal built-in commands
+        $fallbackCommands = @{
+            version = "1.0.0"
+            commands = @(
+                @{
+                    command = "help"
+                    directory = "windows"
+                    file = "Helpers"
+                    function = "writeHelp"
+                    description = "Display help information"
+                    aliases = @("?", "h")
+                },
+                @{
+                    command = "menu"
+                    directory = "windows"
+                    file = "Helpers"
+                    function = "readMenu"
+                    description = "Show interactive menu"
+                    aliases = @("m")
+                },
+                @{
+                    command = "exit"
+                    directory = "core"
+                    file = "Exit"
+                    function = "exitShell"
+                    description = "Exit ShellCLI"
+                    aliases = @("quit", "q")
+                }
+            )
+        }
+        
+        $script:Commands = $fallbackCommands | ConvertTo-Json | ConvertFrom-Json
+        $script:CommandsInitialized = $true
+        return $true
+    } catch {
+        Write-Host "Failed to load fallback commands: $($_.Exception.Message)" -ForegroundColor Red
         return $false
     }
 }
@@ -111,8 +181,12 @@ function Get-CommandDefinition {
         return $script:CommandCache[$Command]
     }
     
+    if (-not $script:CommandsInitialized) {
+        $null = Initialize-Commands
+    }
+    
     if (-not $script:Commands) {
-        Initialize-Commands
+        return $null
     }
     
     # Search by command name or alias
@@ -200,7 +274,12 @@ function addScript {
     }
 }
 
-# Update readCommand to use new command system
+function exitShell {
+    Write-Host "Exiting ShellCLI..." -ForegroundColor Yellow
+    exit
+}
+
+# Update readCommand to handle exit
 function readCommand {
     param (
         [Parameter(Mandatory = $false)]
@@ -226,8 +305,8 @@ function readCommand {
         $command = $command.ToLower().Trim()
         
         # Check for exit command
-        if ($command -eq "exit" -or $command -eq "quit") {
-            Write-Host "Exiting ShellCLI..." -ForegroundColor Yellow
+        if ($command -eq "exit" -or $command -eq "quit" -or $command -eq "q") {
+            exitShell
             return
         }
         
