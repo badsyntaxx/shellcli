@@ -22,9 +22,7 @@ function initializeShellCLI {
             # Remove the script file
             Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\Framework.ps1" | Remove-Item -ErrorAction SilentlyContinue
 
-            # Load commands and assign to script:Commands, then start shell
-            Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value '$script:Commands = loadCommands -CommandsPath "https://raw.githubusercontent.com/badsyntaxx/shellcli/main/core/commands.json"'
-            Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value 'if ($script:Commands) { writeText -type "success" -text "Commands loaded: $($script:Commands.commands.Count)" } else { writeText -type "error" -text "Failed to load commands!" }'
+            # Add a final line that will invoke the desired function
             Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value 'invokeScript -script "readCommand -command `"help`"" -initialize $true'
 
             # Execute the combined script
