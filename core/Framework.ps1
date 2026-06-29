@@ -1,4 +1,4 @@
-$script:commandMap = @{
+$global:commandMap = @{
     ""                               = @("windows", "Helpers", "shellCLI")
     "help"                           = @("windows", "Helpers", "writeHelp")
     "menu"                           = @("windows", "Helpers", "readMenu")
@@ -127,10 +127,10 @@ function filterCommands {
         $normalizedCommand = $command.ToLower().Trim()
         
         # Find matching key (case-insensitive)
-        $matchingKey = $script:commandMap.Keys | Where-Object { $_ -eq $normalizedCommand }
+        $matchingKey = $global:commandMap.Keys | Where-Object { $_ -eq $normalizedCommand }
         
         if ($matchingKey) {
-            return $script:commandMap[$matchingKey]
+            return $global:commandMap[$matchingKey]
         } else {
             # Check if it's a PowerShell/Windows command (like your old switch did)
             if ($normalizedCommand -ne "help" -and $normalizedCommand -ne "" -and $normalizedCommand -match "^(?-i)(\w+(-\w+)*)") {

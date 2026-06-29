@@ -33,7 +33,7 @@ function writeHelp {
     writeText -type "plain" -text "plugins win11debloat  - https://github.com/Raphire/Win11Debloat" -Color "DarkGray"
 
     # Add dynamic command listing
-    if ($null -eq $script:commandMap) {
+    if ($null -eq $global:commandMap) {
         loadCommandMap | Out-Null
     }
     
@@ -42,8 +42,8 @@ function writeHelp {
     
     # Group commands by category
     $categories = @{}
-    foreach ($cmd in $script:commandMap.Keys | Where-Object { $_ -ne "" }) {
-        $def = $script:commandMap[$cmd]
+    foreach ($cmd in $global:commandMap.Keys | Where-Object { $_ -ne "" }) {
+        $def = $global:commandMap[$cmd]
         $category = $def[0]
         if (-not $categories.ContainsKey($category)) {
             $categories[$category] = @()
