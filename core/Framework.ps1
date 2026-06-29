@@ -1,3 +1,7 @@
+$script:Commands = $null
+$script:CommandsUrl = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main/commands.json"
+$script:CommandCache = @{}
+
 function invokeScript {
     param (
         [parameter(Mandatory = $true)]
@@ -35,7 +39,7 @@ function invokeScript {
         writeText -type "error" -text "invokeScript-$($_.InvocationInfo.ScriptLineNumber) | $script"
     }
 }
-function readCommand {
+<# function readCommand {
     param (
         [Parameter(Mandatory = $false)]
         [string]$command = ""
@@ -69,7 +73,60 @@ function readCommand {
     } catch {
         writeText -type "error" -text "readCommand-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
+} #>
+function Initialize-Commands {
+    param(
+        [string]$CommandsPath = $null
+    )
+    
+    try {
+        if ($CommandsPath -and (Test-Path $CommandsPath)) {
+            # Load from local file
+            $json = Get-Content $CommandsPath -Raw
+            $script:Commands = $json | ConvertFrom-Json
+        } else {
+            # Download from GitHub
+            Write-Host "Downloading command definitions..." -ForegroundColor Gray
+            $json = Invoke-RestMethod -Uri $script:CommandsUrl -ErrorAction Stop
+            $script:Commands = $json
+        }
+        
+        Write-Host "Loaded $($script:Commands.commands.Count) commands" -ForegroundColor Green
+        return $true
+    } catch {
+        Write-Host "Failed to load commands: $($_.Exception.Message)" -ForegroundColor Red
+        return $false
+    }
 }
+
+function Get-CommandDefinition {
+    param(
+        [string]$Command
+    )
+    
+    $Command = $Command.ToLower().Trim()
+    
+    # Check cache first
+    if ($script:CommandCache.ContainsKey($Command)) {
+        return $script:CommandCache[$Command]
+    }
+    
+    if (-not $script:Commands) {
+        Initialize-Commands
+    }
+    
+    # Search by command name or alias
+    $definition = $script:Commands.commands | Where-Object { 
+        $_.command -eq $Command -or ($_.aliases -and $Command -in $_.aliases)
+    } | Select-Object -First 1
+    
+    if ($definition) {
+        $script:CommandCache[$Command] = $definition
+    }
+    
+    return $definition
+}
+
 function filterCommands {
     param (
         [Parameter(Mandatory)]
@@ -77,73 +134,43 @@ function filterCommands {
     )
 
     try {
-        $commandArray = $()
-
-        switch ($command) {
-            "" { $commandArray = $("windows", "Helpers", "shellCLI") }
-            "help" { $commandArray = $("windows", "Helpers", "writeHelp") }
-            "menu" { $commandArray = $("windows", "Helpers", "readMenu") }
-            "toggle context menu" { $commandArray = $("windows", "Toggle Context Menu", "toggleContextMenu") }
-            "enable context menu" { $commandArray = $("windows", "Toggle Context Menu", "enableContextMenu") }
-            "disable context menu" { $commandArray = $("windows", "Toggle Context Menu", "disableContextMenu") }
-            "toggle admin" { $commandArray = $("windows", "Toggle Admin", "toggleAdmin") }
-            "enable admin" { $commandArray = $("windows", "Toggle Admin", "enableAdmin") }
-            "disable admin" { $commandArray = $("windows", "Toggle Admin", "disableAdmin") }
-            "list users" { $commandArray = $("windows", "User", "listUsers") }
-            "user menu" { $commandArray = $("windows", "User", "userMenu") }
-            "add user" { $commandArray = $("windows", "User", "addUser") }
-            "add local user" { $commandArray = $("windows", "User", "addLocalUser") }
-            "add ad user" { $commandArray = $("windows", "User", "addADUser") }
-            "add drive letter" { $commandArray = $("windows", "Add Drive Letter", "addDriveLetter") }
-            "remove user" { $commandArray = $("windows", "User", "removeUser") }
-            "edit hostname" { $commandArray = $("windows", "Edit Hostname", "editHostname") }
-            "edit description" { $commandArray = $("windows", "Edit Hostname", "editDescription") }
-            "edit user" { $commandArray = $("windows", "User", "editUser") }
-            "edit user name" { $commandArray = $("windows", "User", "editUserName") }
-            "edit user password" { $commandArray = $("windows", "User", "editUserPassword") }
-            "edit user group" { $commandArray = $("windows", "User", "editUserGroup") }
-            "edit net adapter" { $commandArray = $("windows", "Edit Net Adapter", "editNetAdapter") }
-            "get wifi creds" { $commandArray = $("windows", "Get Wifi Creds", "getWifiCreds") }
-            "get software" { $commandArray = $("windows", "Get Software", "getSoftware") }
-            "get windirstat" { $commandArray = $("windows", "Get Software", "getWinDirStat") }
-            "get revouninstaller" { $commandArray = $("windows", "Get Software", "getRevoUninstaller") }
-            "schedule task" { $commandArray = $("windows", "Schedule Task", "scheduleTask") }
-            "update windows" { $commandArray = $("windows", "Update Windows", "updateWindows") }
-            "clear temp files" { $commandArray = $("windows", "Repair Windows", "clearTempFiles") }
-            "repair windows" { $commandArray = $("windows", "Repair Windows", "repairWindows") }
-            "plugins" { $commandArray = $("plugins", "Helpers", "plugins") }
-            "plugins menu" { $commandArray = $("plugins", "Helpers", "readMenu") }
-            "plugins help" { $commandArray = $("plugins", "Helpers", "writeHelp") }
-            "plugins reclaimw11" { $commandArray = $("plugins", "ReclaimW11", "reclaimw11") }
-            "plugins massgravel" { $commandArray = $("plugins", "massgravel", "massgravel") }
-            "plugins win11debloat" { $commandArray = $("plugins", "win11Debloat", "win11Debloat") }
-            "share gpu with vm" { $commandArray = ("windows", "Share GPU with VM", "shareGPUWithVM") }
-            "copy host gpu drivers to vm" { $commandArray = ("windows", "Share GPU with VM", "copyHostGPUDriversToVM") }
-            "install host gpu drivers on vm" { $commandArray = ("windows", "Share GPU with VM", "installHostGPUDriversOnVM") }
-            "partition gpu" { $commandArray = ("windows", "Share GPU with VM", "partitionGPU") }
-            "generate encrypted password" { $commandArray = ("windows", "Generate Encrypted Password", "generateEncryptedPassword") }
-            "add premade account" { $commandArray = ("windows", "Add Premade Account", "addPremadeAccount") }
-            default { 
-                if ($command -ne "help" -and $command -ne "" -and $command -match "^(?-i)(\w+(-\w+)*)") {
-                    if (Get-command $matches[1] -ErrorAction SilentlyContinue) {
-                        $output = Invoke-Expression -Command $command 
-                        $output | Format-Table | Out-String | ForEach-Object { Write-Host $_ }
-                        readCommand
-                    }
-                }
-                Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
-                Write-Host "  Unrecognized command `"$command`". Try" -NoNewline -ForegroundColor "White"
-                Write-Host " help" -ForegroundColor "Cyan" -NoNewline
-                Write-Host " or" -NoNewline -ForegroundColor "White"
-                Write-Host " menu" -NoNewline -ForegroundColor "Cyan"
-                Write-Host " to learn more." -ForegroundColor "White"
-                readCommand 
+        $command = $command.ToLower().Trim()
+        
+        # Empty command handling
+        if ($command -eq "") {
+            return @("windows", "Helpers", "shellCLI")
+        }
+        
+        # Check if it's a PowerShell command
+        if ($command -match "^(?-i)(\w+(-\w+)*)") {
+            $cmdName = $matches[1]
+            if (Get-Command $cmdName -ErrorAction SilentlyContinue) {
+                $output = Invoke-Expression -Command $command 
+                $output | Format-Table | Out-String | ForEach-Object { Write-Host $_ }
+                readCommand
+                return @()
             }
         }
-
-        return $commandArray
+        
+        # Look up command in definitions
+        $definition = Get-CommandDefinition -Command $command
+        
+        if ($definition) {
+            return @($definition.directory, $definition.file, $definition.function)
+        }
+        
+        # Command not found
+        Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
+        Write-Host "  Unrecognized command `"$command`". Try" -NoNewline -ForegroundColor "White"
+        Write-Host " help" -ForegroundColor "Cyan" -NoNewline
+        Write-Host " or" -NoNewline -ForegroundColor "White"
+        Write-Host " menu" -NoNewline -ForegroundColor "Cyan"
+        Write-Host " to learn more." -ForegroundColor "White"
+        readCommand 
+        return @()
     } catch {
         writeText -type "error" -text "filterCommands-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        return @()
     }
 }
 function addScript {
@@ -155,18 +182,76 @@ function addScript {
     )
 
     try {
-        $url = "https://raw.githubusercontent.com/badsyntaxx/chaste-scripts/main"
-
+        # Use consistent repository URL
+        $url = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main"
+        
         $download = getDownload -url "$url/$directory/$file.ps1" -target "$env:SystemRoot\Temp\$file.ps1" -hide
-
+        
         if ($download -eq $true) {
             $rawScript = Get-Content -Path "$env:SystemRoot\Temp\$file.ps1" -Raw -ErrorAction SilentlyContinue
             Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value $rawScript
-
+            
             Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\$file.ps1" | Remove-Item -ErrorAction SilentlyContinue
+        } else {
+            throw "Failed to download $directory/$file.ps1"
         }
     } catch {
         writeText -type "error" -text "addScript-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
+
+# Update readCommand to use new command system
+function readCommand {
+    param (
+        [Parameter(Mandatory = $false)]
+        [string]$command = "",
+        [int]$depth = 0
+    )
+
+    try {
+        if ($depth -gt 5) {
+            writeText -type "error" -text "Command depth exceeded - possible infinite loop"
+            return
+        }
+        
+        Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
+        if ($command -eq "") { 
+            Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
+            Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
+            Write-Host " $([char]0x203A) " -NoNewline  -ForegroundColor "Cyan"
+            $command = Read-Host 
+            Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
+        }
+
+        $command = $command.ToLower().Trim()
+        
+        # Check for exit command
+        if ($command -eq "exit" -or $command -eq "quit") {
+            Write-Host "Exiting ShellCLI..." -ForegroundColor Yellow
+            return
+        }
+        
+        $filteredCommand = filterCommands -command $command
+        
+        # If filterCommands already handled the command (like PowerShell cmdlets), return
+        if (-not $filteredCommand -or $filteredCommand.Count -eq 0) {
+            return
+        }
+        
+        $commandDirectory = $filteredCommand[0]
+        $commandFile = $filteredCommand[1]
+        $commandFunction = $filteredCommand[2]
+
+        New-Item -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -ItemType File -Force | Out-Null
+        addScript -directory $commandDirectory -file $commandFile
+        addScript -directory "core" -file "Framework"
+        Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value "invokeScript '$commandFunction'"
+        Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value "readCommand"
+
+        $shellCLI = Get-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Raw
+        Invoke-Expression $shellCLI
+    } catch {
+        writeText -type "error" -text "readCommand-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
 function writeText {
