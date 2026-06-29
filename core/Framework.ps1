@@ -88,32 +88,45 @@ function readCommand {
     )
 
     try {
-        Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
-        if ($command -eq "") { 
+        # Use a loop to keep the session alive
+        while ($true) {
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
-            Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
-            Write-Host " $([char]0x203A) " -NoNewline  -ForegroundColor "Cyan"
-            $command = Read-Host 
-            Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
+            
+            if ($command -eq "") { 
+                Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
+                Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
+                Write-Host " $([char]0x203A) " -NoNewline  -ForegroundColor "Cyan"
+                $command = Read-Host 
+                Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
+            }
+
+            $command = $command.ToLower()
+            $command = $command.Trim()
+            $filteredCommand = filterCommands -command $command
+            
+            # Check if filterCommands returned a valid array (3 elements)
+            if ($filteredCommand -and $filteredCommand.Count -eq 3) {
+                $commandDirectory = $filteredCommand[0]
+                $commandFile = $filteredCommand[1]
+                $commandFunction = $filteredCommand[2]
+
+                New-Item -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -ItemType File -Force | Out-Null
+                addScript -directory $commandDirectory -file $commandFile
+                addScript -directory "core" -file "Framework"
+                Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value "invokeScript '$commandFunction'"
+                Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value "readCommand"
+
+                $shellCLI = Get-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Raw
+                Invoke-Expression $shellCLI
+            }
+            # If filteredCommand is $null, it was either a PowerShell command or unrecognized
+            # Reset command for the next loop iteration
+            $command = ""
         }
-
-        $command = $command.ToLower()
-        $command = $command.Trim()
-        $filteredCommand = filterCommands -command $command
-        $commandDirectory = $filteredCommand[0]
-        $commandFile = $filteredCommand[1]
-        $commandFunction = $filteredCommand[2]
-
-        New-Item -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -ItemType File -Force | Out-Null
-        addScript -directory $commandDirectory -file $commandFile
-        addScript -directory "core" -file "Framework"
-        Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value "invokeScript '$commandFunction'"
-        Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value "readCommand"
-
-        $shellCLI = Get-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Raw
-        Invoke-Expression $shellCLI
     } catch {
         writeText -type "error" -text "readCommand-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        # Reset command and continue
+        $command = ""
     }
 }
 function filterCommands {
@@ -132,13 +145,19 @@ function filterCommands {
         if ($matchingKey) {
             return $global:commandMap[$matchingKey]
         } else {
-            # Check if it's a PowerShell/Windows command (like your old switch did)
+            # Check if it's a PowerShell/Windows command
             if ($normalizedCommand -ne "help" -and $normalizedCommand -ne "" -and $normalizedCommand -match "^(?-i)(\w+(-\w+)*)") {
                 $cmdName = $matches[1]
                 if (Get-Command $cmdName -ErrorAction SilentlyContinue) {
-                    # It's a valid PowerShell command, execute it and return $null
-                    $output = Invoke-Expression -Command $command
-                    $output | Format-Table | Out-String | ForEach-Object { Write-Host $_ }
+                    # It's a valid PowerShell command, execute it
+                    try {
+                        $output = Invoke-Expression -Command $command
+                        if ($output) {
+                            $output | Format-Table | Out-String | ForEach-Object { Write-Host $_ }
+                        }
+                    } catch {
+                        Write-Host "Error executing command: $($_.Exception.Message)" -ForegroundColor Red
+                    }
                     return $null
                 }
             }
@@ -154,6 +173,7 @@ function filterCommands {
         }
     } catch {
         writeText -type "error" -text "filterCommands-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        return $null
     }
 }
 function addScript {
