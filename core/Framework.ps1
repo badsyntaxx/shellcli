@@ -108,16 +108,7 @@ function filterCommands {
             return @("windows", "Helpers", "shellCLI")
         }
         
-        # Check if it's a PowerShell command
-        if ($command -ne "help" -and $command -ne "" -and $command -match "^(?-i)(\w+(-\w+)*)") {
-            if (Get-command $matches[1] -ErrorAction SilentlyContinue) {
-                $output = Invoke-Expression -Command $command 
-                $output | Format-Table | Out-String | ForEach-Object { Write-Host $_ }
-                readCommand
-            }
-        }
-        
-        # Look up command in loaded commands
+        # FIRST: Look up command in loaded commands (your custom commands take priority)
         if ($script:Commands -and $script:Commands.commands) {
             $definition = $script:Commands.commands | Where-Object { 
                 $_.command -eq $command -or ($_.aliases -and $command -in $_.aliases)
@@ -125,6 +116,17 @@ function filterCommands {
             
             if ($definition) {
                 return @($definition.directory, $definition.file, $definition.function)
+            }
+        }
+        
+        # SECOND: Check if it's a PowerShell command (only if not found in custom commands)
+        if ($command -match "^(?-i)(\w+(-\w+)*)") {
+            $cmdName = $matches[1]
+            if (Get-Command $cmdName -ErrorAction SilentlyContinue) {
+                $output = Invoke-Expression -Command $command 
+                $output | Format-Table | Out-String | ForEach-Object { Write-Host $_ }
+                readCommand
+                return @()
             }
         }
         
