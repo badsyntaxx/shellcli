@@ -88,8 +88,6 @@ function readCommand {
     )
 
     try {
-        Write-Host "1"
-        Read-Host
         Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
         if ($command -eq "") { 
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
@@ -98,23 +96,20 @@ function readCommand {
             $command = Read-Host 
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
         }
-        Write-Host "2"
-        Read-Host
+
         $command = $command.ToLower()
         $command = $command.Trim()
         $filteredCommand = filterCommands -command $command
         $commandDirectory = $filteredCommand[0]
         $commandFile = $filteredCommand[1]
         $commandFunction = $filteredCommand[2]
-        Write-Host "3"
-        Read-Host
+
         New-Item -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -ItemType File -Force | Out-Null
         addScript -directory $commandDirectory -file $commandFile
         addScript -directory "core" -file "Framework"
         Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value "invokeScript '$commandFunction'"
         Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value "readCommand"
-        Write-Host "4"
-        Read-Host
+
         $shellCLI = Get-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Raw
         Invoke-Expression $shellCLI
     } catch {
