@@ -109,13 +109,11 @@ function filterCommands {
         }
         
         # Check if it's a PowerShell command
-        if ($command -match "^(?-i)(\w+(-\w+)*)") {
-            $cmdName = $matches[1]
-            if (Get-Command $cmdName -ErrorAction SilentlyContinue) {
+        if ($command -ne "help" -and $command -ne "" -and $command -match "^(?-i)(\w+(-\w+)*)") {
+            if (Get-command $matches[1] -ErrorAction SilentlyContinue) {
                 $output = Invoke-Expression -Command $command 
                 $output | Format-Table | Out-String | ForEach-Object { Write-Host $_ }
                 readCommand
-                return @()
             }
         }
         
