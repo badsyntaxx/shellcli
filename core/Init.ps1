@@ -26,8 +26,7 @@ function initializeShellCLI {
             Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value 'invokeScript -script "readCommand -command `"help`"" -initialize $true'
 
             # Execute the combined script
-            $shellCLI = Get-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Raw
-            Invoke-Expression $shellCLI
+            & "$env:SystemRoot\Temp\SHELLCLI.ps1"
         }
     } catch {
         Write-Host "  initializeShellCLI-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -ForegroundColor "Red"
