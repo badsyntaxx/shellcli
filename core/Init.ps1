@@ -22,7 +22,7 @@ function initializeShellCLI {
             Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\Framework.ps1" | Remove-Item -ErrorAction SilentlyContinue
 
             # Load commands and start shell
-            Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value 'Load-Commands -CommandsPath "https://raw.githubusercontent.com/badsyntaxx/shellcli/main/core/commands.json"'
+            Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value 'loadCommands -CommandsPath "https://raw.githubusercontent.com/badsyntaxx/shellcli/main/core/commands.json"'
             Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value 'invokeScript -script "readCommand -command `"help`"" -initialize $true'
 
             # Execute the combined script

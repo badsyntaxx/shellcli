@@ -72,7 +72,7 @@ function readCommand {
         writeText -type "error" -text "readCommand-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-function Load-Commands {
+function loadCommands {
     param(
         [string]$CommandsPath = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main/core/commands.json"
     )
