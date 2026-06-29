@@ -24,9 +24,13 @@ function initializeShellCLI {
 
             # Add a final line that will invoke the desired function
             Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value 'invokeScript -script "readCommand -command `"help`"" -initialize $true'
+            # Load commands and assign to script:Commands, then start shell
+            Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value '$script:Commands = Load-Commands -CommandsPath "https://raw.githubusercontent.com/badsyntaxx/shellcli/main/core/commands.json"'
+            Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value 'if ($script:Commands) { writeText -type "success" -text "Commands loaded: $($script:Commands.commands.Count)" } else { writeText -type "error" -text "Failed to load commands!" }'
+            Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value 'invokeScript -script "readCommand -command `"help`"" -initialize $true'
 
             # Execute the combined script
-            & "$env:SystemRoot\Temp\SHELLCLI.ps1"
+            . "$env:SystemRoot\Temp\SHELLCLI.ps1"
         }
     } catch {
         Write-Host "  initializeShellCLI-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -ForegroundColor "Red"
