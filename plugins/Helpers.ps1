@@ -31,4 +31,42 @@ function writeHelp {
     writeText -type "plain" -text "plugins massgravel    - https://github.com/massgravel/Microsoft-Activation-Scripts" -Color "DarkGray"
     writeText -type "plain" -text "plugins reclaimw11    - Credit needed" -Color "DarkGray"
     writeText -type "plain" -text "plugins win11debloat  - https://github.com/Raphire/Win11Debloat" -Color "DarkGray"
+
+    # Add dynamic command listing
+    if ($null -eq $script:commandMap) {
+        loadCommandMap | Out-Null
+    }
+    
+    Write-Host " $([char]0x2502) Available Commands:" -ForegroundColor "Gray"
+    Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
+    
+    # Group commands by category
+    $categories = @{}
+    foreach ($cmd in $script:commandMap.Keys | Where-Object { $_ -ne "" }) {
+        $def = $script:commandMap[$cmd]
+        $category = $def[0]
+        if (-not $categories.ContainsKey($category)) {
+            $categories[$category] = @()
+        }
+        $categories[$category] += $cmd
+    }
+    
+    foreach ($category in $categories.Keys | Sort-Object) {
+        Write-Host " $([char]0x2502)  $($category):" -ForegroundColor "Cyan"
+        $commands = $categories[$category] | Sort-Object
+        $grouped = @()
+        $line = ""
+        foreach ($cmd in $commands) {
+            if ($line.Length + $cmd.Length + 2 -gt 60) {
+                Write-Host " $([char]0x2502)    $line" -ForegroundColor "White"
+                $line = ""
+            }
+            if ($line -ne "") { $line += ", " }
+            $line += $cmd
+        }
+        if ($line -ne "") {
+            Write-Host " $([char]0x2502)    $line" -ForegroundColor "White"
+        }
+        Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
+    }
 }
