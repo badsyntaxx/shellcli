@@ -2,6 +2,7 @@ function initializeShellCLI {
     try {
         # Check if user has administrator privileges
         if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]"Administrator")) {
+            # If not, elevate privileges and restart function with current arguments
             Start-Process powershell.exe "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`" $PSCommandArgs" -WorkingDirectory $pwd -Verb RunAs
             Exit
         }
@@ -11,16 +12,15 @@ function initializeShellCLI {
 
         $url = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main"
 
-        # Download Framework.ps1
+        # Download the script
         $download = getScript -Url "$url/core/Framework.ps1" -Target "$env:SystemRoot\Temp\Framework.ps1"
         if ($download) { 
+            # Append the script to the main script
             $rawScript = Get-Content -Path "$env:SystemRoot\Temp\Framework.ps1" -Raw -ErrorAction SilentlyContinue
             Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value $rawScript
-            Remove-Item "$env:SystemRoot\Temp\Framework.ps1" -ErrorAction SilentlyContinue
 
-            # Preload the command map (optional - to avoid delay on first command)
-            Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value '# Preload command map'
-            Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value 'loadCommandMap | Out-Null'
+            # Remove the script file
+            Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\Framework.ps1" | Remove-Item -ErrorAction SilentlyContinue
 
             # Add a final line that will invoke the desired function
             Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value 'invokeScript -script "readCommand -command `"help`"" -initialize $true'
