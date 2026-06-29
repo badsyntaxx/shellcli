@@ -77,19 +77,23 @@ function loadCommandMap {
         $url = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main/core/commands.json"
         $target = "$env:SystemRoot\Temp\commands.json"
         
-        # Download the JSON file using your existing getScript function
         $download = getScript -Url $url -Target $target
+        if (-not $download) { return $null }
         
-        if ($download) {
-            $jsonContent = Get-Content $target -Raw
-            $script:commandMap = $jsonContent | ConvertFrom-Json -AsHashtable
-            Remove-Item $target -ErrorAction SilentlyContinue
-            return $true
+        $jsonContent = Get-Content $target -Raw
+        $jsonObject = $jsonContent | ConvertFrom-Json
+        Remove-Item $target -ErrorAction SilentlyContinue
+        
+        # Convert to hashtable
+        $script:commandMap = @{}
+        foreach ($property in $jsonObject.PSObject.Properties) {
+            $script:commandMap[$property.Name] = @($property.Value)
         }
-        return $false
+        
+        return $script:commandMap
     } catch {
         writeText -type "error" -text "loadCommandMap-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-        return $false
+        return $null
     }
 }
 
@@ -101,23 +105,17 @@ function filterCommands {
     )
 
     try {
-        # Load command map if not already loaded
+        # Load command map if not loaded
         if ($null -eq $script:commandMap) {
-            $loaded = loadCommandMap
-            if (-not $loaded) {
-                throw "Failed to load command map from GitHub"
-            }
+            $script:commandMap = loadCommandMap
         }
 
-        $commandArray = $null
-
-        # Check if command exists in the loaded map
+        # Return the command definition if it exists
         if ($script:commandMap.ContainsKey($command)) {
-            $commandArray = $script:commandMap[$command]
-            return $commandArray
+            return $script:commandMap[$command]
         }
 
-        # Handle unknown commands (keeping your original logic)
+        # Unknown command handling (your original logic)
         if ($command -ne "help" -and $command -ne "" -and $command -match "^(?-i)(\w+(-\w+)*)") {
             if (Get-command $matches[1] -ErrorAction SilentlyContinue) {
                 $output = Invoke-Expression -Command $command 
