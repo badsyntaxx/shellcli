@@ -1,2 +1,3 @@
 # Ignore a specific file
 core/dev.ps1
+core/devInit.ps1
