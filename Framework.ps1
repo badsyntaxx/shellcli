@@ -123,7 +123,7 @@ function readCommand {
 }
 function filterCommands {
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $false)]
         [string]$command
     )
 
