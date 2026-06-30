@@ -22,6 +22,7 @@ $global:commandMap = @{
     "edit user password"             = @("windows", "User", "editUserPassword")
     "edit user group"                = @("windows", "User", "editUserGroup")
     "edit net adapter"               = @("windows", "Edit Net Adapter", "editNetAdapter")
+    "find dc"                        = @("windows", "Diagnose Windows", "findDC")
     "get wifi creds"                 = @("windows", "Get Wifi Creds", "getWifiCreds")
     "get software"                   = @("windows", "Get Software", "getSoftware")
     "get windirstat"                 = @("windows", "Get Software", "getWinDirStat")
