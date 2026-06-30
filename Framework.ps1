@@ -161,7 +161,7 @@ function filterCommands {
             Write-Host " or" -NoNewline -ForegroundColor "White"
             Write-Host " menu" -NoNewline -ForegroundColor "Cyan"
             Write-Host " to learn more." -ForegroundColor "White"
-            return $null
+            readCommand
         }
     } catch {
         writeText -type "error" -text "filterCommands-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
