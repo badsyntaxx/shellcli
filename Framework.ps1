@@ -110,7 +110,7 @@ function readCommand {
 
             New-Item -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -ItemType File -Force | Out-Null
             addScript -directory $commandDirectory -file $commandFile
-            addScript -directory "core" -file "Framework"
+            addScript -file "Framework"
             Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value "invokeScript '$commandFunction'"
             Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value "readCommand"
 
@@ -170,7 +170,7 @@ function filterCommands {
 }
 function addScript {
     param (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory = $false)]
         [string]$directory,
         [Parameter(Mandatory)]
         [string]$file
