@@ -95,6 +95,7 @@ function readCommand {
             
             if ($command -eq "" -or $null -eq $command) { 
                 readCommand -command "help"
+                return
             }
 
             $command = $command.ToLower()
