@@ -94,7 +94,7 @@ function readCommand {
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
             
             if ($command -eq "" -or $null -eq $command) { 
-                readCommand
+                return
                 Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
                 Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
                 Write-Host " $([char]0x203A) " -NoNewline  -ForegroundColor "Cyan"
