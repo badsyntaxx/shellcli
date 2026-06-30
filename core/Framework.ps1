@@ -94,12 +94,7 @@ function readCommand {
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
             
             if ($command -eq "" -or $null -eq $command) { 
-                return
-                Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
-                Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
-                Write-Host " $([char]0x203A) " -NoNewline  -ForegroundColor "Cyan"
-                $command = Read-Host 
-                Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
+                readCommand -command "menu"
             }
 
             $command = $command.ToLower()
