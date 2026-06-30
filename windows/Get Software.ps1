@@ -91,13 +91,15 @@ function getDiagnosticSoftware {
     $installChoice = readOption -options $([ordered]@{
             "Revo Uninstaller" = "Install Revo Uninstaller."
             "WinDirStat"       = "Install WinDirStat."
+            "BGInfo"           = "Install BGInfo."
             "Exit"             = "Exit this script and go back to main command line."
         }) -prompt "Select which diagnostic tool to install:" -lineAfter
 
     switch ($installChoice) {
         0 { getRevoUninstaller }
         1 { getWinDirStat }
-        2 { readCommand }
+        2 { getBGInfo }
+        3 { readCommand }
     }
 }
 
@@ -176,7 +178,29 @@ function getWinDirStat {
 }
 
 function getProductivitySoftware {
-    WriteText -type "notice" -text "Productivity software not yet implemented." -lineBefore
+    $installChoice = readOption -options $([ordered]@{
+            "Windows PowerToys" = "Install Windows PowerToys."
+            "Exit"              = "Exit this script and go back to main command line."
+        }) -prompt "Select which diagnostic tool to install:" -lineAfter
+
+    switch ($installChoice) {
+        0 { getRevoUninstaller }
+        1 { getWinDirStat }
+        2 { getBGInfo }
+        3 { readCommand }
+    }
+}
+
+function getWindowsPowerToys {
+    $url = "https://release-assets.githubusercontent.com/github-production-release-asset/184456251/58b30170-c4ae-4a90-8abd-a955c5f58e07?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-06-30T13%3A10%3A52Z&rscd=attachment%3B+filename%3DPowerToysUserSetup-0.100.1-x64.exe&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-06-30T12%3A10%3A52Z&ske=2026-06-30T13%3A10%3A52Z&sks=b&skv=2018-11-09&sig=%2BYe3kIqAD8DFp3%2FY4GNAe4%2BK%2BVg%2FClwvyJr0IGmims0%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc4MjgyNTM1NSwibmJmIjoxNzgyODIxNzU1LCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.WxR7zlAsBDXUl-oF75i1HCwklmM43HzqKZ3mLFYSlj0&response-content-disposition=attachment%3B%20filename%3DPowerToysUserSetup-0.100.1-x64.exe&response-content-type=application%2Foctet-stream"
+    $appName = "Google Chrome"
+    $paths = @(
+        "$env:ProgramFiles\PowerToys.exe"
+    )
+    $installed = findExisting -Paths $paths -App $appName
+    if (!$installed) { 
+        installProgram -url $url -AppName $appName -Args "" 
+    }
 }
 
 function getCustomizationSoftware {
@@ -207,4 +231,52 @@ function findExisting {
     }
 
     return $installationFound
+}
+
+function getBGInfo {
+    try {
+        $url = "https://drive.google.com/uc?export=download&id=1gBFuz6WqrgPvIqYjrcRCYZeC_x9XsUbC"
+
+        $download = getDownload -url $url -target "$env:SystemRoot\Temp\BGInfo.zip" -lineBefore
+
+        if ($download -eq $true) { 
+            Expand-Archive -LiteralPath "$env:SystemRoot\Temp\BGInfo.zip" -DestinationPath "$env:SystemRoot\Temp\"
+
+            # Test if the extracted folder exists
+            if (Test-Path "$env:SystemRoot\Temp\BGInfo") {
+                writeText -type "plain" -text "BGInfo unpacked."
+            } else {
+                writeText -type "error" -text "Failed to unpack BGInfo."
+            }
+
+            ROBOCOPY "$env:SystemRoot\Temp\BGInfo" "C:\Program Files\BGInfo" /E /NFL /NDL /NJH /NJS /nc /ns | Out-Null
+            ROBOCOPY "$env:SystemRoot\Temp\BGInfo" "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup" "Start BGInfo.bat" /NFL /NDL /NJH /NJS /nc /ns | Out-Null
+
+            if (Test-Path "C:\Program Files\BGInfo") {
+                writeText -type "plain" -text "BGInfo installed."
+            } else {
+                writeText -type "error" -text "Failed to install BGInfo."
+            }
+
+            Remove-Item -Path "$env:SystemRoot\Temp\BGInfo.zip" -Recurse
+            Remove-Item -Path "$env:SystemRoot\Temp\BGInfo" -Recurse 
+
+            $filesDeleted = $true
+            if (Test-Path "$env:SystemRoot\Temp\BGInfo.zip") { 
+                $filesDeleted = $false 
+            }
+            if (Test-Path "$env:SystemRoot\Temp\BGInfo") { 
+                $filesDeleted = $false 
+            } 
+            if (!$filesDeleted) {
+                writeText -type "error" -text "Some temp files were not deleted. This is harmless."
+            }
+
+            Start-Process -FilePath "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup\Start BGInfo.bat" -WindowStyle Hidden
+
+            writeText -type "success" -text "BGInfo installed and applied."
+        }
+    } catch {
+        writeText -type "error" -text "installBGInfo-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
 }

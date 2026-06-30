@@ -26,6 +26,7 @@ $global:commandMap = @{
     "get software"                   = @("windows", "Get Software", "getSoftware")
     "get windirstat"                 = @("windows", "Get Software", "getWinDirStat")
     "get revouninstaller"            = @("windows", "Get Software", "getRevoUninstaller")
+    "get bginfo"                     = @("windows", "Get Software", "getBGInfo")
     "schedule task"                  = @("windows", "Schedule Task", "scheduleTask")
     "update windows"                 = @("windows", "Update Windows", "updateWindows")
     "clear temp files"               = @("windows", "Repair Windows", "clearTempFiles")
