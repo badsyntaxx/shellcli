@@ -179,7 +179,11 @@ function addScript {
     try {
         $url = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main"
 
-        $download = getDownload -url "$url/$directory/$file.ps1" -target "$env:SystemRoot\Temp\$file.ps1" -hide
+        if ($file = "Framework") {
+            $download = getDownload -url "$url/$file.ps1" -target "$env:SystemRoot\Temp\$file.ps1" -hide
+        } else {
+            $download = getDownload -url "$url/$directory/$file.ps1" -target "$env:SystemRoot\Temp\$file.ps1" -hide
+        }
 
         if ($download -eq $true) {
             $rawScript = Get-Content -Path "$env:SystemRoot\Temp\$file.ps1" -Raw -ErrorAction SilentlyContinue

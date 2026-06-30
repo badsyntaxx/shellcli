@@ -13,7 +13,7 @@ function initializeShellCLI {
         $url = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main"
 
         # Download the script
-        $download = getScript -Url "$url/core/Framework.ps1" -Target "$env:SystemRoot\Temp\Framework.ps1"
+        $download = getScript -Url "$url/Framework.ps1" -Target "$env:SystemRoot\Temp\Framework.ps1"
         if ($download) { 
             # Append the script to the main script
             $rawScript = Get-Content -Path "$env:SystemRoot\Temp\Framework.ps1" -Raw -ErrorAction SilentlyContinue
