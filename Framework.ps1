@@ -107,7 +107,7 @@ function readCommand {
             $commandDirectory = $filteredCommand[0]
             $commandFile = $filteredCommand[1]
             $commandFunction = $filteredCommand[2]
-
+            Write-Host "$commandDirectory\$commandFile"
             New-Item -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -ItemType File -Force | Out-Null
             addScript -directory $commandDirectory -file $commandFile
             addScript -file "Framework"
