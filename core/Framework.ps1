@@ -89,42 +89,37 @@ function readCommand {
     )
 
     try {
-        # Use a loop to keep the session alive
-        while ($true) {
-            Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
+
+        Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
             
-            if ($command -eq "" -or $null -eq $command) { 
-                readCommand -command "help"
-                break
-            }
-
-            $command = $command.ToLower()
-            $command = $command.Trim()
-            $filteredCommand = filterCommands -command $command
-            
-            # Check if filterCommands returned a valid array (3 elements)
-            if ($filteredCommand -and $filteredCommand.Count -eq 3) {
-                $commandDirectory = $filteredCommand[0]
-                $commandFile = $filteredCommand[1]
-                $commandFunction = $filteredCommand[2]
-
-                New-Item -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -ItemType File -Force | Out-Null
-                addScript -directory $commandDirectory -file $commandFile
-                addScript -directory "core" -file "Framework"
-                Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value "invokeScript '$commandFunction'"
-                Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value "readCommand"
-
-                $shellCLI = Get-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Raw
-                Invoke-Expression $shellCLI
-            }
-            # If filteredCommand is $null, it was either a PowerShell command or unrecognized
-            # Reset command for the next loop iteration
-            $command = ""
+        if ($command -eq "" -or $null -eq $command) { 
+            readCommand -command "help"
+            break
         }
+
+        $command = $command.ToLower()
+        $command = $command.Trim()
+        $filteredCommand = filterCommands -command $command
+            
+        # Check if filterCommands returned a valid array (3 elements)
+        if ($filteredCommand -and $filteredCommand.Count -eq 3) {
+            $commandDirectory = $filteredCommand[0]
+            $commandFile = $filteredCommand[1]
+            $commandFunction = $filteredCommand[2]
+
+            New-Item -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -ItemType File -Force | Out-Null
+            addScript -directory $commandDirectory -file $commandFile
+            addScript -directory "core" -file "Framework"
+            Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value "invokeScript '$commandFunction'"
+            Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value "readCommand"
+
+            $shellCLI = Get-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Raw
+            Invoke-Expression $shellCLI
+        }
+
+        
     } catch {
         writeText -type "error" -text "readCommand-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-        # Reset command and continue
-        $command = ""
     }
 }
 function filterCommands {
