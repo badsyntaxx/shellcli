@@ -107,7 +107,7 @@ function readCommand {
             $commandDirectory = $filteredCommand[0]
             $commandFile = $filteredCommand[1]
             $commandFunction = $filteredCommand[2]
-            Write-Host "$commandDirectory\$commandFile"
+
             New-Item -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -ItemType File -Force | Out-Null
             addScript -directory $commandDirectory -file $commandFile
             addScript -file "Framework"
@@ -179,12 +179,12 @@ function addScript {
     try {
         $url = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main"
 
-        if ($file = "Framework") {
+        if ($file -eq "Framework") {
             $download = getDownload -url "$url/$file.ps1" -target "$env:SystemRoot\Temp\$file.ps1" -hide
         } else {
             $download = getDownload -url "$url/$directory/$file.ps1" -target "$env:SystemRoot\Temp\$file.ps1" -hide
         }
-        Write-Host $file
+
         if ($download -eq $true) {
             $rawScript = Get-Content -Path "$env:SystemRoot\Temp\$file.ps1" -Raw -ErrorAction SilentlyContinue
             Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value $rawScript
