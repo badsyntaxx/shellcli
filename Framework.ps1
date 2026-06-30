@@ -110,7 +110,7 @@ function readCommand {
 
             New-Item -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -ItemType File -Force | Out-Null
             addScript -directory $commandDirectory -file $commandFile
-            addScript -directory "" -file "Framework"
+            addScript -directory "core" -file "Framework"
             Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value "invokeScript '$commandFunction'"
             Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value "readCommand"
 
@@ -184,7 +184,7 @@ function addScript {
         } else {
             $download = getDownload -url "$url/$directory/$file.ps1" -target "$env:SystemRoot\Temp\$file.ps1" -hide
         }
-
+        Write-Host $file
         if ($download -eq $true) {
             $rawScript = Get-Content -Path "$env:SystemRoot\Temp\$file.ps1" -Raw -ErrorAction SilentlyContinue
             Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value $rawScript
