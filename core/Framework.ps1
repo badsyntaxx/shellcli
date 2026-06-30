@@ -93,7 +93,8 @@ function readCommand {
         while ($true) {
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
             
-            if ($command -eq "") { 
+            if ($command -eq "" -or $null -eq $command) { 
+                readCommand
                 Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
                 Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
                 Write-Host " $([char]0x203A) " -NoNewline  -ForegroundColor "Cyan"
