@@ -94,7 +94,7 @@ function readCommand {
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
             
             if ($command -eq "" -or $null -eq $command) { 
-                readCommand -command "menu"
+                readCommand -command "help"
             }
 
             $command = $command.ToLower()
