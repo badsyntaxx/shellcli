@@ -89,12 +89,13 @@ function readCommand {
     )
 
     try {
-
         Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
-            
-        if ($command -eq "" -or $null -eq $command) { 
-            readCommand -command "help"
-            break
+        if ($command -eq "") { 
+            Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
+            Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
+            Write-Host " $([char]0x203A) " -NoNewline  -ForegroundColor "Cyan"
+            $command = Read-Host 
+            Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
         }
 
         $command = $command.ToLower()
@@ -116,8 +117,6 @@ function readCommand {
             $shellCLI = Get-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Raw
             Invoke-Expression $shellCLI
         }
-
-        
     } catch {
         writeText -type "error" -text "readCommand-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
