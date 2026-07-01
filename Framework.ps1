@@ -139,6 +139,7 @@ function readCommand {
                     $command = Read-Host
                 }
             }
+            Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
         }
 
         $command = $command.ToLower()
