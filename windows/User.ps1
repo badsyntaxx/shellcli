@@ -15,7 +15,6 @@ function userMenu {
         4 { readCommand }
     }
 }
-
 function addUser {
     try {
         $choice = readOption -options $([ordered]@{
@@ -27,7 +26,7 @@ function addUser {
         switch ($choice) {
             0 { addLocalUser }
             1 { addADUser }
-            2 { userMenu }
+            2 { readCommand }
         }
     } catch {
         writeText -type "error" -text "addUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
@@ -126,7 +125,7 @@ function editUser {
             0 { editUserName -user $user }
             1 { editUserPassword -user $user }
             2 { editUserGroup -user $user }
-            3 { userMenu }
+            3 { readCommand }
         }
     } catch {
         writeText -type "error" -text "editUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
@@ -534,7 +533,7 @@ function toggleAdmin {
         switch ($choice) {
             0 { enableAdmin }
             1 { disableAdmin }
-            2 { userMenu }
+            2 { readCommand }
         }
     } catch {
         writeText -type "error" -text "toggleAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
