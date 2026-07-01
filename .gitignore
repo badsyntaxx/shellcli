@@ -1,2 +1,3 @@
 # Ignore a specific file
-dev.ps1
+devInit.ps1
+devFramework.ps1

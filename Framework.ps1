@@ -1,5 +1,4 @@
 $global:commandMap = @{
-    ""                               = @("windows", "Helpers", "shellCLI", "List some help info.")
     "?"                              = @("windows", "Helpers", "writeHelp", "List some help info.")
     "help"                           = @("windows", "Helpers", "writeHelp", "List some help info.")
     "menu"                           = @("windows", "Helpers", "readMenu", "Display the main menu.")
@@ -51,8 +50,13 @@ function listAllCommands {
         writeText -type "header" -text "Available Commands"
         foreach ($key in $global:commandMap.Keys) {
             $value = $global:commandMap[$key]
-            Write-Host $value
-            writeText -label $key -text "= $($value[3])"
+            # Show the command and its description
+            if ($value.Count -ge 4) {
+                writeText -label $key -text $value[3]
+            } else {
+                # Fallback if description is missing
+                writeText -label $key -text "= [No description]"
+            }
         }
     } catch {
         writeText -type "error" -text "listAllCommands-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
