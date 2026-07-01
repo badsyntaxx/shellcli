@@ -51,7 +51,7 @@ $global:commandMap = [ordered]@{
 
 function listAllCommands {
     try {
-        writeText -type "table" -Table $global:commandMap
+        writeText -type "List" -List $global:commandMap -ListValue 3
         
     } catch {
         writeText -type "error" -text "listAllCommands-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
@@ -261,6 +261,8 @@ function writeText {
         [parameter(Mandatory = $false)]
         [System.Collections.Specialized.OrderedDictionary]$List,
         [parameter(Mandatory = $false)]
+        [string]$ListValue,
+        [parameter(Mandatory = $false)]
         [System.Collections.Specialized.OrderedDictionary]$oldData,
         [parameter(Mandatory = $false)]
         [System.Collections.Specialized.OrderedDictionary]$newData
@@ -343,21 +345,20 @@ function writeText {
         if ($type -eq 'list') { 
             # Get a list of keys from the options dictionary
             $orderedKeys = $List.Keys | ForEach-Object { $_ }
-
             # Find the length of the longest key for padding
             $longestKeyLength = ($orderedKeys | Measure-Object -Property Length -Maximum).Maximum
 
             # Display single option if only one exists
             if ($orderedKeys.Count -eq 1) {
                 Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
-                Write-Host " $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($List[$orderedKeys])"
+                Write-Host " $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($List[$key][$ListValue])"
             } else {
                 # Loop through each option and display with padding and color
                 for ($i = 0; $i -lt $orderedKeys.Count; $i++) {
                     $key = $orderedKeys[$i]
                     $padding = " " * ($longestKeyLength - $key.Length)
                     Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
-                    Write-Host "   $($key): $padding $($List[$key])" -ForegroundColor $Color
+                    Write-Host "   $($key): $padding $($List[$key][$ListValue])" -ForegroundColor $Color
                 }
             }
         }
