@@ -75,7 +75,7 @@ function invokeScript {
         $console = $host.UI.RawUI
         $console.BackgroundColor = "Black"
         $console.ForegroundColor = "DarkGray"
-        $console.WindowTitle = "ShellCLI"
+        $console.WindowTitle = "Shell CLI"
 
         if ($initialize) {
             Clear-Host
@@ -202,12 +202,7 @@ function filterCommands {
             }
             
             # Command not found in map and not a PowerShell command
-            Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
-            Write-Host "  Unrecognized command `"$command`". Try" -NoNewline -ForegroundColor "White"
-            Write-Host " help" -ForegroundColor "Cyan" -NoNewline
-            Write-Host " or" -NoNewline -ForegroundColor "White"
-            Write-Host " menu" -NoNewline -ForegroundColor "Cyan"
-            Write-Host " to learn more." -ForegroundColor "White"
+            writeText -type "plain" -text "Unknown command '$command' | Try 'help' or 'menu'."
             readCommand
         }
     } catch {
@@ -480,11 +475,9 @@ function readOption {
         # Add a line break before the menu if lineBefore is specified
         if ($lineBefore) { Write-Host " $([char]0x2502)" -ForegroundColor "Gray" }
 
-        # Get current cursor position
-        # $promptPos = $host.UI.RawUI.CursorPosition
-
         Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
-        # Write-Host " ? " -NoNewline -ForegroundColor "Cyan"
+        Write-Host "$([char]0x2500)" -NoNewline -ForegroundColor "Gray"
+        Write-Host "$([char]0x2500)" -NoNewline -ForegroundColor "Gray"
         Write-Host " $prompt " -ForegroundColor "Gray"
 
         # Initialize variables for user input handling
@@ -495,14 +488,8 @@ function readOption {
         # Get a list of keys from the options dictionary
         $orderedKeys = $options.Keys | ForEach-Object { $_ }
 
-        # Get an array of all values
-        # $values = $options.Values
-
         # Find the length of the longest key for padding
         $longestKeyLength = ($orderedKeys | ForEach-Object { "$_".Length } | Measure-Object -Maximum).Maximum
-
-        # Find the length of the longest value
-        # $longestValueLength = ($values | ForEach-Object { "$_".Length } | Measure-Object -Maximum).Maximum
 
         # Display single option if only one exists
         if ($orderedKeys.Count -eq 1) {
@@ -557,28 +544,6 @@ function readOption {
                 $host.UI.RawUI.CursorPosition = $currPos
             }
         }
-
-        <# # Clear the menu by overwriting it with spaces
-        $menuLines = $options.Count
-        $newY = $promptPos.Y + 1 # Calculate the new Y position
-        for ($i = 0; $i -lt $menuLines; $i++) {
-            # Ensure the Y position is within the terminal bounds
-            if ($newY -ge 0 -and $newY -lt $host.UI.RawUI.WindowSize.Height) {
-                $host.UI.RawUI.CursorPosition = New-Object System.Management.Automation.Host.Coordinates($promptPos.X, $newY)
-                Write-Host (" " * ($host.UI.RawUI.WindowSize.Width - 1)) # Clear each line with spaces
-            }
-            $newY++ # Move to the next line
-        }
-
-        # Move the cursor back to the prompt position
-        if ($promptPos.Y -ge 0 -and $promptPos.Y -lt $host.UI.RawUI.WindowSize.Height) {
-            $host.UI.RawUI.CursorPosition = $promptPos
-        }
-
-        # Display the selected option on the same line as the prompt
-        Write-Host "? " -NoNewline -ForegroundColor "Green"
-        Write-Host "$prompt " -NoNewline
-        Write-Host "$($orderedKeys[$pos])" -ForegroundColor "DarkCyan" #>
 
         # Add a line break after the menu if lineAfter is specified
         if ($lineAfter) { Write-Host " $([char]0x2502)" -ForegroundColor "Gray" }

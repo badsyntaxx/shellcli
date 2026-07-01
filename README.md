@@ -2,9 +2,9 @@
 
 # Shell CLI
 
-ShellCLI aims to simplify running PowerShell commands. It is no different from a regular PowerShell session, 
-but it provides a more user-friendly interface, simpler commands and interactive menus. The idea is to streamlines 
-tasks on Windows computers such as user, system and network management, by providing short, intuitive commands and/or menus.
+Shell CLI aims to simplify running PowerShell commands. It is no different from a regular PowerShell session, but it provides a more user-friendly
+interface, simpler commands and interactive menus. The idea is to streamlines tasks on Windows computers such as user, system and network management,
+by providing short, intuitive commands and/or menus.
 
 ## Before we begin
 
@@ -106,9 +106,9 @@ Set the execution policy to unrestricted. `Set-ExecutionPolicy Unrestricted`
 
 ## Bypass anti-virus
 
-Some antivirus programs may block the use of ShellCLI. Typically when they do, it's the initial connection command triggers the warning or the block. 
-That's because of the irm (Invoke-RestMethod) portion of the command. The reason anti-virus software will sometimes block this command is because it can be
-used to send and retrieve information over the internet. In this case you retrieve the root powershell functions of Shell CLI.
+Some antivirus programs may block the use of ShellCLI. Typically when they do, it's the initial connection command triggers the warning or the block.
+That's because of the irm (Invoke-RestMethod) portion of the command. The reason anti-virus software will sometimes block this command is because it
+can be used to send and retrieve information over the internet. In this case you retrieve the root powershell functions of Shell CLI.
 
 You should be able to bypass most anti-virus programs by pasting the ShellCLI initializer into an admin powershell or terminal directly. The link to
 the initializer is below.
