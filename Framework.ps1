@@ -104,10 +104,9 @@ function readCommand {
         if ($command -eq "") { 
             # Draw the prompt lines once
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
-            Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
             
             # Keep the cursor on this line for the prompt
-            Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
+            Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
             Write-Host " $([char]0x203A) " -NoNewline -ForegroundColor "Cyan"
             
             # Read the input - this will stay on the same line
@@ -124,7 +123,7 @@ function readCommand {
                 [System.Console]::SetCursorPosition(0, $cursorPos)
                 
                 # Redraw the prompt on the same line
-                Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
+                Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
                 Write-Host " $([char]0x203A) " -NoNewline -ForegroundColor "Cyan"
                 
                 # Read again
@@ -135,14 +134,11 @@ function readCommand {
                     [System.Console]::SetCursorPosition(0, $cursorPos)
                     Write-Host (" " * [System.Console]::WindowWidth) -NoNewline
                     [System.Console]::SetCursorPosition(0, $cursorPos)
-                    Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
+                    Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
                     Write-Host " $([char]0x203A) " -NoNewline -ForegroundColor "Cyan"
                     $command = Read-Host
                 }
             }
-            
-            # After getting valid input, draw the closing line
-            Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
         }
 
         $command = $command.ToLower()
@@ -276,28 +272,29 @@ function writeText {
         }
 
         if ($type -eq "prompt") {
-            Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
-            Write-Host " $text" -ForegroundColor "Gray"
+            Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
+            Write-Host "   ?" -NoNewline -ForegroundColor "Yellow"
+            Write-Host " $text" -ForegroundColor "DarkGray"
         }
 
         if ($type -eq 'success') { 
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
-            Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
-            Write-Host " $([char]0x2713) $text"  -ForegroundColor "Green"
+            Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
+            Write-Host "   $([char]0x2713) $text"  -ForegroundColor "Green"
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
         }
 
         if ($type -eq 'error') { 
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
-            Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
-            Write-Host " X $text" -ForegroundColor "Red"
+            Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
+            Write-Host "   X $text" -ForegroundColor "Red"
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
         }
 
         if ($type -eq 'notice') { 
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
-            Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
-            Write-Host " ! $text" -ForegroundColor "Yellow" 
+            Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
+            Write-Host "   ! $text" -ForegroundColor "Yellow" 
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
         }
 
@@ -307,11 +304,11 @@ function writeText {
                     $Color = 'DarkCyan'
                 }
                 Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
-                Write-Host " $label`: " -NoNewline -ForegroundColor "Gray"
+                Write-Host "  $label`: " -NoNewline -ForegroundColor "Gray"
                 Write-Host "$text" -ForegroundColor $Color 
             } else {
                 Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
-                Write-Host "  $text" -ForegroundColor $Color 
+                Write-Host "   $text" -ForegroundColor $Color 
             }
         }
 
@@ -411,7 +408,7 @@ function readInput {
 
         if ($allowBlank -eq $false) {
             if ($userInput -eq "" -or $userInput.Length -eq 0) { 
-                writeText -type "notice" -text "Input was blank returning to command line." 
+                writeText -type "notice" -text "Input was blank, exiting." 
                 readCommand
             } 
         }
@@ -475,10 +472,8 @@ function readOption {
         # Add a line break before the menu if lineBefore is specified
         if ($lineBefore) { Write-Host " $([char]0x2502)" -ForegroundColor "Gray" }
 
-        Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
-        Write-Host "$([char]0x2500)" -NoNewline -ForegroundColor "Gray"
-        Write-Host "$([char]0x2500)" -NoNewline -ForegroundColor "Gray"
-        Write-Host " $prompt " -ForegroundColor "Gray"
+        Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
+        Write-Host "   $prompt " -ForegroundColor "DarkGray"
 
         # Initialize variables for user input handling
         $vkeycode = 0

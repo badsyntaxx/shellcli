@@ -41,7 +41,7 @@ function addLocalUser {
         $group = readOption -options $([ordered]@{
                 "Administrators" = "Set this user's group membership to administrators."
                 "Users"          = "Set this user's group membership to standard users."
-            }) -prompt "Select a user group" -returnKey -lineAfter
+            }) -prompt "Select a user group" -returnKey
 
         # Create the new local user and add to the specified group
         New-LocalUser $name -Password $password -description "Local User" -AccountNeverExpires -PasswordNeverExpires -ErrorAction Stop | Out-Null
@@ -423,7 +423,7 @@ function removeUser {
                 "Delete" = "Also delete the users data."
                 "Keep"   = "Do not delete the users data."
                 "Cancel" = "Do not delete anything and exit this function."
-            }) -prompt "Do you also want to delete the users data?" -lineAfter
+            }) -prompt "Do you also want to delete the users data?"
 
         if ($choice -eq 2) {
             return
@@ -467,8 +467,6 @@ function removeUser {
         }
 
         writeText -type 'success' -text $response
-
-        removeUser
     } catch {
         writeText -type "error" -text "removeUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }

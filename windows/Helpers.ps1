@@ -24,7 +24,7 @@ function readMenu {
                 "get software"        = "Get a list of installed software that can be installed."
                 "schedule task "      = "(ALPHA) Schedule a new task."
                 "Cancel"              = "Select nothing and exit this menu."
-            }) -prompt "Select a function." -returnKey
+            }) -prompt "Select a function." -returnKey -lineAfter
 
         if ($choice -eq "Cancel") {
             readCommand
@@ -39,9 +39,9 @@ function readMenu {
 
 function writeHelp {   
     writeText -type "plain" -text "STARTER COMMANDS:"
-    writeText -type "plain" -text "commands    - Display a full list of commands." -Color "DarkGray"
-    writeText -type "plain" -text "menu        - Display a menu with some available functions." -Color "DarkGray"
-    writeText -type "plain" -text "? or help   - Display this help text." -Color "DarkGray"
+    writeText -type "plain" -text "commands    - Display a full list of commands."
+    writeText -type "plain" -text "menu        - Display a menu with some available functions."
+    writeText -type "plain" -text "? or help   - Display this help text."
     writeText -type "plain" -text "FULL DOCUMENTATION:" -lineBefore
-    writeText -type "plain" -text "https://wkey.pro/dev/shellcli" -Color "DarkGray"
+    writeText -type "plain" -text "https://wkey.pro/dev/shellcli"
 }
