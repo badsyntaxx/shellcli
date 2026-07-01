@@ -1,5 +1,5 @@
 $global:commandMap = @{
-    ""                               = @("windows", "Helpers", "shellCLI")
+    "?"                              = @("windows", "Helpers", "shellCLI")
     "help"                           = @("windows", "Helpers", "writeHelp")
     "menu"                           = @("windows", "Helpers", "readMenu")
     "toggle context menu"            = @("windows", "Toggle Context Menu", "toggleContextMenu")
@@ -43,7 +43,6 @@ $global:commandMap = @{
     "install host gpu drivers on vm" = @("windows", "Share GPU with VM", "installHostGPUDriversOnVM")
     "partition gpu"                  = @("windows", "Share GPU with VM", "partitionGPU")
     "generate encrypted password"    = @("windows", "Generate Encrypted Password", "generateEncryptedPassword")
-    "add premade account"            = @("windows", "Add Premade Account", "addPremadeAccount")
 }
 
 function invokeScript {
