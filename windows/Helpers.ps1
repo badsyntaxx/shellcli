@@ -36,17 +36,12 @@ function readMenu {
     }
 }
 
+
 function writeHelp {   
-    writeText -type "header" -text "Here are some commands to get you started:" -lineAfter
-    Write-Host " $([char]0x2502)" -ForegroundColor "Gray" -NoNewline
-    Write-Host "  Type" -NoNewline
-    Write-Host " commands" -ForegroundColor "Cyan" -NoNewline
-    Write-Host " for a full list of commands."
-    Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
-    writeText -type "plain" -text "EXAMPLE COMMANDS:"
-    writeText -type "plain" -text "menu                 - Display a menu with some available functions." -Color "DarkGray"
-    writeText -type "plain" -text "edit hostname        - Edit the computers hostname and description." -Color "DarkGray"
-    writeText -type "plain" -text "repair windows       - Repair Windows." -Color "DarkGray"
+    writeText -type "plain" -text "STARTER COMMANDS:"
+    writeText -type "plain" -text "commands    - Display a full list of commands." -Color "DarkGray"
+    writeText -type "plain" -text "menu        - Display a menu with some available functions." -Color "DarkGray"
+    writeText -type "plain" -text "? or help   - Display this help text." -Color "DarkGray"
     writeText -type "plain" -text "FULL DOCUMENTATION:" -lineBefore
     writeText -type "plain" -text "https://wkey.pro/dev/shellcli" -Color "DarkGray"
 }
