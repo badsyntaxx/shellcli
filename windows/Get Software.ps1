@@ -92,6 +92,7 @@ function getDiagnosticSoftware {
             "Revo Uninstaller" = "Install Revo Uninstaller."
             "WinDirStat"       = "Install WinDirStat."
             "BGInfo"           = "Install BGInfo."
+            "HWiNFO"           = "Install HWiNFO."
             "Exit"             = "Exit this script and go back to main command line."
         }) -prompt "Select which diagnostic tool to install:" -lineAfter
 
@@ -99,7 +100,8 @@ function getDiagnosticSoftware {
         0 { getRevoUninstaller }
         1 { getWinDirStat }
         2 { getBGInfo }
-        3 { readCommand }
+        3 { getHWInfo }
+        4 { readCommand }
     }
 }
 
@@ -174,6 +176,18 @@ function getWinDirStat {
         getDiagnosticSoftware
     } catch {
         writeText -type "error" -text "getWinDirStat-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -lineAfter
+    }
+}
+
+function getHWInfo {
+    $url = "https://www.hwinfo.com/files/hwi64_848.exe"
+    $appName = "HWiNFO"
+    $paths = @(
+        "$env:ProgramFiles\HWiNFO64\HWiNFO64.exe"
+    )
+    $installed = findExisting -Paths $paths -App $appName
+    if (!$installed) { 
+        installProgram -url $url -AppName $appName -Args "/VERYSILENT /NORESTART" 
     }
 }
 
