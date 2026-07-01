@@ -1,8 +1,8 @@
-$global:commandMap = @{
+$global:commandMap = [ordered]@{
     "?"                              = @("windows", "Helpers", "writeHelp", "List some help info.")
     "help"                           = @("windows", "Helpers", "writeHelp", "List some help info.")
     "menu"                           = @("windows", "Helpers", "readMenu", "Display the main menu.")
-    "list commands"                  = @("windows", "Helpers", "listAllCommands", "List all available commands.")
+    "commands"                       = @("windows", "Helpers", "listAllCommands", "List all available commands.")
     #-- CUSTOMIZATION COMMANDS --#
     "toggle context menu"            = @("windows", "Toggle Context Menu", "toggleContextMenu", "Toggle the context menu.")
     "enable context menu"            = @("windows", "Toggle Context Menu", "enableContextMenu", "Enable the context menu.")
@@ -13,7 +13,7 @@ $global:commandMap = @{
     "toggle admin"                   = @("windows", "Toggle Admin", "toggleAdmin", "Toggle admin privileges.")
     "enable admin"                   = @("windows", "Toggle Admin", "enableAdmin", "Enable admin privileges.")
     "disable admin"                  = @("windows", "Toggle Admin", "disableAdmin", "Disable admin privileges.")
-    "list users"                     = @("windows", "User", "listUsers", "List all users.")
+    "users"                          = @("windows", "User", "listUsers", "List all users.")
     "user menu"                      = @("windows", "User", "userMenu", "Display the user menu.")
     "add user"                       = @("windows", "User", "addUser", "Add a new user.")
     "add local user"                 = @("windows", "User", "addLocalUser", "Add a new local user.")
@@ -26,8 +26,12 @@ $global:commandMap = @{
     #-- NETWORK COMMANDS --#
     "edit net adapter"               = @("windows", "Edit Net Adapter", "editNetAdapter", "Edit the network adapter.")
     "get wifi creds"                 = @("windows", "Get Wifi Creds", "getWifiCreds", "Get WiFi credentials.")
+    #-- SOFTWARE COMMANDS --#
+    "get software"                   = @("windows", "Get Software", "getSoftware", "Display a menu of available software.")
+    "get windirstat"                 = @("windows", "Get Software", "getWinDirStat", "Get WinDirStat.")
     "get revouninstaller"            = @("windows", "Get Software", "getRevoUninstaller", "Get Revo Uninstaller.")
-    "get hwinfo"                     = @("windows", "Get Software", "getHWInfo", "Get hardware information.")
+    "get hwinfo"                     = @("windows", "Get Software", "getHWInfo", "Get HWInfo.")
+    "get bginfo"                     = @("windows", "Get Software", "getBGInfo", "Get BGInfo.")
     #-- SYSTEM COMMANDS --#
     "schedule task"                  = @("windows", "Schedule Task", "scheduleTask", "Schedule a task.")
     "update windows"                 = @("windows", "Update Windows", "updateWindows", "Update Windows.")
@@ -47,7 +51,7 @@ $global:commandMap = @{
 
 function listAllCommands {
     try {
-        writeText -type "list" -List $global:commandMap
+        writeText -type "table" -Table $global:commandMap
         
     } catch {
         writeText -type "error" -text "listAllCommands-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
@@ -253,6 +257,8 @@ function writeText {
         [parameter(Mandatory = $false)]
         [switch]$lineAfter = $false, # Add a new line after output if specified
         [parameter(Mandatory = $false)]
+        [System.Collections.Specialized.OrderedDictionary]$Table,
+        [parameter(Mandatory = $false)]
         [System.Collections.Specialized.OrderedDictionary]$List,
         [parameter(Mandatory = $false)]
         [System.Collections.Specialized.OrderedDictionary]$oldData,
@@ -309,6 +315,28 @@ function writeText {
             } else {
                 Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
                 Write-Host "  $text" -ForegroundColor $Color 
+            }
+        }
+
+        if ($type -eq 'table') { 
+            # Get a list of keys from the options dictionary
+            $orderedKeys = $Table.Keys | ForEach-Object { $_ }
+
+            # Find the length of the longest key for padding
+            $longestKeyLength = ($orderedKeys | Measure-Object -Property Length -Maximum).Maximum
+
+            # Display single option if only one exists
+            if ($orderedKeys.Count -eq 1) {
+                Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
+                Write-Host " $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($Table[$orderedKeys])"
+            } else {
+                # Loop through each option and display with padding and color
+                for ($i = 0; $i -lt $orderedKeys.Count; $i++) {
+                    $key = $orderedKeys[$i]
+                    $padding = " " * ($longestKeyLength - $key.Length)
+                    Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
+                    Write-Host "   $($key): $padding $($Table[$key])" -ForegroundColor $Color
+                }
             }
         }
 
@@ -823,7 +851,7 @@ function selectUser {
         if ($writeResult) {
             Write-Host
             # Display user data as a list
-            writeText -type "list" -List $data -Color "Green"
+            writeText -type "table" -Table $data -Color "Green"
         }
 
         # Add a line break after the menu if lineAfter is specified

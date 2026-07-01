@@ -104,7 +104,7 @@ function addADUser {
 
         $password = $null
 
-        writeText -type "list" -List $data -lineAfter
+        writeText -type "table" -Table $data -lineAfter
 
         writeText -type "success" -text "The user account was created."
     } catch {
@@ -517,13 +517,12 @@ function listUsers {
         }
 
         # Display user data as a list
-        writeText -type "list" -List $accounts
+        writeText -type "table" -Table $accounts
         
     } catch {
         writeText -type "error" -text "listUsers-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-
 function toggleAdmin {
     try {
         $choice = readOption -options $([ordered]@{
@@ -541,7 +540,6 @@ function toggleAdmin {
         writeText -type "error" -text "toggleAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-
 function enableAdmin {
     try { 
         $admin = Get-LocalUser -Name "Administrator"
