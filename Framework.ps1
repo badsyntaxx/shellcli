@@ -466,7 +466,9 @@ function readOption {
         [parameter(Mandatory = $false)]
         [switch]$lineBefore = $false,
         [parameter(Mandatory = $false)]
-        [switch]$lineAfter = $false
+        [switch]$lineAfter = $false,
+        [parameter(Mandatory = $false)]
+        [int]$maxDescriptionLength = 100 # New parameter for max description length
     )
 
     try {
@@ -487,23 +489,34 @@ function readOption {
         # Find the length of the longest key for padding
         $longestKeyLength = ($orderedKeys | ForEach-Object { "$_".Length } | Measure-Object -Maximum).Maximum
 
+        # Helper function to truncate description with ellipsis
+        function truncateDescription {
+            param([string]$description)
+            if ($description.Length -gt $maxDescriptionLength) {
+                return $description.Substring(0, $maxDescriptionLength - 3) + "..."
+            }
+            return $description
+        }
+
         # Display single option if only one exists
         if ($orderedKeys.Count -eq 1) {
+            $truncatedDesc = truncateDescription -description $options[$orderedKeys]
             Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
             Write-Host " $([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline
-            Write-Host "   $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($options[$orderedKeys])" -ForegroundColor "DarkCyan"
+            Write-Host "   $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $truncatedDesc" -ForegroundColor "DarkCyan"
         } else {
             # Loop through each option and display with padding and color
             for ($i = 0; $i -lt $orderedKeys.Count; $i++) {
                 $key = $orderedKeys[$i]
                 $padding = " " * ($longestKeyLength - $key.Length)
+                $truncatedDesc = truncateDescription -description $options[$key]
                 if ($i -eq $pos) { 
                     Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
                     Write-Host " $([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline  
-                    Write-Host " $key $padding - $($options[$key])" -ForegroundColor "DarkCyan"
+                    Write-Host " $key $padding - $truncatedDesc" -ForegroundColor "DarkCyan"
                 } else { 
                     Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
-                    Write-Host "   $key $padding - $($options[$key])"
+                    Write-Host "   $key $padding - $truncatedDesc"
                 }
             }
         }
@@ -530,13 +543,16 @@ function readOption {
                 $newKey = $orderedKeys[$pos]
             
                 # Re-draw the previously selected and newly selected options
+                $oldTruncatedDesc = truncateDescription -description $options[$orderedKeys[$oldPos]]
+                $newTruncatedDesc = truncateDescription -description $options[$orderedKeys[$pos]]
+                
                 $host.UI.RawUI.CursorPosition = $menuOldPos
                 Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
-                Write-Host "   $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $($options[$orderedKeys[$oldPos]])"
+                Write-Host "   $($orderedKeys[$oldPos]) $(" " * ($longestKeyLength - $oldKey.Length)) - $oldTruncatedDesc"
                 $host.UI.RawUI.CursorPosition = $menuNewPos
                 Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
                 Write-Host " $([char]0x2192)" -ForegroundColor "DarkCyan" -NoNewline
-                Write-Host " $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $($options[$orderedKeys[$pos]])" -ForegroundColor "DarkCyan"
+                Write-Host " $($orderedKeys[$pos]) $(" " * ($longestKeyLength - $newKey.Length)) - $newTruncatedDesc" -ForegroundColor "DarkCyan"
                 $host.UI.RawUI.CursorPosition = $currPos
             }
         }

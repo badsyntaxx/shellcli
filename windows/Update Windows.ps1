@@ -8,18 +8,39 @@ function updateWindows {
 
         writeText -type "plain" -text "Getting updates..."
 
-        Get-WindowsUpdate
+        $updates = Get-WindowsUpdate
 
-        $choice = readOption -options $([ordered]@{
-                "All"    = "Install all updates."
-                "Severe" = "Install only severe updates."
-                "Cancel" = "Do nothing and exit this function."
-            }) -prompt "Select which updates to install:" -lineBefore
+        # Create an empty ordered dictionary
+        $orderedUpdateData = [ordered]@{}
 
-        switch ($choice) {
-            0 { Get-WindowsUpdate -Install -AcceptAll | Out-Null }
-            1 { Get-WindowsUpdate -Severity "Important" -Install | Out-Null }
-            2 { readCommand }
+        # Loop through each update and add its properties to the dictionary
+        for ($i = 0; $i -lt $updates.Count; $i++) {
+            $update = $updates[$i]
+            # Key: "KB1234567" or "Update #1" - Value: "Title of the update"
+            $orderedUpdateData["KB$($update.KB)"] = "$($update.Title) ($([math]::Round($update.Size/1MB, 2)) MB)"
+        }
+
+        writeText -type "table" -Table $orderedUpdateData
+
+        $orderedUpdateData += [ordered]@{
+            "All"       = "Install all updates."
+            "Important" = "Install only important updates."
+            "Cancel"    = "Do nothing and exit this function."
+        }
+
+        $choice = readOption -options $orderedUpdateData -prompt "Select which updates to install:" -lineBefore -returnKey
+
+        if ($choice -eq 'All') {
+            Get-WindowsUpdate -Install -AcceptAll | Out-Null
+        }
+        if ($choice -eq 'Important') {
+            Get-WindowsUpdate -Severity "Important" -Install | Out-Null
+        }
+        if ($choice -eq 'Cancel') {
+            readCommand
+        }
+        if ($choice -ne 'All' -and $choice -ne 'Important' -and $choice -ne 'Cancel') {
+            Get-WindowsUpdate -KBArticleID $choice -Install | Out-Null
         }
 
         writeText -type "success" -text "Updates complete."
