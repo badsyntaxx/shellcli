@@ -1,49 +1,63 @@
 $global:commandMap = @{
-    "?"                              = @("windows", "Helpers", "shellCLI")
-    "help"                           = @("windows", "Helpers", "writeHelp")
-    "menu"                           = @("windows", "Helpers", "readMenu")
-    "toggle context menu"            = @("windows", "Toggle Context Menu", "toggleContextMenu")
-    "enable context menu"            = @("windows", "Toggle Context Menu", "enableContextMenu")
-    "disable context menu"           = @("windows", "Toggle Context Menu", "disableContextMenu")
-    "toggle admin"                   = @("windows", "Toggle Admin", "toggleAdmin")
-    "enable admin"                   = @("windows", "Toggle Admin", "enableAdmin")
-    "disable admin"                  = @("windows", "Toggle Admin", "disableAdmin")
-    "list users"                     = @("windows", "User", "listUsers")
-    "user menu"                      = @("windows", "User", "userMenu")
-    "add user"                       = @("windows", "User", "addUser")
-    "add local user"                 = @("windows", "User", "addLocalUser")
-    "add ad user"                    = @("windows", "User", "addADUser")
-    "add drive letter"               = @("windows", "Add Drive Letter", "addDriveLetter")
-    "remove user"                    = @("windows", "User", "removeUser")
-    "edit hostname"                  = @("windows", "Edit Hostname", "editHostname")
-    "edit description"               = @("windows", "Edit Hostname", "editDescription")
-    "edit user"                      = @("windows", "User", "editUser")
-    "edit user name"                 = @("windows", "User", "editUserName")
-    "edit user password"             = @("windows", "User", "editUserPassword")
-    "edit user group"                = @("windows", "User", "editUserGroup")
-    "edit net adapter"               = @("windows", "Edit Net Adapter", "editNetAdapter")
-    "get wifi creds"                 = @("windows", "Get Wifi Creds", "getWifiCreds")
-    "get software"                   = @("windows", "Get Software", "getSoftware")
-    "get windirstat"                 = @("windows", "Get Software", "getWinDirStat")
-    "get revouninstaller"            = @("windows", "Get Software", "getRevoUninstaller")
-    "get hwinfo"                     = @("windows", "Get Software", "getHWInfo")
-    "schedule task"                  = @("windows", "Schedule Task", "scheduleTask")
-    "update windows"                 = @("windows", "Update Windows", "updateWindows")
-    "clear temp files"               = @("windows", "Repair Windows", "clearTempFiles")
-    "repair windows"                 = @("windows", "Repair Windows", "repairWindows")
-    "share gpu with vm"              = @("windows", "Share GPU with VM", "shareGPUWithVM")
-    "copy host gpu drivers to vm"    = @("windows", "Share GPU with VM", "copyHostGPUDriversToVM")
-    "install host gpu drivers on vm" = @("windows", "Share GPU with VM", "installHostGPUDriversOnVM")
-    "partition gpu"                  = @("windows", "Share GPU with VM", "partitionGPU")
-    "generate encrypted password"    = @("windows", "Generate Encrypted Password", "generateEncryptedPassword")
-    "plugins"                        = @("plugins", "Helpers", "plugins")
-    "plugins menu"                   = @("plugins", "Helpers", "readMenu")
-    "plugins help"                   = @("plugins", "Helpers", "writeHelp")
-    "plugins reclaimw11"             = @("plugins", "ReclaimW11", "reclaimw11")
-    "plugins massgravel"             = @("plugins", "massgravel", "massgravel")
-    "plugins win11debloat"           = @("plugins", "win11Debloat", "win11Debloat")
+    ""                               = @("windows", "Helpers", "shellCLI", "List some help info.")
+    "?"                              = @("windows", "Helpers", "writeHelp", "List some help info.")
+    "help"                           = @("windows", "Helpers", "writeHelp", "List some help info.")
+    "menu"                           = @("windows", "Helpers", "readMenu", "Display the main menu.")
+    "list commands"                  = @("windows", "Helpers", "listAllCommands", "List all available commands.")
+    #-- CUSTOMIZATION COMMANDS --#
+    "toggle context menu"            = @("windows", "Toggle Context Menu", "toggleContextMenu", "Toggle the context menu.")
+    "enable context menu"            = @("windows", "Toggle Context Menu", "enableContextMenu", "Enable the context menu.")
+    "disable context menu"           = @("windows", "Toggle Context Menu", "disableContextMenu", "Disable the context menu.")
+    "edit hostname"                  = @("windows", "Edit Hostname", "editHostname", "Edit the hostname.")
+    "edit description"               = @("windows", "Edit Hostname", "editDescription", "Edit the host description.")
+    #-- USER COMMANDS --#
+    "toggle admin"                   = @("windows", "Toggle Admin", "toggleAdmin", "Toggle admin privileges.")
+    "enable admin"                   = @("windows", "Toggle Admin", "enableAdmin", "Enable admin privileges.")
+    "disable admin"                  = @("windows", "Toggle Admin", "disableAdmin", "Disable admin privileges.")
+    "list users"                     = @("windows", "User", "listUsers", "List all users.")
+    "user menu"                      = @("windows", "User", "userMenu", "Display the user menu.")
+    "add user"                       = @("windows", "User", "addUser", "Add a new user.")
+    "add local user"                 = @("windows", "User", "addLocalUser", "Add a new local user.")
+    "add ad user"                    = @("windows", "User", "addADUser", "Add a new Active Directory user.")
+    "remove user"                    = @("windows", "User", "removeUser", "Remove a user.")
+    "edit user"                      = @("windows", "User", "editUser", "Edit a user.")
+    "edit user name"                 = @("windows", "User", "editUserName", "Edit a user's name.")
+    "edit user password"             = @("windows", "User", "editUserPassword", "Edit a user's password.")
+    "edit user group"                = @("windows", "User", "editUserGroup", "Edit a user's group.")
+    #-- NETWORK COMMANDS --#
+    "edit net adapter"               = @("windows", "Edit Net Adapter", "editNetAdapter", "Edit the network adapter.")
+    "get wifi creds"                 = @("windows", "Get Wifi Creds", "getWifiCreds", "Get WiFi credentials.")
+    "get revouninstaller"            = @("windows", "Get Software", "getRevoUninstaller", "Get Revo Uninstaller.")
+    "get hwinfo"                     = @("windows", "Get Software", "getHWInfo", "Get hardware information.")
+    #-- SYSTEM COMMANDS --#
+    "schedule task"                  = @("windows", "Schedule Task", "scheduleTask", "Schedule a task.")
+    "update windows"                 = @("windows", "Update Windows", "updateWindows", "Update Windows.")
+    "clear temp files"               = @("windows", "Repair Windows", "clearTempFiles", "Clear temporary files.")
+    "repair windows"                 = @("windows", "Repair Windows", "repairWindows", "Repair Windows.")
+    "install host gpu drivers on vm" = @("windows", "Share GPU with VM", "installHostGPUDriversOnVM", "Install host GPU drivers on VM.")
+    "partition gpu"                  = @("windows", "Share GPU with VM", "partitionGPU", "Partition the GPU.")
+    "generate encrypted password"    = @("windows", "Generate Encrypted Password", "generateEncryptedPassword", "Generate an encrypted password.")
+    #-- PLUGIN COMMANDS --#
+    "plugins"                        = @("plugins", "Helpers", "plugins", "List available plugins.")
+    "plugins menu"                   = @("plugins", "Helpers", "readMenu", "Display the plugin menu.")
+    "plugins help"                   = @("plugins", "Helpers", "writeHelp", "Display help information for plugins.")
+    "plugins reclaimw11"             = @("plugins", "ReclaimW11", "reclaimw11", "Reclaim Windows 11.")
+    "plugins massgravel"             = @("plugins", "massgravel", "massgravel", "Mass Gravel plugin.")
+    "plugins win11debloat"           = @("plugins", "win11Debloat", "win11Debloat", "Windows 11 Debloat plugin.")
 }
 
+function listAllCommands {
+    try {
+        writeText -type "header" -text "Available Commands"
+        foreach ($key in $global:commandMap.Keys) {
+            $value = $global:commandMap[$key]
+            Write-Host $value
+            writeText -label $key -text "= $($value[3])"
+        }
+    } catch {
+        writeText -type "error" -text "listAllCommands-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
 function invokeScript {
     param (
         [parameter(Mandatory = $true)]
@@ -88,12 +102,47 @@ function readCommand {
     )
 
     try {
-        Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
         if ($command -eq "") { 
+            # Draw the prompt lines once
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
+            Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
+            
+            # Keep the cursor on this line for the prompt
             Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
-            Write-Host " $([char]0x203A) " -NoNewline  -ForegroundColor "Cyan"
-            $command = Read-Host 
+            Write-Host " $([char]0x203A) " -NoNewline -ForegroundColor "Cyan"
+            
+            # Read the input - this will stay on the same line
+            $command = Read-Host
+            
+            # Check if empty
+            if ([string]::IsNullOrWhiteSpace($command)) {
+                # Move cursor back to the start of the prompt line
+                $cursorPos = [System.Console]::CursorTop - 1
+                [System.Console]::SetCursorPosition(0, $cursorPos)
+                
+                # Clear the line
+                Write-Host (" " * [System.Console]::WindowWidth) -NoNewline
+                [System.Console]::SetCursorPosition(0, $cursorPos)
+                
+                # Redraw the prompt on the same line
+                Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
+                Write-Host " $([char]0x203A) " -NoNewline -ForegroundColor "Cyan"
+                
+                # Read again
+                $command = Read-Host
+                # Keep redrawing until user types something
+                while ([string]::IsNullOrWhiteSpace($command)) {
+                    $cursorPos = [System.Console]::CursorTop - 1
+                    [System.Console]::SetCursorPosition(0, $cursorPos)
+                    Write-Host (" " * [System.Console]::WindowWidth) -NoNewline
+                    [System.Console]::SetCursorPosition(0, $cursorPos)
+                    Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
+                    Write-Host " $([char]0x203A) " -NoNewline -ForegroundColor "Cyan"
+                    $command = Read-Host
+                }
+            }
+            
+            # After getting valid input, draw the closing line
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
         }
 
@@ -101,8 +150,8 @@ function readCommand {
         $command = $command.Trim()
         $filteredCommand = filterCommands -command $command
             
-        # Check if filterCommands returned a valid array (3 elements)
-        if ($filteredCommand -and $filteredCommand.Count -eq 3) {
+        # Check if filterCommands returned a valid array (4 elements)
+        if ($filteredCommand -and $filteredCommand.Count -eq 4) {
             $commandDirectory = $filteredCommand[0]
             $commandFile = $filteredCommand[1]
             $commandFunction = $filteredCommand[2]
