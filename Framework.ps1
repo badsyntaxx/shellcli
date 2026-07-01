@@ -47,17 +47,8 @@ $global:commandMap = @{
 
 function listAllCommands {
     try {
-        writeText -type "header" -text "Available Commands"
-        foreach ($key in $global:commandMap.Keys) {
-            $value = $global:commandMap[$key]
-            # Show the command and its description
-            if ($value.Count -ge 4) {
-                writeText -label $key -text $value[3]
-            } else {
-                # Fallback if description is missing
-                writeText -label $key -text "= [No description]"
-            }
-        }
+        writeText -type "list" -List $global:commandMap
+        
     } catch {
         writeText -type "error" -text "listAllCommands-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
