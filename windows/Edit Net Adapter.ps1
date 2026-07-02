@@ -296,23 +296,25 @@ function getAdapterInfo {
             $dnsServers = Get-DnsClientServerAddress -InterfaceIndex $index | Select-Object -ExpandProperty ServerAddresses
 
             if ($status -eq "Up") {
-                Write-Host " $([char]0x2502)  $([char]0x2022)" -ForegroundColor "Green" -NoNewline
+                Write-Host " $([char]0x2502)" -NoNewline
+                Write-Host " $([char]0x2022)" -ForegroundColor "Green" -NoNewline
                 Write-Host " $name | $dhcp" -ForegroundColor "Gray" 
             } else {
-                Write-Host " $([char]0x2502)  $([char]0x25BC)" -ForegroundColor "Red" -NoNewline
+                Write-Host " $([char]0x2502)" -NoNewline
+                Write-Host " $([char]0x25BC)" -ForegroundColor "Red" -NoNewline
                 Write-Host " $name | $dhcp" -ForegroundColor "Gray"
             }
 
-            writeText -type "plain" -text "  MAC Address . . . : $macAddress" -Color "Gray"
-            writeText -type "plain" -text "  IPv4 Address. . . : $ipAddress" -Color "Gray"
-            writeText -type "plain" -text "  Subnet Mask . . . : $subnet" -Color "Gray"
-            writeText -type "plain" -text "  Default Gateway . : $gateway" -Color "Gray"
+            writeText -type "plain" -text "MAC Address . . . : $macAddress" -Color "Gray"
+            writeText -type "plain" -text "IPv4 Address. . . : $ipAddress" -Color "Gray"
+            writeText -type "plain" -text "Subnet Mask . . . : $subnet" -Color "Gray"
+            writeText -type "plain" -text "Default Gateway . : $gateway" -Color "Gray"
 
             for ($i = 0; $i -lt $dnsServers.Count; $i++) {
                 if ($i -eq 0) {
-                    writeText -type "plain" -text "  DNS Servers . . . : $($dnsServers[$i])" -Color "Gray"
+                    writeText -type "plain" -text "DNS Servers . . . : $($dnsServers[$i])" -Color "Gray"
                 } else {
-                    writeText -type "plain" -text "                      $($dnsServers[$i])" -Color "Gray"
+                    writeText -type "plain" -text "                    $($dnsServers[$i])" -Color "Gray"
                 }
             }
         }
