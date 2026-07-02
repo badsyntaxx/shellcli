@@ -8,7 +8,6 @@ function shellCLI {
     Write-Host " if you get stuck."
     Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
 }
-
 function readMenu {
     try {
         # Create a menu with options and descriptions using an ordered hashtable
@@ -35,8 +34,6 @@ function readMenu {
         writeText -type "error" -text "readMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
-
-
 function writeHelp {   
     writeText -type "plain" -text "STARTER COMMANDS:"
     writeText -type "plain" -text "commands    - Display a full list of commands."
