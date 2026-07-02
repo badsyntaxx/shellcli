@@ -26,8 +26,18 @@ function enableContextMenu {
     }
 }
 function disableContextMenu {
-    try {         
-        & "C:\Windows\System32\reg.exe" add "HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32" /f /ve | Out-Null
+    try {
+        # Target HKLM (system-wide)
+        & "C:\Windows\System32\reg.exe" add "HKLM\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32" /f /ve | Out-Null
+        
+        # Target current user's HKCU directly
+        $regPath = "HKCU:\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32"
+        New-Item -Path $regPath -Force -ErrorAction SilentlyContinue | Out-Null
+        Set-ItemProperty -Path $regPath -Name "(Default)" -Value "" -Force
+        
+        # Also try using reg.exe with the current user (this works even when elevated)
+        & "C:\Windows\System32\reg.exe" add "HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32" /f /ve 2>$null | Out-Null
+        
         Stop-Process -Name explorer -force
         Start-Process explorer
         writeText -type "success" -text "Context menu disabled"
