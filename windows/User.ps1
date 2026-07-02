@@ -1,5 +1,6 @@
 function userMenu {
     $choice = readOption -options $([ordered]@{
+            "users"        = "List all users on the system."
             "toggle admin" = "Toggle the Windows built in administrator account."
             "add user"     = "Add a user to the system."
             "remove user"  = "Remove a user from the system."
@@ -8,11 +9,12 @@ function userMenu {
         }) -prompt "Select a function."
 
     switch ($choice) {
-        0 { toggleAdmin }
-        1 { addUser }
-        2 { removeUser }
-        3 { editUser }
-        4 { readCommand }
+        0 { listUsers }
+        1 { toggleAdmin }
+        2 { addUser }
+        3 { removeUser }
+        4 { editUser }
+        5 { readCommand }
     }
 }
 function addUser {
@@ -29,7 +31,8 @@ function addUser {
             2 { readCommand }
         }
     } catch {
-        writeText -type "error" -text "addUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
     }
 }
 function addLocalUser {
@@ -66,7 +69,8 @@ function addLocalUser {
         # Because of the bug listed above we just assume success if the script is still executing at this point.
         writeText -type "success" -text "Local user added."
     } catch {
-        writeText -type "error" -text "addLocalUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
     }
 }
 function addADUser {
@@ -107,7 +111,8 @@ function addADUser {
 
         writeText -type "success" -text "The user account was created."
     } catch {
-        writeText -type "error" -text "addADUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
     }
 }
 function editUser {
@@ -128,7 +133,8 @@ function editUser {
             3 { readCommand }
         }
     } catch {
-        writeText -type "error" -text "editUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
     }
 }
 function editUserName {
@@ -164,7 +170,8 @@ function editUserName {
             writeText -type "notice" -text "Editing domain users doesn't work yet."
         }
     } catch {
-        writeText -type "error" -text "editUser-name-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
     }
 }
 function editUserPassword {
@@ -202,7 +209,8 @@ function editUserPassword {
             writeText -type "plain" -text "Editing domain users doesn't work yet."
         }
     } catch {
-        writeText -type "error" -text "editUserPassword-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
     }
 }
 function editUserGroup {
@@ -238,7 +246,8 @@ function editUserGroup {
             writeText -type "plain" -text "Editing domain users doesn't work yet."
         }
     } catch {
-        writeText -type "error" -text "editUserGroup-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
     }
 } 
 function addGroups {
@@ -409,7 +418,8 @@ function removeGroups {
             }
         }
     } catch {
-        writeText -type "error" -text "remove-group-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
     }
 }
 function removeUser {
@@ -468,7 +478,8 @@ function removeUser {
 
         writeText -type 'success' -text $response
     } catch {
-        writeText -type "error" -text "removeUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
     }
 }
 function listUsers {
@@ -517,7 +528,8 @@ function listUsers {
         writeText -type "table" -Table $accounts
         
     } catch {
-        writeText -type "error" -text "listUsers-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
     }
 }
 function toggleAdmin {
@@ -534,7 +546,8 @@ function toggleAdmin {
             2 { readCommand }
         }
     } catch {
-        writeText -type "error" -text "toggleAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
     }
 }
 function enableAdmin {
@@ -555,7 +568,8 @@ function enableAdmin {
             }
         }
     } catch {
-        writeText -type "error" -text "enableAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
     }
 }
 function disableAdmin {
@@ -576,6 +590,7 @@ function disableAdmin {
             writeText -text "Administrator account is already disabled."
         }
     } catch {
-        writeText -type "error" -text "disableAdmin-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
     }
 }
