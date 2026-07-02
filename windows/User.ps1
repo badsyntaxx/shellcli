@@ -344,7 +344,7 @@ function removeGroups {
             }
         }
 
-        $groups
+        # $groups
 
         foreach ($group in $groups) { 
             switch ($group.Name) {
