@@ -13,7 +13,7 @@ function selectTask {
             "Edit IP settings"  = "Set the IP schema to dynamic or static."
             "Edit DNS settings" = "Set the DNS to dynamic or static."
             "Exit"              = "Exit back to command line."
-        }) -prompt "Select a task:"
+        }) -prompt "Select a task:" -lineAfter
 
     switch ($task) {
         0 { toggleAdapter }
@@ -45,7 +45,7 @@ function selectAdapter {
         if ($adapterName -ne "") {
             $choice = $adapterName
         } else {
-            $choice = readOption -options $adapterList -prompt "Select a network adapter:" -returnKey
+            $choice = readOption -options $adapterList -prompt "Select a network adapter:" -returnKey -lineAfter
         }
 
         $netAdapter = Get-NetAdapter -Name $choice
@@ -279,7 +279,6 @@ function getAdapterInfo {
     )
     
     try {
-        Write-Host
         $status = Get-NetAdapter -Name $adapterName | Select-Object -ExpandProperty Status
         if ($status -ne "Disabled") {
             $macAddress = Get-NetAdapter -Name $adapterName | Select-Object -ExpandProperty MacAddress
@@ -296,11 +295,11 @@ function getAdapterInfo {
             $dnsServers = Get-DnsClientServerAddress -InterfaceIndex $index | Select-Object -ExpandProperty ServerAddresses
 
             if ($status -eq "Up") {
-                Write-Host " $([char]0x2502)" -NoNewline
+                Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
                 Write-Host " $([char]0x2022)" -ForegroundColor "Green" -NoNewline
                 Write-Host " $name | $dhcp" -ForegroundColor "Gray" 
             } else {
-                Write-Host " $([char]0x2502)" -NoNewline
+                Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
                 Write-Host " $([char]0x25BC)" -ForegroundColor "Red" -NoNewline
                 Write-Host " $name | $dhcp" -ForegroundColor "Gray"
             }
@@ -318,7 +317,6 @@ function getAdapterInfo {
                 }
             }
         }
-        Write-Host
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
         # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"

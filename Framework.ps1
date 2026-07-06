@@ -194,7 +194,7 @@ function filterCommands {
                     } catch {
                         Write-Host "Error executing command: $($_.Exception.Message)" -ForegroundColor Red
                     }
-                    return $null
+                    # return $null
                 }
             }
             
@@ -204,7 +204,7 @@ function filterCommands {
         }
     } catch {
         writeText -type "error" -text "filterCommands-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-        return $null
+        # return $null
     }
 }
 function addScript {
