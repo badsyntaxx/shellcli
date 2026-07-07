@@ -212,6 +212,7 @@ function getWifiCreds {
         writeText -type "error" -text "getWifiCreds-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
+
 function disableHypernateFile {
     try {
         # Get current file size before removal (for feedback)
@@ -222,17 +223,16 @@ function disableHypernateFile {
         }
         
         # Disable hibernation
-        Write-Host "⏳ Disabling hibernation..." -ForegroundColor Yellow
+        writeText -type "plain" -text "Disabling hibernation..." 
         $result = powercfg /hibernate off 2>&1
         
         if ($LASTEXITCODE -ne 0) {
-            Write-Host "❌ Failed to disable hibernation: $result" -ForegroundColor Red
-            return $false
+            writeText -type "error" -text "Failed to disable hibernation: $result"
         }
         
         # Wait for system to release the file
         Start-Sleep -Seconds 2
-        
+         
         # Force remove if still present
         if (Test-Path "C:\hiberfil.sys") {
             try {
@@ -240,27 +240,25 @@ function disableHypernateFile {
                 attrib -r "C:\hiberfil.sys" 2>$null
                 
                 Remove-Item "C:\hiberfil.sys" -Force -ErrorAction Stop
-                Write-Host "✅ Successfully removed hiberfil.sys (freed ~${fileSize}GB)" -ForegroundColor Green
+                writeText -type "success" -text "Successfully removed hiberfil.sys (freed ~${fileSize}GB)"
             } catch {
-                Write-Host "⚠️ Hibernation disabled but file removal failed: $_" -ForegroundColor Yellow
-                Write-Host "   The file will be removed automatically on next reboot." -ForegroundColor Yellow
-                return $true # Still consider it a success since hibernation is disabled
+                writeText -type "error" -text "Hibernation disabled but file removal failed: $_"
+                writeText -type "info" -text "The file will be removed automatically on next reboot."
             }
         } else {
             if ($fileSize -eq 0) {
-                Write-Host "ℹ️ Hibernation was already disabled. No space to free." -ForegroundColor Cyan
+                writeText -type "info" -text "Hibernation was already disabled. No space to free."
             } else {
-                Write-Host "✅ Hibernation disabled. File automatically removed." -ForegroundColor Green
+                writeText -type "success" -text "Hibernation disabled. File automatically removed."
             }
         }
         
         # Show freed space summary
         $currentFree = [math]::Round((Get-PSDrive C).Free / 1GB, 2)
-        Write-Host "📊 Current free space on C: ~${currentFree}GB" -ForegroundColor Cyan
+        writeText -type "plain" -text "Current free space on C: ~${currentFree}GB"
         
-        return $true
     } catch {
-        Write-Host "❌ Unexpected error: $_" -ForegroundColor Red
-        return $false
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
     }
 }
