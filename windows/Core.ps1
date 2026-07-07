@@ -42,6 +42,14 @@ function writeHelp {
     writeText -type "plain" -text "FULL DOCUMENTATION:" -lineBefore
     writeText -type "plain" -text "https://wkey.pro/dev/shellcli"
 }
+function listAllCommands {
+    try {
+        writeText -type "List" -List $global:commandMap -ListValue 3
+        
+    } catch {
+        writeText -type "error" -text "listAllCommands-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+    }
+}
 function toggleContextMenu {
     try {         
         $choice = readOption -options $([ordered]@{
