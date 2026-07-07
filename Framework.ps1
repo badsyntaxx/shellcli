@@ -34,6 +34,10 @@ $global:commandMap = [ordered]@{
     "get bginfo"                     = @("windows", "Get Software", "getBGInfo", "Get BGInfo.")
     #-- SYSTEM COMMANDS --#
     "services"                       = @("windows", "Service Controller", "listServices", "Display the services.")
+    "stop service"                   = @("windows", "Service Controller", "stopService", "Stop a service.")
+    "start service"                  = @("windows", "Service Controller", "startService", "Start a service.")
+    "restart service"                = @("windows", "Service Controller", "restartService", "Restart a service.")
+    "service status"                 = @("windows", "Service Controller", "getServiceStatus", "Check the status of a service.")
     "service menu"                   = @("windows", "Service Controller", "serviceMenu", "Display the service controller menu.")
     "schedule task"                  = @("windows", "Schedule Task", "scheduleTask", "Schedule a task.")
     "update windows"                 = @("windows", "Update Windows", "updateWindows", "Update Windows.")
