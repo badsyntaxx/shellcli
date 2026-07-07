@@ -126,7 +126,6 @@ function restartService {
 
         Restart-Service -Name $serviceName -Force
 
-
         Start-Sleep 3  # Wait for a moment to allow the service to start
 
         getServiceStatus -serviceName $serviceName
