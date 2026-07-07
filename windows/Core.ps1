@@ -94,10 +94,10 @@ function disableContextMenu {
         $hkmlPath = "HKLM\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32"
         try {
             & "C:\Windows\System32\reg.exe" add $hkmlPath /f /ve 2>$null | Out-Null
-            writeText -type "info" -text "HKLM registry entry added (system-wide)"
+            writeText -type "notice" -text "HKLM registry entry added (system-wide)"
         } catch {
             # Silently skip HKLM if access denied - we'll still apply HKCU
-            writeText -type "info" -text "HKLM not accessible, applying to current user only"
+            writeText -type "notice" -text "HKLM not accessible, applying to current user only"
         }
         
         # Target current user's HKCU directly (this always works)
@@ -243,11 +243,11 @@ function disableHypernateFile {
                 writeText -type "success" -text "Successfully removed hiberfil.sys (freed ~${fileSize}GB)"
             } catch {
                 writeText -type "error" -text "Hibernation disabled but file removal failed: $_"
-                writeText -type "info" -text "The file will be removed automatically on next reboot."
+                writeText -type "notice" -text "The file will be removed automatically on next reboot."
             }
         } else {
             if ($fileSize -eq 0) {
-                writeText -type "info" -text "Hibernation was already disabled. No space to free."
+                writeText -type "notice" -text "Hibernation was already disabled. No space to free."
             } else {
                 writeText -type "success" -text "Hibernation disabled. File automatically removed."
             }

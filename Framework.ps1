@@ -33,6 +33,8 @@ $global:commandMap = [ordered]@{
     "get hwinfo"                     = @("windows", "Get Software", "getHWInfo", "Get HWInfo.")
     "get bginfo"                     = @("windows", "Get Software", "getBGInfo", "Get BGInfo.")
     #-- SYSTEM COMMANDS --#
+    "services"                       = @("windows", "Service Controller", "listServices", "Display the services.")
+    "service menu"                   = @("windows", "Service Controller", "serviceMenu", "Display the service controller menu.")
     "schedule task"                  = @("windows", "Schedule Task", "scheduleTask", "Schedule a task.")
     "update windows"                 = @("windows", "Update Windows", "updateWindows", "Update Windows.")
     "clear temp files"               = @("windows", "Repair Windows", "clearTempFiles", "Clear temporary files.")
@@ -182,7 +184,7 @@ function filterCommands {
                             $output | Format-Table | Out-String | ForEach-Object { Write-Host $_ }
                         }
                     } catch {
-                        Write-Host "Error executing command: $($_.Exception.Message)" -ForegroundColor Red
+                        writeText -type "error" -text "Error executing command: $($_.Exception.Message)"
                     }
                     readCommand
                 }
