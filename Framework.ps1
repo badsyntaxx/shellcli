@@ -1,18 +1,18 @@
 $global:commandMap = [ordered]@{
-    "?"                              = @("windows", "Helpers", "writeHelp", "List some help info.")
-    "help"                           = @("windows", "Helpers", "writeHelp", "List some help info.")
-    "menu"                           = @("windows", "Helpers", "readMenu", "Display the main menu.")
-    "commands"                       = @("windows", "Helpers", "listAllCommands", "List all available commands.")
+    "?"                              = @("windows", "Core", "writeHelp", "List some help info.")
+    "help"                           = @("windows", "Core", "writeHelp", "List some help info.")
+    "menu"                           = @("windows", "Core", "readMenu", "Display the main menu.")
+    "commands"                       = @("windows", "Core", "listAllCommands", "List all available commands.")
     #-- CUSTOMIZATION COMMANDS --#
-    "toggle context menu"            = @("windows", "Toggle Context Menu", "toggleContextMenu", "Toggle the context menu.")
-    "enable context menu"            = @("windows", "Toggle Context Menu", "enableContextMenu", "Enable the context menu.")
-    "disable context menu"           = @("windows", "Toggle Context Menu", "disableContextMenu", "Disable the context menu.")
-    "edit hostname"                  = @("windows", "Edit Hostname", "editHostname", "Edit the hostname.")
-    "edit description"               = @("windows", "Edit Hostname", "editDescription", "Edit the host description.")
+    "toggle context menu"            = @("windows", "Core", "toggleContextMenu", "Toggle the context menu.")
+    "enable context menu"            = @("windows", "Core", "enableContextMenu", "Enable the context menu.")
+    "disable context menu"           = @("windows", "Core", "disableContextMenu", "Disable the context menu.")
+    "edit hostname"                  = @("windows", "Core", "editHostname", "Edit the hostname.")
+    "edit description"               = @("windows", "Core", "editDescription", "Edit the host description.")
     #-- USER COMMANDS --#
-    "toggle admin"                   = @("windows", "Toggle Admin", "toggleAdmin", "Toggle admin privileges.")
-    "enable admin"                   = @("windows", "Toggle Admin", "enableAdmin", "Enable admin privileges.")
-    "disable admin"                  = @("windows", "Toggle Admin", "disableAdmin", "Disable admin privileges.")
+    "toggle admin"                   = @("windows", "User", "toggleAdmin", "Toggle admin privileges.")
+    "enable admin"                   = @("windows", "User", "enableAdmin", "Enable admin privileges.")
+    "disable admin"                  = @("windows", "User", "disableAdmin", "Disable admin privileges.")
     "users"                          = @("windows", "User", "listUsers", "List all users.")
     "user menu"                      = @("windows", "User", "userMenu", "Display the user menu.")
     "add user"                       = @("windows", "User", "addUser", "Add a new user.")
@@ -25,7 +25,7 @@ $global:commandMap = [ordered]@{
     "edit user group"                = @("windows", "User", "editUserGroup", "Edit a user's group.")
     #-- NETWORK COMMANDS --#
     "edit net adapter"               = @("windows", "Edit Net Adapter", "editNetAdapter", "Edit the network adapter.")
-    "get wifi creds"                 = @("windows", "Get Wifi Creds", "getWifiCreds", "Get WiFi credentials.")
+    "get wifi creds"                 = @("windows", "Core", "getWifiCreds", "Get WiFi credentials.")
     #-- SOFTWARE COMMANDS --#
     "get software"                   = @("windows", "Get Software", "getSoftware", "Display a menu of available software.")
     "get windirstat"                 = @("windows", "Get Software", "getWinDirStat", "Get WinDirStat.")
@@ -44,9 +44,7 @@ $global:commandMap = [ordered]@{
     "plugins"                        = @("plugins", "Helpers", "plugins", "List available plugins.")
     "plugins menu"                   = @("plugins", "Helpers", "readMenu", "Display the plugin menu.")
     "plugins help"                   = @("plugins", "Helpers", "writeHelp", "Display help information for plugins.")
-    "plugins reclaimw11"             = @("plugins", "ReclaimW11", "reclaimw11", "Reclaim Windows 11.")
-    "plugins massgravel"             = @("plugins", "massgravel", "massgravel", "Mass Gravel plugin.")
-    "plugins win11debloat"           = @("plugins", "win11Debloat", "win11Debloat", "Windows 11 Debloat plugin.")
+    "plugins ?"                      = @("plugins", "Helpers", "writeHelp", "Display help information for plugins.")
 }
 
 function listAllCommands {
