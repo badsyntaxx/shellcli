@@ -6,7 +6,7 @@ function readMenu {
         # Create a menu with options and descriptions using an ordered hashtable
         $choice = readOption -options $([ordered]@{
                 "massgravel"   = "https://github.com/massgravel/Microsoft-Activation-Scripts"
-                "reclaimw11"   = "Credit needed"
+                "reclaim"      = "Credit needed"
                 "win11debloat" = "https://github.com/Raphire/Win11Debloat"
                 "Cancel"       = "Select nothing and exit this menu."
             }) -prompt "Select a plugin:" -returnKey
