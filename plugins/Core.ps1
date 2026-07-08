@@ -21,7 +21,7 @@ function readMenu {
     }
 }
 function writeHelp {   
-    writeText -type "plain" -text "STARTER COMMANDS:"
+    writeText -type "plain" -text "GET STARTED:"
     writeText -type "plain" -text "commands                   - Display a full list of commands."
     writeText -type "plain" -text "plugins menu               - Display a menu with some available functions."
     writeText -type "plain" -text "plugins ? or plugins help  - Display this help text."

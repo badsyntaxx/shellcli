@@ -35,7 +35,7 @@ function readMenu {
     }
 }
 function writeHelp {   
-    writeText -type "plain" -text "STARTER COMMANDS:"
+    writeText -type "plain" -text "GET STARTED:"
     writeText -type "plain" -text "commands    - Display a full list of commands."
     writeText -type "plain" -text "menu        - Display a menu with some available functions."
     writeText -type "plain" -text "? or help   - Display this help text."
