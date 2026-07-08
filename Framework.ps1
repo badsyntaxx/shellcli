@@ -33,6 +33,7 @@ $global:commandMap = [ordered]@{
     "get hwinfo"                     = @("windows", "Get Software", "getHWInfo", "Get HWInfo.")
     "get bginfo"                     = @("windows", "Get Software", "getBGInfo", "Get BGInfo.")
     #-- SYSTEM COMMANDS --#
+    "fix icons"                      = @("windows", "Core", "fixIcons", "Fix desktop icons.")
     "disable hybernate file"         = @("windows", "Core", "disableHybernateFile", "Disable the hybernate file.")
     "services"                       = @("windows", "Service Controller", "listServices", "Display the services.")
     "stop service"                   = @("windows", "Service Controller", "stopService", "Stop a service.")
