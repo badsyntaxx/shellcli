@@ -48,13 +48,13 @@ $global:commandMap = [ordered]@{
     "partition gpu"                  = @("windows", "Share GPU with VM", "partitionGPU", "Partition the GPU.")
     "generate encrypted password"    = @("windows", "Generate Encrypted Password", "generateEncryptedPassword", "Generate an encrypted password.")
     #-- PLUGIN COMMANDS --#
-    "plugins massgravel"             = @("plugins", "massgravel", "massgravel", "Windows activation scripts.")
-    "plugins reclaim"                = @("plugins", "Reclaim", "reclaim", "Disable telemetry and bloatware in Windows 11.")
-    "plugins win11debloat"           = @("plugins", "Win11Debloat", "win11debloat", "Remove bloatware from Windows 11.")
     "plugins"                        = @("plugins", "Core", "plugins", "List available plugins.")
     "plugins menu"                   = @("plugins", "Core", "readMenu", "Display the plugin menu.")
     "plugins help"                   = @("plugins", "Core", "writeHelp", "Display help information for plugins.")
     "plugins ?"                      = @("plugins", "Core", "writeHelp", "Display help information for plugins.")
+    "plugins massgravel"             = @("plugins", "massgravel", "massgravel", "Windows activation scripts.")
+    "plugins reclaim"                = @("plugins", "Reclaim", "reclaim", "Disable telemetry and bloatware in Windows 11.")
+    "plugins win11debloat"           = @("plugins", "Win11Debloat", "win11debloat", "Remove bloatware from Windows 11.")
 }
 
 function invokeScript {
