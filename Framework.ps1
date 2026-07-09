@@ -55,7 +55,6 @@ $global:commandMap = [ordered]@{
     "plugins ?"                      = @("plugins", "Core", "writeHelp", "Display help information for plugins.")
     "plugins massgravel"             = @("plugins", "massgravel", "massgravel", "Windows activation scripts.")
     "plugins reclaim"                = @("plugins", "Reclaim", "reclaim", "Disable telemetry and bloatware in Windows 11.")
-    "plugins win11debloat"           = @("plugins", "Win11Debloat", "win11debloat", "Remove bloatware from Windows 11.")
 }
 
 function invokeScript {
@@ -92,7 +91,8 @@ function invokeScript {
 
         Invoke-Expression $script
     } catch {
-        writeText -type "error" -text "invokeScript-$($_.InvocationInfo.ScriptLineNumber) | $script"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)"
     }
 }
 function readCommand {
@@ -163,7 +163,8 @@ function readCommand {
             Invoke-Expression $shellCLI
         }
     } catch {
-        writeText -type "error" -text "readCommand-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)"
     }
 }
 function filterCommands {
@@ -204,8 +205,8 @@ function filterCommands {
             readCommand
         }
     } catch {
-        writeText -type "error" -text "filterCommands-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
-        # return $null
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)"
     }
 }
 function addScript {
@@ -232,7 +233,8 @@ function addScript {
             Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\$file.ps1" | Remove-Item -ErrorAction SilentlyContinue
         }
     } catch {
-        writeText -type "error" -text "addScript-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)"
     }
 }
 function writeText {
@@ -360,7 +362,8 @@ function writeText {
         # Add a new line after output if specified
         if ($lineAfter) { Write-Host " $([char]0x2502)" -ForegroundColor "Gray" }
     } catch {
-        writeText -type "error" -text "writeText-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)"
     }
 }
 function readInput {
@@ -451,7 +454,8 @@ function readInput {
         # Return the validated user input
         return $userInput
     } catch {
-        writeText -type "error" -text "readInput-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)"
     }
 }
 function readOption {
@@ -579,7 +583,8 @@ function readOption {
             return $pos 
         }
     } catch {
-        writeText -type "error" -text "readOption-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)"
     }
 }
 function getDownload {
@@ -718,7 +723,8 @@ function getDownload {
                     writeText -type "plain" -text "Retrying..."
                     Start-Sleep -Seconds 1
                 } else {
-                    writeText -type "error" -text "getDownload-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+                    writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+                    # writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)"
                 }
             } finally {
                 # cleanup
@@ -755,7 +761,8 @@ function getUserData {
 
         return $data
     } catch {
-        writeText -type "error" -text "getUserData-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)"
     }
 }
 function selectUser {
@@ -834,7 +841,8 @@ function selectUser {
         # Return the user data dictionary
         return $data
     } catch {
-        writeText -type "error" -text "selectUser-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)"
     }
 }
 function installEXE {

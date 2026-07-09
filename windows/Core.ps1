@@ -31,7 +31,8 @@ function readMenu {
 
         readCommand -command $choice
     } catch {
-        writeText -type "error" -text "readMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)"
     }
 }
 function writeHelp {   
@@ -47,7 +48,8 @@ function listAllCommands {
         writeText -type "List" -List $global:commandMap -ListValue 3
         
     } catch {
-        writeText -type "error" -text "listAllCommands-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)"
     }
 }
 function toggleContextMenu {
@@ -64,7 +66,8 @@ function toggleContextMenu {
             2 { readCommand }
         }
     } catch {
-        writeText -type "error" -text "toggleContextMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)"
     }
 }
 function enableContextMenu {
@@ -85,7 +88,8 @@ function enableContextMenu {
         Start-Process explorer
         writeText -type "success" -text "Context menu enabled"
     } catch {
-        writeText -type "error" -text "enableContextMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)"
     }
 }
 function disableContextMenu {
@@ -112,7 +116,8 @@ function disableContextMenu {
         Start-Process explorer
         writeText -type "success" -text "Context menu disabled"
     } catch {
-        writeText -type "error" -text "disableContextMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)"
     }
 }
 function editHostname {
@@ -156,7 +161,8 @@ function editHostname {
             1 { readCommand }
         }
     } catch {
-        writeText -type "error" -text "editHostname-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)"
     }
 }
 function editDescription {
@@ -172,7 +178,8 @@ function editDescription {
 
         writeText -type "success" -text "Description changed."
     } catch {
-        writeText -type "error" -text "editDescription-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)"
     }
 }
 function getWifiCreds {
@@ -209,11 +216,12 @@ function getWifiCreds {
             Write-Host "$password"
         }
     } catch {
-        writeText -type "error" -text "getWifiCreds-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)"
     }
 }
 
-function disableHypernateFile {
+function disableHybernateFile {
     try {
         # Get current file size before removal (for feedback)
         $fileSize = if (Test-Path "C:\hiberfil.sys") {
@@ -258,11 +266,17 @@ function disableHypernateFile {
         writeText -type "plain" -text "Current free space on C: ~${currentFree}GB"
         
     } catch {
-        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)"
     }
 }
 
 function fixIcons {
-    Stop-Process -Name explorer -Force; Remove-Item "$env:USERPROFILE\AppData\Local\Microsoft\Windows\Explorer\iconcache*" -Force; Start-Process explorer
+    try {
+        Stop-Process -Name explorer -Force; Remove-Item "$env:USERPROFILE\AppData\Local\Microsoft\Windows\Explorer\iconcache*" -Force; Start-Process explorer
+    } catch {
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)"
+    }
+    
 }
