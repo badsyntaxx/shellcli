@@ -33,6 +33,8 @@ $global:commandMap = [ordered]@{
     "get hwinfo"                     = @("windows", "Get Software", "getHWInfo", "Get HWInfo.")
     "get bginfo"                     = @("windows", "Get Software", "getBGInfo", "Get BGInfo.")
     #-- SYSTEM COMMANDS --#
+    "techmode 1"                     = @("windows", "Core", "techMode", "Enable tech mode.")
+    "techmode 0"                     = @("windows", "Core", "userMode", "Enable user mode.")
     "fix icons"                      = @("windows", "Core", "fixIcons", "Fix desktop icons.")
     "disable hybernate file"         = @("windows", "Core", "disableHybernateFile", "Disable the hybernate file.")
     "services"                       = @("windows", "Service Controller", "listServices", "Display the services.")
@@ -284,21 +286,21 @@ function writeText {
         if ($type -eq 'success') { 
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
             Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
-            Write-Host "   $([char]0x2713) $text"  -ForegroundColor "Green"
+            Write-Host "  $([char]0x2713) $text"  -ForegroundColor "Green"
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
         }
 
         if ($type -eq 'error') { 
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
             Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
-            Write-Host "   X $text" -ForegroundColor "Red"
+            Write-Host "  X $text" -ForegroundColor "Red"
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
         }
 
         if ($type -eq 'notice') { 
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
             Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
-            Write-Host "   ! $text" -ForegroundColor "Yellow" 
+            Write-Host "  ! $text" -ForegroundColor "Yellow" 
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
         }
 
