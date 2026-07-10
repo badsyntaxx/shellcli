@@ -220,7 +220,6 @@ function getWifiCreds {
         # writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)"
     }
 }
-
 function disableHybernateFile {
     try {
         # Get current file size before removal (for feedback)

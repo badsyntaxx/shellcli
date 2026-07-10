@@ -24,6 +24,7 @@ $global:commandMap = [ordered]@{
     "edit user password"             = @("windows", "User", "editUserPassword", "Edit a user's password.")
     "edit user group"                = @("windows", "User", "editUserGroup", "Edit a user's group.")
     #-- NETWORK COMMANDS --#
+    "network"                        = @("windows", "Edit Net Adapter", "network", "Get net adapter info.")
     "edit net adapter"               = @("windows", "Edit Net Adapter", "editNetAdapter", "Edit the network adapter.")
     "get wifi creds"                 = @("windows", "Core", "getWifiCreds", "Get WiFi credentials.")
     #-- SOFTWARE COMMANDS --#
