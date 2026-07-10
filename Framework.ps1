@@ -967,3 +967,19 @@ function installProgram {
         writeText "Skipping $AppName installation."
     }
 }
+function formatSize {
+    param([long]$Bytes)
+    switch ($Bytes) {
+        { $_ -ge 1TB } { "{0:N2} TB" -f ($_ / 1TB); break }
+        { $_ -ge 1GB } { "{0:N2} GB" -f ($_ / 1GB); break }
+        { $_ -ge 1MB } { "{0:N2} MB" -f ($_ / 1MB); break }
+        { $_ -ge 1KB } { "{0:N2} KB" -f ($_ / 1KB); break }
+        default { "{0} B" -f $_ }
+    }
+}
+function getFolderSize {
+    param([string]$Path)
+    $size = (Get-ChildItem $Path -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum
+    if ($size -eq $null) { $size = 0 }
+    return $size
+}
