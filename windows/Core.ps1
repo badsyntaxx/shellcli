@@ -222,6 +222,10 @@ function getWifiCreds {
 }
 function disableHybernateFile {
     try {
+        # Show freed space summary
+        $currentFree = [math]::Round((Get-PSDrive C).Free / 1GB, 2)
+        writeText -type "plain" -text "Current free space on C: ~${currentFree}GB"
+        
         # Get current file size before removal (for feedback)
         $fileSize = if (Test-Path "C:\hiberfil.sys") {
             [math]::Round((Get-Item "C:\hiberfil.sys").Length / 1GB, 2)
