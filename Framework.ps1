@@ -980,7 +980,9 @@ function formatSize {
 function getFolderSize {
     param([string]$Path)
     $size = (Get-ChildItem $Path -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum
-    if ($size -eq $null) { $size = 0 }
+    if ($null -eq $size) { 
+        $size = 0 
+    }
     return $size
 }
 function log {
