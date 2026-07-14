@@ -1,7 +1,9 @@
 function initializeShellCLI {
     try {
+        log -msg "Initializing ShellCLI..."
         # Check if user has administrator privileges
         if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]"Administrator")) {
+            log -msg "Terminal is not admin. Self elevating."
             # If not, elevate privileges and restart function with current arguments
             Start-Process powershell.exe "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`" $PSCommandArgs" -WorkingDirectory $pwd -Verb RunAs
             Exit
@@ -9,12 +11,14 @@ function initializeShellCLI {
         
         # Create the main script file
         New-Item -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -ItemType File -Force | Out-Null
+        log -msg "Main script file created at $env:SystemRoot\Temp\SHELLCLI.ps1."
 
         $url = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main"
 
         # Download the script
         $download = getScript -Url "$url/Framework.ps1" -Target "$env:SystemRoot\Temp\Framework.ps1"
         if ($download) { 
+            log -msg "Download done. Building framework..."
             # Append the script to the main script
             $rawScript = Get-Content -Path "$env:SystemRoot\Temp\Framework.ps1" -Raw -ErrorAction SilentlyContinue
             Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value $rawScript
@@ -25,14 +29,15 @@ function initializeShellCLI {
             # Add a final line that will invoke the desired function
             Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value 'invokeScript -script "readCommand -command `"help`"" -initialize $true'
 
+            log -msg "Starting..."
             # Execute the combined script
             . "$env:SystemRoot\Temp\SHELLCLI.ps1"
         }
     } catch {
-        Write-Host "  initializeShellCLI-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)" -ForegroundColor "Red"
+        Write-Host "  $($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor "Red"
+        log -msg "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
     }
 }
-
 function getScript {
     param (
         [Parameter(Mandatory)]
@@ -44,6 +49,7 @@ function getScript {
     Process {
         $downloadComplete = $true 
         try {
+            log -msg "Downloading framework."
             # Create web request and get response
             $request = [System.Net.HttpWebRequest]::Create($url)
             $response = $request.GetResponse()
@@ -76,6 +82,7 @@ function getScript {
                 return $false 
             }
         } catch {
+            log -msg "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
             write-host $($_.Exception.Message)
             read-host
             return $false
@@ -83,6 +90,44 @@ function getScript {
             $reader.Close()
             $writer.Close()
         }
+    }
+}
+function log {
+    param(
+        [Parameter(Mandatory = $true, Position = 0)]
+        [string]$msg,
+        [Parameter(Position = 1)]
+        [ValidateSet('INFO', 'WARNING', 'ERROR', 'DEBUG', 'SUCCESS')]
+        [string]$lvl = 'INFO'
+    )
+
+    try {      
+        # Define log directory
+        $logDirectory = "C:\Temp\ShellCLI"
+        
+        # Create log directory if it doesn't exist
+        if (-not (Test-Path -Path $logDirectory)) {
+            try {
+                New-Item -Path $logDirectory -ItemType Directory -Force -ErrorAction Stop | Out-Null
+            } catch {
+                Write-Error "Failed to create log directory: $_"
+                return
+            }
+        }
+        
+        # Define log file path
+        $dateStamp = Get-Date -Format "yyyy-MM-dd"
+        $logFileName = "${dateStamp}.log"
+        $logFilePath = Join-Path -Path $logDirectory -ChildPath $logFileName
+
+        # Format log entry
+        $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+        $logEntry = "[$timestamp] [$lvl] $msg"
+            
+        # Write to log file
+        Add-Content -Path $logFilePath -Value $logEntry -ErrorAction Stop
+    } catch {
+        Write-Error "Failed to write log entry: $_"
     }
 }
 
