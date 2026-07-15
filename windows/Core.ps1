@@ -226,11 +226,23 @@ function disableHybernateFile {
         $currentFree = [math]::Round((Get-PSDrive C).Free / 1GB, 2)
         writeText -type "plain" -text "Current free space on C: ~${currentFree}GB"
         
+        # Check if hibernation is currently enabled
+        $hiberEnabled = (powercfg /query SCHEME_CURRENT SUB_SLEEP HIBERNATEIDLE 2>&1) -match "HIBERNATEIDLE"
+        
         # Get current file size before removal (for feedback)
-        $fileSize = if (Test-Path "C:\hiberfil.sys") {
+        $fileExists = Test-Path "C:\hiberfil.sys"
+        $fileSize = if ($fileExists) {
             [math]::Round((Get-Item "C:\hiberfil.sys").Length / 1GB, 2)
         } else {
             0
+        }
+        
+        # If already disabled, inform and exit
+        if (-not $fileExists -and -not $hiberEnabled) {
+            writeText -type "notice" -text "Hibernation was already disabled. No space to free."
+            $currentFree = [math]::Round((Get-PSDrive C).Free / 1GB, 2)
+            writeText -type "plain" -text "Current free space on C: ~${currentFree}GB"
+            return
         }
         
         # Disable hibernation
@@ -239,28 +251,34 @@ function disableHybernateFile {
         
         if ($LASTEXITCODE -ne 0) {
             writeText -type "error" -text "Failed to disable hibernation: $result"
+            return
         }
         
         # Wait for system to release the file
-        Start-Sleep -Seconds 2
-         
-        # Force remove if still present
-        if (Test-Path "C:\hiberfil.sys") {
+        Start-Sleep -Seconds 3
+        
+        # Check if file was automatically removed
+        if (-not (Test-Path "C:\hiberfil.sys")) {
+            if ($fileSize -gt 0) {
+                writeText -type "success" -text "Hibernation disabled. File automatically removed (freed ~${fileSize}GB)"
+            } else {
+                writeText -type "success" -text "Hibernation disabled successfully."
+            }
+        } else {
+            # Force remove if still present
             try {
                 # Clear read-only attribute if set
                 attrib -r "C:\hiberfil.sys" 2>$null
+                
+                # Try to take ownership if needed (optional)
+                # takeown /F "C:\hiberfil.sys" 2>$null
+                # icacls "C:\hiberfil.sys" /grant administrators:F 2>$null
                 
                 Remove-Item "C:\hiberfil.sys" -Force -ErrorAction Stop
                 writeText -type "success" -text "Successfully removed hiberfil.sys (freed ~${fileSize}GB)"
             } catch {
                 writeText -type "error" -text "Hibernation disabled but file removal failed: $_"
                 writeText -type "notice" -text "The file will be removed automatically on next reboot."
-            }
-        } else {
-            if (0 -eq $fileSize) {
-                writeText -type "notice" -text "Hibernation was already disabled. No space to free."
-            } else {
-                writeText -type "success" -text "Hibernation disabled. File automatically removed."
             }
         }
         
