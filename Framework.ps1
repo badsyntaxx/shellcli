@@ -695,7 +695,10 @@ function getDownload {
         }
     }
     Process {
-        log -msg "Downloading from ($url) to ($target)."
+        if (-not $hide) {
+            log -msg "Downloading from ($url) to ($target)."
+        }
+        
         $downloadComplete = $true 
         for ($retryCount = 1; $retryCount -le 2; $retryCount++) {
             try {
