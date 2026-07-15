@@ -41,6 +41,7 @@ function getBrowserSoftware {
         $script:user = selectUser -prompt "Select user to install apps for:"
     }
     if ($installChoice -eq 0) { 
+        log -msg "Installing Vivaldi web browser."
         $url = "https://downloads.vivaldi.com/stable/Vivaldi.7.0.3495.27.x64.exe"
         $appName = "Vivaldi"
         $paths = @(
@@ -52,6 +53,7 @@ function getBrowserSoftware {
         }
     }
     if ($installChoice -eq 1) { 
+        log -msg "Installing Brave web browser."
         $url = "https://github.com/brave/browser-laptop/releases/download/v0.25.2dev/BraveSetup-x64.exe"
         $appName = "Brave"
         $paths = @(
@@ -63,6 +65,7 @@ function getBrowserSoftware {
         }
     }
     if ($installChoice -eq 2) { 
+        log -msg "Installing Firefox web browser."
         $url = "https://archive.mozilla.org/pub/firefox/releases/134.0.2/win64/en-US/Firefox Setup 134.0.2.msi"
         $appName = "Firefox"
         $paths = @(
@@ -74,6 +77,7 @@ function getBrowserSoftware {
         }
     }
     if ($installChoice -eq 3) { 
+        log -msg "Installing Google Chrome web browser."
         $url = "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi"
         $appName = "Google Chrome"
         $paths = @(

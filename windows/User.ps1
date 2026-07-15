@@ -31,8 +31,8 @@ function addUser {
             2 { readCommand }
         }
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
-        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
 function addLocalUser {
@@ -67,10 +67,10 @@ function addLocalUser {
         $password = $null
 
         # Because of the bug listed above we just assume success if the script is still executing at this point.
-        writeText -type "success" -text "Local user added."
+        writeText -type "success" -text "Local user ($name) was created and added to the ($group) group."
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
-        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
 function addADUser {
@@ -111,8 +111,8 @@ function addADUser {
 
         writeText -type "success" -text "The user account was created."
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
-        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
 function editUser {
@@ -133,8 +133,8 @@ function editUser {
             3 { readCommand }
         }
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
-        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
 function editUserName {
@@ -144,6 +144,8 @@ function editUserName {
     )
         
     try {
+        log -msg "Editing a local users profile name on this PC."
+
         if (-not $user) { 
             $user = selectUser -prompt "Select a user to edit the password for." -lineAfter
         }
@@ -162,16 +164,16 @@ function editUserName {
             $newUser = Get-LocalUser -Name $newName
 
             if ($null -ne $newUser) { 
-                writeText -type "success" -text "Account name changed"
+                writeText -type "success" -text "Account name $($user['Name']) changed to $newName."
             } else {
-                writeText -type "error" -text "Unknown error"
+                writeText -type "error" -text "Unknown error."
             }
         } else { 
             writeText -type "notice" -text "Editing domain users doesn't work yet."
         }
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
-        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
 function editUserPassword {
@@ -181,6 +183,8 @@ function editUserPassword {
     )
 
     try {
+        log -msg "Editing a local users password on this PC."
+
         if (-not $user) { 
             $user = selectUser -prompt "Select a user to edit the password for." -lineAfter
         }
@@ -195,9 +199,9 @@ function editUserPassword {
             $password = readInput -prompt "Password:" -IsSecure:$true -allowBlank:$true
 
             if ($password.Length -eq 0) { 
-                $message = "Password removed" 
+                $message = "Password for user $($user['Name']) was removed." 
             } else { 
-                $message = "Password changed" 
+                $message = "Password for user $($user['Name']) changed." 
             }
 
             Get-LocalUser -Name $user["Name"] | Set-LocalUser -Password $password -PasswordNeverExpires $true
@@ -209,8 +213,8 @@ function editUserPassword {
             writeText -type "plain" -text "Editing domain users doesn't work yet."
         }
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
-        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
 function editUserGroup {
@@ -246,8 +250,8 @@ function editUserGroup {
             writeText -type "plain" -text "Editing domain users doesn't work yet."
         }
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
-        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 } 
 function addGroups {
@@ -315,6 +319,7 @@ function addGroups {
     foreach ($group in $selectedGroups) {
         if ($group -ne "Done") {
             Add-LocalGroupMember -Group $group -Member $username -ErrorAction SilentlyContinue | Out-Null 
+            log -msg "The user ($username) has been added to the group $group."
         }
     }
 }
@@ -415,11 +420,12 @@ function removeGroups {
         foreach ($group in $selectedGroups) {
             if ($group -ne "Done") {
                 Remove-LocalGroupMember -Group $group -Member $username -ErrorAction SilentlyContinue
+                log -msg "The user ($username) has been removed from the group $group."
             }
         }
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
-        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
 function removeUser {
@@ -441,7 +447,7 @@ function removeUser {
 
         Remove-LocalUser -Name $user["Name"] | Out-Null
 
-        $response = "The user has been removed."
+        $response = "The user ($($user['Name'])) has been removed."
         if ($choice -eq 0 -and $dir) { 
             try {
                 # Attempt to take ownership and grant full control
@@ -478,8 +484,8 @@ function removeUser {
 
         writeText -type 'success' -text $response
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
-        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
 function listUsers {
@@ -528,8 +534,8 @@ function listUsers {
         writeText -type "table" -Table $accounts
         
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
-        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
 function toggleAdmin {
@@ -546,8 +552,8 @@ function toggleAdmin {
             2 { readCommand }
         }
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
-        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
 function enableAdmin {
@@ -562,14 +568,14 @@ function enableAdmin {
             $admin = Get-LocalUser -Name "Administrator"
 
             if ($admin.Enabled) { 
-                writeText -type "success" -text "Administrator account enabled."
+                writeText -type "success" -text "The local Administrator account is enabled."
             } else { 
                 writeText -type "error" -text "Could not enable administrator account."
             }
         }
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
-        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
 function disableAdmin {
@@ -584,13 +590,13 @@ function disableAdmin {
             if ($admin.Enabled) { 
                 writeText -type "error" -text "Could not disable administrator account."
             } else { 
-                writeText -type "success" -text "Administrator account disabled."
+                writeText -type "success" -text "The local Administrator account is disabled."
             }
         } else { 
-            writeText -text "Administrator account is already disabled."
+            writeText -text "The local Administrator account is already disabled."
         }
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)"
-        # writeText -type "error" -text "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }

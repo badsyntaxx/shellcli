@@ -257,7 +257,7 @@ function disableHybernateFile {
                 writeText -type "notice" -text "The file will be removed automatically on next reboot."
             }
         } else {
-            if ($fileSize -eq 0) {
+            if (0 -eq $fileSize) {
                 writeText -type "notice" -text "Hibernation was already disabled. No space to free."
             } else {
                 writeText -type "success" -text "Hibernation disabled. File automatically removed."
@@ -273,7 +273,6 @@ function disableHybernateFile {
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
-
 function fixIcons {
     try {
         Stop-Process -Name explorer -Force; Remove-Item "$env:USERPROFILE\AppData\Local\Microsoft\Windows\Explorer\iconcache*" -Force; Start-Process explorer
@@ -283,7 +282,6 @@ function fixIcons {
     }
     
 }
-
 function techMode {
     # Check for interactive user session
     if (-not $env:USERNAME -or $env:USERNAME -eq "SYSTEM" -or -not (Get-Process -Name explorer -ErrorAction SilentlyContinue)) {
@@ -305,7 +303,6 @@ function techMode {
     Start-Process explorer
     writeText -type "success" -text "TechMode enabled"
 }
-
 function userMode {
     # Check for interactive user session
     if (-not $env:USERNAME -or $env:USERNAME -eq "SYSTEM" -or -not (Get-Process -Name explorer -ErrorAction SilentlyContinue)) {
