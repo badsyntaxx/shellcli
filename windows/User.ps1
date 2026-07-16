@@ -39,7 +39,7 @@ function addLocalUser {
     try {
         writeText -type "prompt" -text "Enter user credentials."
 
-        $name = readInput -prompt "Username:" -Validate "^([a-zA-Z0-9 ._\-]{1,64})$" -CheckExistingUser
+        $name = readInput -prompt "Username:" -Validate "^(\s*|[a-zA-Z0-9 ._\-]{1,64})$" -CheckExistingUser
         $password = readInput -prompt "Password:" -IsSecure -lineAfter
         $group = readOption -options $([ordered]@{
                 "Administrators" = "Set this user's group membership to administrators."
@@ -157,7 +157,7 @@ function editUserName {
         }
 
         if ($user["Source"] -eq "Local") { 
-            $newName = readInput -prompt "Username:" -Validate "^(\s*|[a-zA-Z0-9 _\-]{1,64})$" -CheckExistingUser
+            $newName = readInput -prompt "Username:" -Validate "^(\s*|[a-zA-Z0-9 ._\-]{1,64})$" -CheckExistingUser
     
             Rename-LocalUser -Name $user["Name"] -NewName $newName
 
@@ -488,6 +488,56 @@ function removeUser {
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
+<# function listUsers {
+    try {
+        # Initialize empty array to store user names
+        $userNames = @()
+
+        # Get all local users on the system
+        $localUsers = Get-LocalUser
+
+        # Define a list of accounts to exclude from selection
+        $excludedAccounts = @("DefaultAccount", "WDAGUtilityAccount", "Guest", "defaultuser0")
+
+        # Check if the "Administrator" account is disabled and add it to excluded list if so
+        $adminEnabled = Get-LocalUser -Name "Administrator" | Select-Object -ExpandProperty Enabled
+        if (!$adminEnabled) { 
+            $excludedAccounts += "Administrator" 
+        }
+
+        # Filter local users to exclude predefined accounts
+        foreach ($user in $localUsers) {
+            if ($user.Name -notin $excludedAccounts) { 
+                $userNames += $user.Name 
+            }
+        }
+
+        # Create an ordered dictionary to store username and group information
+        $accounts = [ordered]@{}
+        foreach ($name in $userNames) {
+            # Get details for the current username
+            $username = Get-LocalUser -Name $name
+            
+            # Find groups the user belongs to
+            $groups = Get-LocalGroup | Where-Object { $username.SID -in ($_ | Get-LocalGroupMember | Select-Object -ExpandProperty "SID") } | Select-Object -ExpandProperty "Name"
+            # Convert groups to a semicolon-separated string
+            $groupString = $groups -join ';'
+
+            # Get the users source
+            $source = Get-LocalUser -Name $username | Select-Object -ExpandProperty PrincipalSource
+
+            # Add username and group string to the dictionary
+            $accounts["$username"] = "$source | $groupString"
+        }
+
+        # Display user data as a list
+        writeText -type "table" -Table $accounts
+        
+    } catch {
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+    }
+} #>
 function listUsers {
     try {
         # Initialize empty array to store user names
