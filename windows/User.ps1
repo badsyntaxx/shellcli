@@ -514,20 +514,48 @@ function listUsers {
 
         # Create an ordered dictionary to store username and group information
         $accounts = [ordered]@{}
+        
+        # Use .NET Directory Services for more reliable group enumeration
+        $computerName = $env:COMPUTERNAME
+        $adsiComputer = [ADSI]"WinNT://$computerName,computer"
+        
         foreach ($name in $userNames) {
-            # Get details for the current username
-            $username = Get-LocalUser -Name $name
+            $groupNames = @()
             
-            # Find groups the user belongs to
-            $groups = Get-LocalGroup | Where-Object { $username.SID -in ($_ | Get-LocalGroupMember | Select-Object -ExpandProperty "SID") } | Select-Object -ExpandProperty "Name"
+            try {
+                # Get user object via ADSI
+                $userAdsi = [ADSI]"WinNT://$computerName/$name,user"
+                
+                # Enumerate groups the user belongs to
+                $groups = $userAdsi.Groups()
+                foreach ($group in $groups) {
+                    $groupNames += $group.Name
+                }
+            } catch {
+                # Fallback to PowerShell cmdlets if ADSI fails
+                $username = Get-LocalUser -Name $name
+                $allGroups = Get-LocalGroup
+                
+                foreach ($group in $allGroups) {
+                    try {
+                        $members = Get-LocalGroupMember -Group $group.Name -ErrorAction SilentlyContinue
+                        if ($username.SID -in ($members | Select-Object -ExpandProperty SID)) {
+                            $groupNames += $group.Name
+                        }
+                    } catch {
+                        continue
+                    }
+                }
+            }
+            
             # Convert groups to a semicolon-separated string
-            $groupString = $groups -join ';'
+            $groupString = $groupNames -join ';'
 
             # Get the users source
-            $source = Get-LocalUser -Name $username | Select-Object -ExpandProperty PrincipalSource
+            $source = Get-LocalUser -Name $name | Select-Object -ExpandProperty PrincipalSource
 
             # Add username and group string to the dictionary
-            $accounts["$username"] = "$source | $groupString"
+            $accounts["$name"] = "$source | $groupString"
         }
 
         # Display user data as a list
