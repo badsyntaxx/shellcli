@@ -357,7 +357,9 @@ function writeText {
                 Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
                 Write-Host "  $label`: " -NoNewline -ForegroundColor "Gray"
                 Write-Host "$text" -ForegroundColor $Color 
-                log -msg $text -lvl "INFO"
+                if ($text -ne "") {
+                    log -msg $text -lvl "INFO"
+                }
             } else {
                 Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
                 Write-Host "   $text" -ForegroundColor $Color 
