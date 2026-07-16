@@ -565,36 +565,31 @@ function listUsers {
         # Create an ordered dictionary to store username and group information
         $accounts = [ordered]@{}
         
-        # Use .NET Directory Services for more reliable group enumeration
-        $computerName = $env:COMPUTERNAME
-        $adsiComputer = [ADSI]"WinNT://$computerName,computer"
+        # Get all local groups once (more efficient)
+        $allGroups = Get-LocalGroup
         
         foreach ($name in $userNames) {
+            # Get details for the current username
+            $username = Get-LocalUser -Name $name
+            
             $groupNames = @()
             
-            try {
-                # Get user object via ADSI
-                $userAdsi = [ADSI]"WinNT://$computerName/$name,user"
-                
-                # Enumerate groups the user belongs to
-                $groups = $userAdsi.Groups()
-                foreach ($group in $groups) {
-                    $groupNames += $group.Name
-                }
-            } catch {
-                # Fallback to PowerShell cmdlets if ADSI fails
-                $username = Get-LocalUser -Name $name
-                $allGroups = Get-LocalGroup
-                
-                foreach ($group in $allGroups) {
-                    try {
-                        $members = Get-LocalGroupMember -Group $group.Name -ErrorAction SilentlyContinue
-                        if ($username.SID -in ($members | Select-Object -ExpandProperty SID)) {
-                            $groupNames += $group.Name
-                        }
-                    } catch {
-                        continue
+            # Check each group for membership
+            foreach ($group in $allGroups) {
+                try {
+                    # Use -ErrorAction Stop to catch errors from Get-LocalGroupMember
+                    $members = Get-LocalGroupMember -Group $group.Name -ErrorAction Stop
+                    
+                    # Check if the user's SID is in the group members
+                    if ($username.SID -in ($members | Select-Object -ExpandProperty SID)) {
+                        $groupNames += $group.Name
                     }
+                } catch {
+                    # Skip groups that cause errors (like built-in groups with permission issues)
+                    # Optionally log which groups failed
+                    # Write-Verbose "Could not enumerate members for group: $($group.Name)"
+                    log -msg "Could not enumerate members for group: $($group.Name)" -lvl "ERROR"
+                    continue
                 }
             }
             
@@ -602,10 +597,10 @@ function listUsers {
             $groupString = $groupNames -join ';'
 
             # Get the users source
-            $source = Get-LocalUser -Name $name | Select-Object -ExpandProperty PrincipalSource
+            $source = Get-LocalUser -Name $username | Select-Object -ExpandProperty PrincipalSource
 
             # Add username and group string to the dictionary
-            $accounts["$name"] = "$source | $groupString"
+            $accounts["$username"] = "$source | $groupString"
         }
 
         # Display user data as a list
