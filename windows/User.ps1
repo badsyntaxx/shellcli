@@ -144,10 +144,8 @@ function editUserName {
     )
         
     try {
-        log -msg "Editing a local users profile name on this PC."
-
         if (-not $user) { 
-            $user = selectUser -prompt "Select a user to edit the password for." -lineAfter
+            $user = selectUser -prompt "Which name would you like to edit?" -lineAfter
         }
 
         writeText -type "prompt" -text "Enter a new username."

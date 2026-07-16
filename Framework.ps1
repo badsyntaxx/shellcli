@@ -866,14 +866,37 @@ function selectUser {
 
         # Create an ordered dictionary to store username and group information
         $accounts = [ordered]@{}
+        
+        # Get all local groups once (more efficient)
+        $allGroups = Get-LocalGroup
+        
         foreach ($name in $userNames) {
             # Get details for the current username
             $username = Get-LocalUser -Name $name
             
-            # Find groups the user belongs to
-            $groups = Get-LocalGroup | Where-Object { $username.SID -in ($_ | Get-LocalGroupMember | Select-Object -ExpandProperty "SID") } | Select-Object -ExpandProperty "Name"
+            $groupNames = @()
+            
+            # Check each group for membership
+            foreach ($group in $allGroups) {
+                try {
+                    # Use -ErrorAction Stop to catch errors from Get-LocalGroupMember
+                    $members = Get-LocalGroupMember -Group $group.Name -ErrorAction Stop
+                    
+                    # Check if the user's SID is in the group members
+                    if ($username.SID -in ($members | Select-Object -ExpandProperty SID)) {
+                        $groupNames += $group.Name
+                    }
+                } catch {
+                    # Skip groups that cause errors (like built-in groups with permission issues)
+                    # Optionally log which groups failed
+                    # Write-Verbose "Could not enumerate members for group: $($group.Name)"
+                    log -msg "Could not enumerate members for group: $($group.Name)" -lvl "ERROR"
+                    continue
+                }
+            }
+            
             # Convert groups to a semicolon-separated string
-            $groupString = $groups -join ';'
+            $groupString = $groupNames -join ';'
 
             # Get the users source
             $source = Get-LocalUser -Name $username | Select-Object -ExpandProperty PrincipalSource
