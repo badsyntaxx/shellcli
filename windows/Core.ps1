@@ -227,7 +227,8 @@ function disableHybernateFile {
         writeText -type "plain" -text "Current free space on C: ~${currentFree}GB"
         
         # Check if hibernation is currently enabled
-        $hiberEnabled = (powercfg /query SCHEME_CURRENT SUB_SLEEP HIBERNATEIDLE 2>&1) -match "HIBERNATEIDLE"
+        $hiberStatus = powercfg /query SCHEME_CURRENT SUB_SLEEP HIBERNATEIDLE 2>&1
+        $hiberEnabled = $hiberStatus -match "HIBERNATEIDLE\s+0x00000001"
         
         # Get current file size before removal (for feedback)
         $fileExists = Test-Path "C:\hiberfil.sys"
