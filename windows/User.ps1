@@ -621,3 +621,22 @@ function disableAdmin {
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
+function unlockLocalAccount {
+    $user = selectUser -lineAfter
+    
+    if ($user.AccountLocked) {
+        writeText "User $($user["Name"]) is currently locked. Unlocking..."
+        Unlock-LocalUser -Name $user["Name"]
+        
+        # Verify unlock was successful
+        $updatedUser = Get-LocalUser -Name $user["Name"]
+        if (-not $updatedUser.AccountLocked) {
+            writeText -type "success" -text "User $($user["Name"]) successfully unlocked!"
+        } else {
+            writeText -type "error" -text "Failed to unlock user $($user["Name"])"
+        }
+    } else {
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+    }
+}

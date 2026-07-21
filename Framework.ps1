@@ -51,6 +51,7 @@ $global:commandMap = [ordered]@{
     "install host gpu drivers on vm" = @("windows", "Share GPU with VM", "installHostGPUDriversOnVM", "Install host GPU drivers on VM.")
     "partition gpu"                  = @("windows", "Share GPU with VM", "partitionGPU", "Partition the GPU.")
     "generate encrypted password"    = @("windows", "Generate Encrypted Password", "generateEncryptedPassword", "Generate an encrypted password.")
+    "unlock local account"           = @("windows", "User", "unlockLocalAccount", "Unlock a locked local account.")
     #-- PLUGIN COMMANDS --#
     "plugins"                        = @("plugins", "Core", "plugins", "List available plugins.")
     "plugins menu"                   = @("plugins", "Core", "readMenu", "Display the plugin menu.")
@@ -316,6 +317,7 @@ function writeText {
             Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
             Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Gray"
             Write-Host " $text " -ForegroundColor "White"
+            log -msg $text -lvl "INFO"
         }
 
         if ($type -eq "prompt") {
@@ -968,7 +970,8 @@ function installEXE {
             return 0  # Return 0 if not waiting
         }
     } catch {
-        writeText -type "plain" -text "Failed to start the installation process. Error: $_"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
         return -1  # Return -1 to indicate a failure to start the process
     }
 }
@@ -989,7 +992,8 @@ function installMSI {
         }
         return $process.ExitCode  # Return the exit code
     } catch {
-        writeText -type "plain" -text "Failed to start the installation process. Error: $_"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
         return -1  # Return -1 to indicate a failure to start the process
     }
 }
@@ -1052,8 +1056,87 @@ function installProgram {
             }
         }        
     } catch {
-        writeText -type "error" -text "Installation error: $($_.Exception.Message)"
-        writeText "Skipping $AppName installation."
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+    }
+}
+function uninstallWin32App {
+    param([string]$AppName)
+    Write-Host "  Checking: $AppName..." -ForegroundColor White
+    $found = $false
+    $regPaths = @(
+        "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
+        "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*",
+        "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*"
+    )
+    foreach ($regPath in $regPaths) {
+        $apps = Get-ItemProperty $regPath -ErrorAction SilentlyContinue |
+        Where-Object { $_.DisplayName -like "*$AppName*" }
+        foreach ($app in $apps) {
+            $found = $true
+            Write-Log "Found: $($app.DisplayName) v$($app.DisplayVersion)" "FOUND"
+            Write-Host "  Uninstalling: $($app.DisplayName)..." -ForegroundColor Yellow
+            $cmd = if ($app.QuietUninstallString) { $app.QuietUninstallString }
+            elseif ($app.UninstallString) { $app.UninstallString }
+            else { $null }
+            if ($cmd) {
+                if ($cmd -match "msiexec") {
+                    $cmd = $cmd -replace "/I", "/X"
+                    if ($cmd -notmatch "/quiet|/qn|/qb") { $cmd += " /quiet /norestart" }
+                } elseif ($cmd -match "OfficeClickToRun|C2RClient|officec2rclient") {
+                    if ($cmd -notmatch "DisplayLevel") { $cmd = $cmd.TrimEnd() + " DisplayLevel=False" }
+                }
+                try {
+                    Start-Process -FilePath "cmd.exe" -ArgumentList "/c $cmd" -Wait -WindowStyle Hidden
+                    Write-Log "Uninstalled: $($app.DisplayName)" "SUCCESS"
+                    Write-Complete $app.DisplayName
+                    Add-RemoveResult -AppName $app.DisplayName -Status "REMOVED" -Detail "v$($app.DisplayVersion)"
+                } catch {
+                    Write-Log "Failed: $($_.Exception.Message)" "ERROR"
+                    Add-RemoveResult -AppName $app.DisplayName -Status "FAILED" -Detail $_.Exception.Message
+                }
+            } else {
+                Write-Log "No uninstall string for: $($app.DisplayName)" "WARNING"
+                Add-RemoveResult -AppName $app.DisplayName -Status "FAILED" -Detail "No uninstall string"
+            }
+        }
+    }
+    if (-not $found) {
+        Write-Host "  [--] Not found: $AppName" -ForegroundColor Gray
+        Add-RemoveResult -AppName $AppName -Status "SKIPPED" -Detail "Not installed"
+    }
+}
+function uninstallAppXApp {
+    param([string]$PackageName, [string]$FriendlyName = $PackageName)
+    Write-Host "  Checking AppX: $FriendlyName..." -ForegroundColor White
+    $found = $false
+    $installed = Get-AppxPackage -AllUsers -Name "*$PackageName*" -ErrorAction SilentlyContinue
+    foreach ($app in $installed) {
+        $found = $true
+        Write-Host "  Removing: $($app.Name)..." -ForegroundColor Yellow
+        try {
+            Remove-AppxPackage -Package $app.PackageFullName -AllUsers -ErrorAction Stop
+            Write-Complete $FriendlyName
+            Add-RemoveResult -AppName $FriendlyName -Status "REMOVED" -Detail "AppX"
+        } catch {
+            Add-RemoveResult -AppName $FriendlyName -Status "FAILED" -Detail $_.Exception.Message
+        }
+    }
+    $provisioned = Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue |
+    Where-Object { $_.DisplayName -like "*$PackageName*" }
+    foreach ($app in $provisioned) {
+        $found = $true
+        try {
+            Remove-AppxProvisionedPackage -Online -PackageName $app.PackageName -ErrorAction Stop
+            Write-Complete "$FriendlyName (Provisioned)"
+            Add-RemoveResult -AppName "$FriendlyName (Provisioned)" -Status "REMOVED" -Detail "Provisioned"
+        } catch {
+            Add-RemoveResult -AppName "$FriendlyName (Provisioned)" -Status "FAILED" -Detail $_.Exception.Message
+        }
+    }
+    if (-not $found) {
+        Write-Host "  [--] Not found: $FriendlyName" -ForegroundColor Gray
+        Add-RemoveResult -AppName $FriendlyName -Status "SKIPPED" -Detail "Not installed"
     }
 }
 function formatSize {
