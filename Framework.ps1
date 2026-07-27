@@ -51,7 +51,8 @@ $global:commandMap = [ordered]@{
     "install host gpu drivers on vm" = @("windows", "Share GPU with VM", "installHostGPUDriversOnVM", "Install host GPU drivers on VM.")
     "partition gpu"                  = @("windows", "Share GPU with VM", "partitionGPU", "Partition the GPU.")
     "generate encrypted password"    = @("windows", "Generate Encrypted Password", "generateEncryptedPassword", "Generate an encrypted password.")
-    "unlock local account"           = @("windows", "User", "unlockLocalAccount", "Unlock a locked local account.")
+    "unlock local user"              = @("windows", "User", "unlockLocalUser", "Unlock a locked local account.")
+    "find dc"                        = @("windows", "Core", "findDC", "Find the domain controller.")
     #-- PLUGIN COMMANDS --#
     "plugins"                        = @("plugins", "Core", "plugins", "List available plugins.")
     "plugins menu"                   = @("plugins", "Core", "readMenu", "Display the plugin menu.")
@@ -880,21 +881,32 @@ function selectUser {
             
             $groupNames = @()
             
-            # Check each group for membership
+            # Check each group for membership with improved error handling
             foreach ($group in $allGroups) {
                 try {
-                    # Use -ErrorAction Stop to catch errors from Get-LocalGroupMember
-                    $members = Get-LocalGroupMember -Group $group.Name -ErrorAction Stop
+                    # Use SilentlyContinue to handle groups with domain members
+                    $members = Get-LocalGroupMember -Group $group.Name -ErrorAction SilentlyContinue 2>$null
                     
-                    # Check if the user's SID is in the group members
-                    if ($username.SID -in ($members | Select-Object -ExpandProperty SID)) {
-                        $groupNames += $group.Name
+                    # Only check membership if we got results
+                    if ($members) {
+                        # Check if the user's SID is in the group members
+                        if ($username.SID -in ($members | Select-Object -ExpandProperty SID)) {
+                            $groupNames += $group.Name
+                        }
                     }
+                } catch [System.ComponentModel.Win32Exception] {
+                    # Handle error 1789 specifically (Domain unavailable)
+                    if ($_.Exception.ErrorCode -eq 1789) {
+                        # Domain is unavailable, skip this group
+                        Write-Verbose "Domain unavailable, skipping group: $($group.Name)"
+                        continue
+                    }
+                    # Handle other Win32 exceptions
+                    log -msg "Win32 error checking group $($group.Name): $($_.Exception.Message)" -lvl "WARNING"
+                    continue
                 } catch {
-                    # Skip groups that cause errors (like built-in groups with permission issues)
-                    # Optionally log which groups failed
-                    # Write-Verbose "Could not enumerate members for group: $($group.Name)"
-                    log -msg "Could not enumerate members for group: $($group.Name)" -lvl "ERROR"
+                    # Handle any other errors
+                    log -msg "Could not enumerate members for group: $($group.Name) - $($_.Exception.Message)" -lvl "WARNING"
                     continue
                 }
             }
@@ -1061,82 +1073,98 @@ function installProgram {
     }
 }
 function uninstallWin32App {
-    param([string]$AppName)
-    Write-Host "  Checking: $AppName..." -ForegroundColor White
-    $found = $false
-    $regPaths = @(
-        "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
-        "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*",
-        "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*"
+    param(
+        [string]$AppName
     )
-    foreach ($regPath in $regPaths) {
-        $apps = Get-ItemProperty $regPath -ErrorAction SilentlyContinue |
-        Where-Object { $_.DisplayName -like "*$AppName*" }
-        foreach ($app in $apps) {
-            $found = $true
-            Write-Log "Found: $($app.DisplayName) v$($app.DisplayVersion)" "FOUND"
-            Write-Host "  Uninstalling: $($app.DisplayName)..." -ForegroundColor Yellow
-            $cmd = if ($app.QuietUninstallString) { $app.QuietUninstallString }
-            elseif ($app.UninstallString) { $app.UninstallString }
-            else { $null }
-            if ($cmd) {
-                if ($cmd -match "msiexec") {
-                    $cmd = $cmd -replace "/I", "/X"
-                    if ($cmd -notmatch "/quiet|/qn|/qb") { $cmd += " /quiet /norestart" }
-                } elseif ($cmd -match "OfficeClickToRun|C2RClient|officec2rclient") {
-                    if ($cmd -notmatch "DisplayLevel") { $cmd = $cmd.TrimEnd() + " DisplayLevel=False" }
+
+    try {
+        writeText -type "plain" -text "Searching for $AppName" -lineBefore
+
+        $found = $false
+        $regPaths = @(
+            "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
+            "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*",
+            "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*"
+        )
+
+        foreach ($regPath in $regPaths) {
+            $apps = Get-ItemProperty $regPath -ErrorAction SilentlyContinue |
+            Where-Object { $_.DisplayName -like "*$AppName*" }
+            foreach ($app in $apps) {
+                $found = $true
+                writeText -type "notice" -text "$($app.DisplayName) v$($app.DisplayVersion) and uninstalling: $($app.DisplayName)..."
+
+                $cmd = if ($app.QuietUninstallString) { 
+                    $app.QuietUninstallString 
+                } elseif ($app.UninstallString) { 
+                    $app.UninstallString 
+                } else { 
+                    $null 
                 }
-                try {
-                    Start-Process -FilePath "cmd.exe" -ArgumentList "/c $cmd" -Wait -WindowStyle Hidden
-                    Write-Log "Uninstalled: $($app.DisplayName)" "SUCCESS"
-                    Write-Complete $app.DisplayName
-                    Add-RemoveResult -AppName $app.DisplayName -Status "REMOVED" -Detail "v$($app.DisplayVersion)"
-                } catch {
-                    Write-Log "Failed: $($_.Exception.Message)" "ERROR"
-                    Add-RemoveResult -AppName $app.DisplayName -Status "FAILED" -Detail $_.Exception.Message
+
+                if ($cmd) {
+                    if ($cmd -match "msiexec") {
+                        $cmd = $cmd -replace "/I", "/X"
+                        if ($cmd -notmatch "/quiet|/qn|/qb") { $cmd += " /quiet /norestart" }
+                    } elseif ($cmd -match "OfficeClickToRun|C2RClient|officec2rclient") {
+                        if ($cmd -notmatch "DisplayLevel") { $cmd = $cmd.TrimEnd() + " DisplayLevel=False" }
+                    }
+                    try {
+                        Start-Process -FilePath "cmd.exe" -ArgumentList "/c $cmd" -Wait -WindowStyle Hidden
+                        writeText -type "success" -text "$($app.DisplayName) v$($app.DisplayVersion) uninstalled"
+                    } catch {
+                        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+                        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+                    }
+                } else {
+                    writeText -type "notice" -text "Uninstall failed. No uninstall string found."
                 }
-            } else {
-                Write-Log "No uninstall string for: $($app.DisplayName)" "WARNING"
-                Add-RemoveResult -AppName $app.DisplayName -Status "FAILED" -Detail "No uninstall string"
             }
         }
-    }
-    if (-not $found) {
-        Write-Host "  [--] Not found: $AppName" -ForegroundColor Gray
-        Add-RemoveResult -AppName $AppName -Status "SKIPPED" -Detail "Not installed"
+        if (-not $found) {
+            writeText -type "plain" -text "$AppName not found. Skipped"
+        }
+    } catch {
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
 function uninstallAppXApp {
-    param([string]$PackageName, [string]$FriendlyName = $PackageName)
-    Write-Host "  Checking AppX: $FriendlyName..." -ForegroundColor White
+    param(
+        [string]$PackageName, 
+        [string]$FriendlyName = $PackageName
+    )
+
+    writeText -type "plain" -text "Searching for AppX: $FriendlyName" -lineBefore
     $found = $false
     $installed = Get-AppxPackage -AllUsers -Name "*$PackageName*" -ErrorAction SilentlyContinue
+
     foreach ($app in $installed) {
         $found = $true
-        Write-Host "  Removing: $($app.Name)..." -ForegroundColor Yellow
+        writeText -type "plain" -text "Removing: $($app.Name)..."
         try {
             Remove-AppxPackage -Package $app.PackageFullName -AllUsers -ErrorAction Stop
-            Write-Complete $FriendlyName
-            Add-RemoveResult -AppName $FriendlyName -Status "REMOVED" -Detail "AppX"
+            writeText -type "success" -text "$FriendlyName uninstalled successfully"
         } catch {
-            Add-RemoveResult -AppName $FriendlyName -Status "FAILED" -Detail $_.Exception.Message
+            writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+            log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
         }
     }
-    $provisioned = Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue |
-    Where-Object { $_.DisplayName -like "*$PackageName*" }
+
+    $provisioned = Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*$PackageName*" }
+    
     foreach ($app in $provisioned) {
         $found = $true
         try {
             Remove-AppxProvisionedPackage -Online -PackageName $app.PackageName -ErrorAction Stop
-            Write-Complete "$FriendlyName (Provisioned)"
-            Add-RemoveResult -AppName "$FriendlyName (Provisioned)" -Status "REMOVED" -Detail "Provisioned"
+            writeText "$FriendlyName (Provisioned) removed successfully"
         } catch {
-            Add-RemoveResult -AppName "$FriendlyName (Provisioned)" -Status "FAILED" -Detail $_.Exception.Message
+            writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+            log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
         }
     }
     if (-not $found) {
-        Write-Host "  [--] Not found: $FriendlyName" -ForegroundColor Gray
-        Add-RemoveResult -AppName $FriendlyName -Status "SKIPPED" -Detail "Not installed"
+        writeText -type "plain" -text "$FriendlyName not found. Skipping"
     }
 }
 function formatSize {

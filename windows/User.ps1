@@ -5,6 +5,7 @@ function userMenu {
             "add user"     = "Add a user to the system."
             "remove user"  = "Remove a user from the system."
             "edit user"    = "Edit a users."
+            "unlock user"  = "Unlock a user account."
             "Cancel"       = "Select nothing and exit this menu."
         }) -prompt "Select a function."
 
@@ -14,7 +15,8 @@ function userMenu {
         2 { addUser }
         3 { removeUser }
         4 { editUser }
-        5 { readCommand }
+        5 { unlockUser }
+        6 { readCommand }
     }
 }
 function addUser {
@@ -621,9 +623,23 @@ function disableAdmin {
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
-function unlockLocalAccount {
+function unlockUser {
+    # Create a menu with options and descriptions using an ordered hashtable
+    $choice = readOption -options $([ordered]@{
+            "Unlock local user" = "View the user management menu."
+            "unlock AD user"    = "Edit this computers name and description."
+            "Cancel"            = "Select nothing and exit this menu."
+        }) -prompt "Select a function." -lineAfter
+
+    switch ($choice) {
+        0 { unlockLocalUser }
+        1 { unlockADUser }
+        2 { readCommand }
+    }
+}
+function unlockLocalUser {
     $user = selectUser -lineAfter
-    
+    $user
     if ($user.AccountLocked) {
         writeText "User $($user["Name"]) is currently locked. Unlocking..."
         Unlock-LocalUser -Name $user["Name"]

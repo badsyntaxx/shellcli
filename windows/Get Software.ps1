@@ -97,6 +97,7 @@ function getDiagnosticSoftware {
             "WinDirStat"       = "Install WinDirStat."
             "BGInfo"           = "Install BGInfo."
             "HWiNFO"           = "Install HWiNFO."
+            "AIPS"             = "Install Advanced IP Scanner."
             "Exit"             = "Exit this script and go back to main command line."
         }) -prompt "Select which diagnostic tool to install:" -lineAfter
 
@@ -105,7 +106,8 @@ function getDiagnosticSoftware {
         1 { getWinDirStat }
         2 { getBGInfo }
         3 { getHWInfo }
-        4 { readCommand }
+        4 { getAIPS }
+        5 { readCommand }
     }
 }
 
@@ -186,6 +188,18 @@ function getHWInfo {
     $appName = "HWiNFO"
     $paths = @(
         "$env:ProgramFiles\HWiNFO64\HWiNFO64.exe"
+    )
+    $installed = findExisting -Paths $paths -App $appName
+    if (!$installed) { 
+        installProgram -url $url -AppName $appName -Args "/VERYSILENT /NORESTART" 
+    }
+}
+
+function getAIPS {
+    $url = "https://download.advanced-ip-scanner.com/download/files/Advanced_IP_Scanner_2.5.4594.1.exe"
+    $appName = "Advanced IP Scanner"
+    $paths = @(
+        "$env:ProgramFiles\Advanced IP Scanner\advanced_ip_scanner.exe"
     )
     $installed = findExisting -Paths $paths -App $appName
     if (!$installed) { 
