@@ -323,7 +323,7 @@ function getAdobeAcrobatReader {
         $url = "https://ardownload2.adobe.com/pub/adobe/reader/win/AcrobatDC/2300820555/AcroRdrDC2300820555_en_US.exe"
         $appName = "Adobe Acrobat Reader"
         $paths = @(
-            "$env:ProgramFiles\Adobe Acrobat Reader\advanced_ip_scanner.exe"
+            "$env:ProgramFiles (x86)\Adobe\Acrobat Reader DC\Reader\AcroRd32.exe"
         )
         $installed = findExisting -Paths $paths -App $appName
         if (!$installed) { 
@@ -350,6 +350,7 @@ function findExisting {
         $installationFound = $false
 
         foreach ($path in $paths) {
+            writeText -type "plain" -text "Checking $path for existing app."
             if (Test-Path $path) {
                 $installationFound = $true
                 break

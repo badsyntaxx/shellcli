@@ -29,6 +29,7 @@ $global:commandMap = [ordered]@{
     "get wifi creds"                 = @("windows", "Core", "getWifiCreds", "Get WiFi credentials.")
     #-- APPS COMMANDS --#
     "get apps"                       = @("windows", "Get Apps", "getApps", "Display a menu of available apps.")
+    "get app"                        = @("windows", "Get Apps", "getApp", "Get an app by providing install details.")
     "get browser apps"               = @("windows", "Get Apps", "getBrowserApps", "Display a menu of web browsers.")
     "get diagnostic apps"            = @("windows", "Get Apps", "getDiagnosticApps", "Display a menu of PC diagnostic software.")
     "get productivity apps"          = @("windows", "Get Apps", "getProductivityApps", "Display a menu of productivity apps.")
