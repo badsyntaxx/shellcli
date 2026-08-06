@@ -22,7 +22,6 @@ function repairSystem {
                 "System file check"             = "Scans for and repairs corrupted system files."
                 "Cleanup & restore"             = "Scans for and repairs the Windows image."
                 "Restart update service"        = "Restart the Windows update service."
-                "Check disk"                    = "Scans and repairs disk errors and bad sectors.(Requires reboot)"
                 "Clear temporary files"         = "Removes Windows temporary and cache files."
                 "Run Windows Memory Diagnostic" = "Tests RAM for errors.(Requires reboot)"
                 "Cancel"                        = "Do nothing and exit this function."
@@ -35,11 +34,10 @@ function repairSystem {
                 & "C:\Windows\System32\cmd.exe" /c net stop wuauserv 
                 & "C:\Windows\System32\cmd.exe" /c net start appidsvc  
             }
-            3 { & "C:\Windows\System32\cmd.exe" /c chkdsk /f /r }
-            4 {
+            3 {
                 clearTempFiles
             }
-            5 { & "C:\Windows\System32\cmd.exe" /c mdsched.exe }
+            4 { & "C:\Windows\System32\cmd.exe" /c mdsched.exe }
         }
 
         repairWindows
