@@ -11,7 +11,8 @@ function repairWindows {
             1 { repairNetwork } 
         }
     } catch {
-        writeText -type "error" -text "repairWindows-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
 
@@ -43,27 +44,23 @@ function repairSystem {
 
         repairWindows
     } catch {
-        writeText -type "error" -text "repairWindows-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
 
-function clearTempFiles {
+function cleanTempFiles {
     try {
-        writeText -type "plain" -text "Clearing temporary files at $env:TEMP"
-        # Remove-Item -Path "$env:TEMP\*" -Recurse -Force -ErrorAction SilentlyContinue
         writeText -type "plain" -text "Clearing temporary files at C:\Windows\Temp"
-        # Remove-Item -Path "C:\Windows\Temp\*" -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item -Path "C:\Windows\Temp\*" -Recurse -Force -ErrorAction SilentlyContinue
         writeText -type "plain" -text "Clearing temporary files at C:\Windows\Prefetch"
-        # Remove-Item -Path "C:\Windows\Prefetch\*" -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item -Path "C:\Windows\Prefetch\*" -Recurse -Force -ErrorAction SilentlyContinue
         writeText -type "plain" -text "Clearing temporary files at C:\Users\$env:USERNAME\AppData\Local\Temp"
-        # Remove-Item -Path "C:\Users\$env:USERNAME\AppData\Local\Temp\*" -Recurse -Force -ErrorAction SilentlyContinue
-        writeText -type "plain" -text "Clearing temporary files at C:\Users\$env:USERNAME\AppData\Roaming\Temp"
-        # Remove-Item -Path "C:\Users\$env:USERNAME\AppData\Roaming\Temp\*" -Recurse -Force -ErrorAction SilentlyContinue
-        writeText -type "plain" -text "Running Disk Cleanup utility to remove temporary files and system cache."
-        # & "C:\Windows\System32\cmd.exe" /c cleanmgr
-        repairWindows
+        Remove-Item -Path "C:\Users\$env:USERNAME\AppData\Local\Temp\*" -Recurse -Force -ErrorAction SilentlyContinue
+        writeText -type "success" -text "Temporary files cleaned."
     } catch {
-        writeText -type "error" -text "clearTempFiles-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
 
@@ -94,6 +91,7 @@ function repairNetwork {
 
         repairWindows
     } catch {
-        writeText -type "error" -text "repairWindows-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
