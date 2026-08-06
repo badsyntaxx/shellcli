@@ -208,7 +208,7 @@ function getBGInfo {
     try {
         $url = "https://drive.google.com/uc?export=download&id=1gBFuz6WqrgPvIqYjrcRCYZeC_x9XsUbC"
 
-        $download = getDownload -url $url -target "$env:SystemRoot\Temp\BGInfo.zip" -lineBefore
+        $download = getDownload -url $url -target "$env:SystemRoot\Temp\BGInfo.zip"
 
         if ($download -eq $true) { 
             Expand-Archive -LiteralPath "$env:SystemRoot\Temp\BGInfo.zip" -DestinationPath "$env:SystemRoot\Temp\"
