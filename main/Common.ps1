@@ -293,3 +293,20 @@ function findDC {
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
+function getStorage {
+    $disk = Get-WmiObject -Class Win32_LogicalDisk -Filter "DeviceID='C:'"
+    $total = [math]::Round($disk.Size / 1GB, 2)
+    $free = [math]::Round($disk.FreeSpace / 1GB, 2)
+    $used = [math]::Round(($disk.Size - $disk.FreeSpace) / 1GB, 2)
+    $percent = [math]::Round(($used / $total) * 100, 2)
+
+    $data = [ordered]@{
+        "Disk"    = "C:"
+        "Total"   = "$total GB"
+        "Free"    = "$free GB"
+        "Used"    = "$used GB"
+        "Percent" = "$percent%"
+    }
+
+    writeText -type "table" -Table $data
+}
