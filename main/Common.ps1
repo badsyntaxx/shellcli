@@ -1,57 +1,3 @@
-function shellCLI {
-    Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
-    Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
-    Write-Host " Try" -NoNewline
-    Write-Host " help" -ForegroundColor "Cyan" -NoNewline
-    Write-Host " or" -NoNewline
-    Write-Host " menu" -NoNewline -ForegroundColor "Cyan"
-    Write-Host " if you get stuck."
-    Write-Host " $([char]0x2502)" -ForegroundColor "Gray"
-}
-function readMenu {
-    try {
-        # Create a menu with options and descriptions using an ordered hashtable
-        $choice = readOption -options $([ordered]@{
-                "user menu"           = "View the user management menu."
-                "edit hostname"       = "Edit this computers name and description."
-                "edit net adapter"    = "(BETA) Edit a network adapter."
-                "get wifi creds"      = "View all saved WiFi credentials on the system."
-                "toggle context menu" = "Enable or Disable the Windows 11 context menu."
-                "repair windows"      = "Repair Windows."
-                "update windows"      = "(BETA) Install Windows updates silently."
-                "clear temp files"    = "Removes Windows temporary and cache files."
-                "get software"        = "Get a list of installed software that can be installed."
-                "schedule task "      = "(ALPHA) Schedule a new task."
-                "Cancel"              = "Select nothing and exit this menu."
-            }) -prompt "Select a function." -returnKey -lineAfter
-
-        if ($choice -eq "Cancel") {
-            readCommand
-        }
-
-        readCommand -command $choice
-    } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
-    }
-}
-function writeHelp {   
-    writeText -type "plain" -text "GET STARTED:"
-    writeText -type "plain" -text "commands    - Display a full list of commands."
-    writeText -type "plain" -text "menu        - Display a menu with some available functions."
-    writeText -type "plain" -text "? or help   - Display this help text."
-    writeText -type "plain" -text "FULL DOCUMENTATION:" -lineBefore
-    writeText -type "plain" -text "https://wkey.pro/dev/shellcli"
-}
-function listAllCommands {
-    try {
-        writeText -type "List" -List $global:commandMap -ListValue 3
-        
-    } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
-    }
-}
 function toggleContextMenu {
     try {         
         $choice = readOption -options $([ordered]@{
@@ -222,13 +168,12 @@ function getWifiCreds {
 }
 function disableHybernateFile {
     try {
-        # Show freed space summary
+        # Show current free space
         $currentFree = [math]::Round((Get-PSDrive C).Free / 1GB, 2)
         writeText -type "plain" -text "Current free space on C: ~${currentFree}GB"
         
-        # Check if hibernation is currently enabled
-        $hiberStatus = powercfg /query SCHEME_CURRENT SUB_SLEEP HIBERNATEIDLE 2>&1
-        $hiberEnabled = $hiberStatus -match "HIBERNATEIDLE\s+0x00000001"
+        # Check if hibernation is actually enabled
+        $hiberEnabled = (Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Power" -Name "HibernateEnabled" -ErrorAction SilentlyContinue).HibernateEnabled -eq 1
         
         # Get current file size before removal (for feedback)
         $fileExists = Test-Path "C:\hiberfil.sys"
@@ -271,9 +216,9 @@ function disableHybernateFile {
                 # Clear read-only attribute if set
                 attrib -r "C:\hiberfil.sys" 2>$null
                 
-                # Try to take ownership if needed (optional)
-                # takeown /F "C:\hiberfil.sys" 2>$null
-                # icacls "C:\hiberfil.sys" /grant administrators:F 2>$null
+                # Try to take ownership if needed
+                takeown /F "C:\hiberfil.sys" 2>$null
+                icacls "C:\hiberfil.sys" /grant administrators:F 2>$null
                 
                 Remove-Item "C:\hiberfil.sys" -Force -ErrorAction Stop
                 writeText -type "success" -text "Successfully removed hiberfil.sys (freed ~${fileSize}GB)"
@@ -284,8 +229,9 @@ function disableHybernateFile {
         }
         
         # Show freed space summary
-        $currentFree = [math]::Round((Get-PSDrive C).Free / 1GB, 2)
-        writeText -type "plain" -text "Current free space on C: ~${currentFree}GB"
+        $newFree = [math]::Round((Get-PSDrive C).Free / 1GB, 2)
+        $freed = [math]::Round($newFree - $currentFree, 2)
+        writeText -type "plain" -text "Current free space on C: ~${newFree}GB (freed ~${freed}GB)"
         
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
