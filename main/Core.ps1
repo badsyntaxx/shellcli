@@ -89,7 +89,6 @@ function readLog {
             writeText -type "plain" -text "`nFollowing log (Ctrl+C to stop)..."
             Get-Content -Path $logFilePath -Wait
         }
-        
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
