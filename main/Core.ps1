@@ -67,19 +67,19 @@ function readLog {
             $logFileName = "${date}.log"
             $logFilePath = Join-Path -Path $logDirectory -ChildPath $logFileName
             if (-not (Test-Path -Path $logFilePath)) {
-                Write-Host "No log file found for date: $date"
-                return
+                writeText -type "plain" -text "No log file found for date: $date"
+                readCommand
             }
         } else {
             $logFiles = Get-ChildItem -Path $logDirectory -Filter "*.log" | 
             Sort-Object -Property LastWriteTime -Descending
             if ($logFiles.Count -eq 0) {
-                Write-Host "No log files found in $logDirectory"
-                return
+                writeText -type "plain" -text "No log files found in $logDirectory"
+                readCommand
             }
             $logFilePath = $logFiles[0].FullName
-            Write-Host "Reading: $($logFiles[0].Name)" -ForegroundColor Cyan
-            Write-Host "----------------------------------------"
+            writeText -type "header" -text "Reading: $($logFiles[0].Name)"
+            writeText -type "plain" -text "----------------------------------------"
         }
         
         # Read last N lines (most useful for logs)
@@ -87,7 +87,7 @@ function readLog {
         
         # If tail switch is used, follow the log
         if ($tail) {
-            Write-Host "`nFollowing log (Ctrl+C to stop)..." -ForegroundColor Yellow
+            writeText -type "plain" -text "`nFollowing log (Ctrl+C to stop)..."
             Get-Content -Path $logFilePath -Wait
         }
         
