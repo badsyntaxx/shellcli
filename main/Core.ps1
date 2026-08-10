@@ -79,7 +79,6 @@ function readLog {
             }
             $logFilePath = $logFiles[0].FullName
             writeText -type "header" -text "Reading Log: $($logFiles[0].Name)"
-            writeText -type "plain" -text "----------------------------------------"
         }
         
         # Read last N lines (most useful for logs)
