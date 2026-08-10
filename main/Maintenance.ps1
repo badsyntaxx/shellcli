@@ -55,6 +55,8 @@ function cleanTempFiles {
         Remove-Item -Path "C:\Windows\Prefetch\*" -Recurse -Force -ErrorAction SilentlyContinue
         writeText -type "plain" -text "Clearing temporary files at C:\Users\$env:USERNAME\AppData\Local\Temp"
         Remove-Item -Path "C:\Users\$env:USERNAME\AppData\Local\Temp\*" -Recurse -Force -ErrorAction SilentlyContinue
+        writeText -type "plain" -text "Emtying Recycle Bin"
+        Clear-RecycleBin -Force
         writeText -type "success" -text "Temporary files cleaned."
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
