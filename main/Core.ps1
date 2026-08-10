@@ -78,7 +78,7 @@ function readLog {
                 readCommand
             }
             $logFilePath = $logFiles[0].FullName
-            writeText -type "header" -text "Reading: $($logFiles[0].Name)"
+            writeText -type "header" -text "Reading Log: $($logFiles[0].Name)"
             writeText -type "plain" -text "----------------------------------------"
         }
         

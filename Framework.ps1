@@ -27,7 +27,7 @@ $global:commandMap = [ordered]@{
     #-- NETWORK COMMANDS --#
     "network"                        = @("main", "Network", "network", "Get net adapter info.")
     "edit net adapter"               = @("main", "Network", "editNetAdapter", "Edit the network adapter.")
-    "get wifi creds"                 = @("main", "Network", "getWifiCreds", "Get WiFi credentials.")
+    "wifi"                           = @("main", "Network", "getWifiCreds", "Get WiFi credentials.")
     #-- APPS COMMANDS --#
     "get apps"                       = @("main", "Get Apps", "getApps", "Display a menu of available apps.")
     "get app"                        = @("main", "Get Apps", "getApp", "Get an app by providing install details.")
