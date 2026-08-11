@@ -254,7 +254,7 @@ function getBGInfo {
 }
 function getHWInfo {
     try {
-        $url = "https://www.hwinfo.com/files/hwi64_848.exe"
+        $url = "https://www.hwinfo.com/files/hwi64_850.exe"
         $appName = "HWiNFO"
         $paths = @(
             "$env:ProgramFiles\HWiNFO64\HWiNFO64.exe"
