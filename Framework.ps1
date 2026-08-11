@@ -1019,8 +1019,40 @@ function installViaWinget {
     )
 
     try {
-        $message = "Installing $appName via winget (ID: $wingetId)..."
-        WriteText -Type "plain" -Text $message
+        WriteText -Type "plain" -Text "Installing $appName via winget (ID: $wingetId)..."
+
+        # Check if winget is installed
+        $wingetPath = Get-Command winget -ErrorAction SilentlyContinue
+        if (-not $wingetPath) {
+            WriteText -Type "plain" -Text "winget not found. Installing winget..."
+            
+            # Install winget using the script method
+            try {
+                # Set PSGallery as trusted
+                Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted -ErrorAction Stop
+                
+                # Install the winget-install script
+                Install-Script -Name winget-install -Force -ErrorAction Stop
+                
+                # Run the winget-install script
+                winget-install
+                
+                # Verify winget is now installed
+                $wingetPath = Get-Command winget -ErrorAction SilentlyContinue
+                if (-not $wingetPath) {
+                    throw "winget installation failed. Please install winget manually from https://github.com/microsoft/winget-cli"
+                }
+                
+                WriteText -Type "success" -Text "winget installed successfully."
+                
+                # Need to refresh environment variables to see the new winget path
+                $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+                
+            } catch {
+                WriteText -Type "error" -Text "Failed to install winget: $($_.Exception.Message)"
+                throw
+            }
+        }
 
         if (appInstalled -appName $appName) {
             WriteText -Type "plain" -Text "$appName is already installed."
