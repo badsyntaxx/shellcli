@@ -281,13 +281,15 @@ function getProductivityApps {
         $installChoice = readOption -options $([ordered]@{
                 "Windows PowerToys"    = "Install Windows PowerToys."
                 "Adobe Acrobat Reader" = "Install Adober Acrobat Reader"
+                "Winget"               = "Install Winget package manager."
                 "Exit"                 = "Exit this script and go back to main command line."
             }) -prompt "Select which productivity app to install:" -lineAfter
 
         switch ($installChoice) {
             0 { getWindowsPowerToys }
             1 { getAdobeAcrobatReader }
-            2 { readCommand }
+            2 { getWinget }
+            3 { readCommand }
         } 
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
@@ -320,6 +322,48 @@ function getAdobeAcrobatReader {
         $installed = findExisting -Paths $paths -App $appName
         if (!$installed) { 
             installProgram -url $url -AppName $appName -Args "/sAll /rs /msi EULA_ACCEPT=YES" 
+        }
+    } catch {
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+    }
+}
+function getWinget {
+    try {
+        writeText -Type "plain" -Text "Installing winget..."
+
+        $wingetPath = Get-Command winget -ErrorAction SilentlyContinue
+        if (-not $wingetPath) {
+            WriteText -Type "plain" -Text "winget not found. Installing winget..."
+            
+            # Install winget using the script method
+            try {
+                # Set PSGallery as trusted (suppress output)
+                Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted -ErrorAction Stop | Out-Null
+                
+                # Install the winget-install script (suppress output)
+                Install-Script -Name winget-install -Force -ErrorAction Stop | Out-Null
+                
+                # Run the winget-install script silently
+                winget-install 2>&1 | Out-Null
+                
+                # Verify winget is now installed
+                $wingetPath = Get-Command winget -ErrorAction SilentlyContinue
+                if (-not $wingetPath) {
+                    throw "winget installation failed. Please install winget manually from https://github.com/microsoft/winget-cli"
+                }
+                
+                WriteText -Type "success" -Text "winget installed successfully."
+                
+                # Need to refresh environment variables to see the new winget path
+                $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+                
+            } catch {
+                WriteText -Type "error" -Text "Failed to install winget: $($_.Exception.Message)"
+                throw
+            }
+        } else {
+            writeText -Type "plain" -Text "winget is already installed."
         }
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
