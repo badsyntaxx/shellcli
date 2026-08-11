@@ -1028,7 +1028,7 @@ function installViaWinget {
             # Update sources
             $null = Start-Process -FilePath "winget" -ArgumentList "source update" -Wait -WindowStyle Hidden
 
-            $args = @(
+            $params = @(
                 'install', "--id $wingetId",  # Fixed: $wingetId not $PackageId
                 '--exact', '--silent',
                 '--accept-package-agreements',
@@ -1036,7 +1036,7 @@ function installViaWinget {
                 '--disable-interactivity'
             )
     
-            $process = Start-Process -FilePath 'winget' -ArgumentList $args -Wait -PassThru -WindowStyle Hidden
+            $process = Start-Process -FilePath 'winget' -ArgumentList $params -Wait -PassThru -WindowStyle Hidden
     
             $success = $process.ExitCode -in @(0, -1978335189)
             WriteText -Type "plain" -Text "Winget exit code: $($process.ExitCode)"
