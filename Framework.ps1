@@ -1012,6 +1012,46 @@ function installMSI {
         return -1  # Return -1 to indicate a failure to start the process
     }
 }
+function installViaWinget {
+    param(
+        [string]$appName,
+        [string]$wingetId
+    )
+
+    try {
+        $message = "Installing $appName via winget (ID: $wingetId)..."
+        WriteText -Type "plain" -Text $message
+
+        if (appInstalled -appName $appName) {
+            WriteText -Type "plain" -Text "$appName is already installed."
+        } else {
+            # Update sources
+            $null = Start-Process -FilePath "winget" -ArgumentList "source update" -Wait -WindowStyle Hidden
+
+            $args = @(
+                'install', "--id $wingetId",  # Fixed: $wingetId not $PackageId
+                '--exact', '--silent',
+                '--accept-package-agreements',
+                '--accept-source-agreements',
+                '--disable-interactivity'
+            )
+    
+            $process = Start-Process -FilePath 'winget' -ArgumentList $args -Wait -PassThru -WindowStyle Hidden
+    
+            $success = $process.ExitCode -in @(0, -1978335189)
+            WriteText -Type "plain" -Text "Winget exit code: $($process.ExitCode)"
+    
+            if ($success) {
+                WriteText -Type "success" -Text "$appName installed successfully via winget."
+            } else {
+                WriteText -Type "error" -Text "Failed to install $appName via winget. Exit code: $($process.ExitCode)"
+            }
+        }
+    } catch {
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+    }    
+}
 function installProgram {
     param (
         [parameter(Mandatory = $true)]

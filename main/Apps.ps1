@@ -254,15 +254,7 @@ function getBGInfo {
 }
 function getHWInfo {
     try {
-        $url = "https://www.hwinfo.com/files/hwi64_850.exe"
-        $appName = "HWiNFO"
-        $paths = @(
-            "$env:ProgramFiles\HWiNFO64\HWiNFO64.exe"
-        )
-        $installed = findExisting -Paths $paths -App $appName
-        if (!$installed) { 
-            installProgram -url $url -AppName $appName -Args "/VERYSILENT /NORESTART" 
-        } 
+        installViaWinget -appName "HWiNFO" -packageId "REALiX.HWiNFO"
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
