@@ -1143,7 +1143,7 @@ function uninstallWin32App {
             Where-Object { $_.DisplayName -like "*$AppName*" }
             foreach ($app in $apps) {
                 $found = $true
-                writeText -type "notice" -text "Uninstalling $($app.DisplayName) v$($app.DisplayVersion)..."
+                writeText -type "plain" -text "Uninstalling $($app.DisplayName) v$($app.DisplayVersion)..."
 
                 $cmd = if ($app.QuietUninstallString) { 
                     $app.QuietUninstallString 
