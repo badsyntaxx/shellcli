@@ -1,5 +1,25 @@
 function getApps {
     try {
+        $wingetPath = Get-Command winget -ErrorAction SilentlyContinue
+        if (-not $wingetPath) {
+            WriteText -Type "plain" -Text "winget not found. Installing winget..."
+            
+            Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted -ErrorAction Stop | Out-Null
+            Install-Script -Name winget-install -Force -ErrorAction Stop | Out-Null
+                
+            winget-install 2>&1 | Out-Null
+                
+            $wingetPath = Get-Command winget -ErrorAction SilentlyContinue
+            if (-not $wingetPath) {
+                writeText -Type "error" -text "winget installation failed. Please install winget manually from https://github.com/microsoft/winget-cli"
+            }
+                
+            WriteText -Type "success" -Text "winget installed successfully."
+                
+            # Need to refresh environment variables to see the new winget path
+            $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")   
+        }
+
         $installChoice = readOption -options $([ordered]@{
                 "Browsers"      = "Get a list of internet browser software."
                 "Diagnostic"    = "Get a list of diagnostic software."
@@ -34,7 +54,7 @@ function getApp {
     $params = readInput -prompt "Args:"
     
 
-    installProgram -url $url -AppName $appName -Args $params 
+    installApp -url $url -appName $appName -params $params 
 }
 function getBrowserApps {
     try {
@@ -44,60 +64,26 @@ function getBrowserApps {
                 "Firefox" = "Install Firefox."
                 "Chrome"  = "Install Google Chrome."
                 "Exit"    = "Exit this script and go back to main command line."
-            }) -prompt "Select which browser to install:"
+            }) -prompt "Select which browser to install:" -lineAfter
 
-        if ($installChoice -ne 4) { 
-            $script:user = selectUser -prompt "Select user to install apps for:"
-        }
-        if ($installChoice -eq 0) { 
-            log -msg "Installing Vivaldi web browser."
-            $url = "https://downloads.vivaldi.com/stable/Vivaldi.7.0.3495.27.x64.exe"
-            $appName = "Vivaldi"
-            $paths = @(
-                "C:\Users\$($user["Name"])\AppData\Local\Vivaldi\Application"
-            )
-            $installed = findExisting -Paths $paths -App $appName
-            if (!$installed) { 
-                installProgram -url $url -AppName $appName -Args "/silent" 
+        switch ($installChoice) {
+            0 { 
+                $url = (winget show --id Vivaldi.Vivaldi | Select-String "Installer Url:").Line.Split(" ")[-1]
+                installApp -url $url -appName "Vivaldi" -params "vivaldi-silent --do-not-launch-chrome --system-level" 
+            }    
+            1 { 
+                $url = (winget show --id Brave.Brave | Select-String "Installer Url:").Line.Split(" ")[-1]
+                installApp -url $url -appName "Brave" -params "--install --silent --system-level"
             }
-        }
-        if ($installChoice -eq 1) { 
-            log -msg "Installing Brave web browser."
-            $url = "https://github.com/brave/browser-laptop/releases/download/v0.25.2dev/BraveSetup-x64.exe"
-            $appName = "Brave"
-            $paths = @(
-                "$env:ProgramFiles\BraveSoftware\Brave-Browser\Application\brave.exe"
-            )
-            $installed = findExisting -Paths $paths -App $appName
-            if (!$installed) { 
-                installProgram -url $url -AppName $appName -Args "/silent" 
+            2 {
+                $url = (winget show --id Mozilla.Firefox | Select-String "Installer Url:").Line.Split(" ")[-1]
+                installApp -url $url -appName "Mozilla Firefox" -params "/S"
+            }    
+            3 { 
+                $url = (winget show --id Google.Chrome | Select-String "Installer Url:").Line.Split(" ")[-1]
+                installApp -url $url -appName "Google Chrome" -params "/qn /norestart" 
             }
-        }
-        if ($installChoice -eq 2) { 
-            log -msg "Installing Firefox web browser."
-            $url = "https://archive.mozilla.org/pub/firefox/releases/134.0.2/win64/en-US/Firefox Setup 134.0.2.msi"
-            $appName = "Firefox"
-            $paths = @(
-                "$env:ProgramFiles\Mozilla Firefox\firefox.exe"
-            )
-            $installed = findExisting -Paths $paths -App $appName
-            if (!$installed) { 
-                installProgram -url $url -AppName $appName -Args "/qn" 
-            }
-        }
-        if ($installChoice -eq 3) { 
-            log -msg "Installing Google Chrome web browser."
-            $url = "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi"
-            $appName = "Google Chrome"
-            $paths = @(
-                "$env:ProgramFiles\Google\Chrome\Application\chrome.exe",
-                "$env:ProgramFiles (x86)\Google\Chrome\Application\chrome.exe",
-                "C:\Users\$($user["Name"])\AppData\Google\Chrome\Application\chrome.exe"
-            )
-            $installed = findExisting -Paths $paths -App $appName
-            if (!$installed) { 
-                installProgram -url $url -AppName $appName -Args "/qn" 
-            }
+            4 { readCommand }
         }
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
@@ -132,13 +118,7 @@ function getRevoUninstaller {
     try {
         $url = "https://revouninstaller.b-cdn.net/ruf270/revosetup.exe"
         $appName = "Revo Uninstaller"
-        $paths = @(
-            "C:\Program Files\VS Revo Group\Revo Uninstaller\RevoUnin.exe"
-        )
-        $installed = findExisting -Paths $paths -App $appName
-        if (!$installed) { 
-            installProgram -url $url -AppName $appName -Args "/VERYSILENT /NORESTART"
-        }
+        installApp -url $url -appName $appName -params "/VERYSILENT /NORESTART"
     
         # Remove from PUBLIC Desktop (where it actually is)
         $publicDesktopLink = "C:\Users\Public\Desktop\Revo Uninstaller.lnk"
@@ -254,7 +234,8 @@ function getBGInfo {
 }
 function getHWInfo {
     try {
-        installViaWinget -appName "HWiNFO" -wingetId "REALiX.HWiNFO"
+        $url = (winget show --id  REALiX.HWiNFO | Select-String "Installer Url:").Line.Split(" ")[-1]
+        installApp -url $url -appName "HWiNFO" -params "--install --silent --system-level"
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
@@ -264,13 +245,7 @@ function getAIPS {
     try {
         $url = "https://download.advanced-ip-scanner.com/download/files/Advanced_IP_Scanner_2.5.4594.1.exe"
         $appName = "Advanced IP Scanner"
-        $paths = @(
-            "$env:ProgramFiles\Advanced IP Scanner\advanced_ip_scanner.exe"
-        )
-        $installed = findExisting -Paths $paths -App $appName
-        if (!$installed) { 
-            installProgram -url $url -AppName $appName -Args "/VERYSILENT /NORESTART" 
-        } 
+        installApp -url $url -appName $appName -params "/VERYSILENT /NORESTART" 
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
@@ -299,14 +274,8 @@ function getProductivityApps {
 function getWindowsPowerToys {
     try {
         $url = "https://release-assets.githubusercontent.com/github-production-release-asset/184456251/58b30170-c4ae-4a90-8abd-a955c5f58e07?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-06-30T13%3A10%3A52Z&rscd=attachment%3B+filename%3DPowerToysUserSetup-0.100.1-x64.exe&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-06-30T12%3A10%3A52Z&ske=2026-06-30T13%3A10%3A52Z&sks=b&skv=2018-11-09&sig=%2BYe3kIqAD8DFp3%2FY4GNAe4%2BK%2BVg%2FClwvyJr0IGmims0%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc4MjgyNTM1NSwibmJmIjoxNzgyODIxNzU1LCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.WxR7zlAsBDXUl-oF75i1HCwklmM43HzqKZ3mLFYSlj0&response-content-disposition=attachment%3B%20filename%3DPowerToysUserSetup-0.100.1-x64.exe&response-content-type=application%2Foctet-stream"
-        $appName = "Google Chrome"
-        $paths = @(
-            "$env:ProgramFiles\PowerToys.exe"
-        )
-        $installed = findExisting -Paths $paths -App $appName
-        if (!$installed) { 
-            installProgram -url $url -AppName $appName -Args "" 
-        } 
+        $appName = "Windows PowerToys"
+        installApp -url $url -appName $appName -params "" 
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
@@ -316,55 +285,7 @@ function getAdobeAcrobatReader {
     try {
         $url = "https://ardownload2.adobe.com/pub/adobe/reader/win/AcrobatDC/2300820555/AcroRdrDC2300820555_en_US.exe"
         $appName = "Adobe Acrobat Reader"
-        $paths = @(
-            "$env:ProgramFiles (x86)\Adobe\Acrobat Reader DC\Reader\AcroRd32.exe"
-        )
-        $installed = findExisting -Paths $paths -App $appName
-        if (!$installed) { 
-            installProgram -url $url -AppName $appName -Args "/sAll /rs /msi EULA_ACCEPT=YES" 
-        }
-    } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
-    }
-}
-function getWinget {
-    try {
-        writeText -Type "plain" -Text "Installing winget..."
-
-        $wingetPath = Get-Command winget -ErrorAction SilentlyContinue
-        if (-not $wingetPath) {
-            WriteText -Type "plain" -Text "winget not found. Installing winget..."
-            
-            # Install winget using the script method
-            try {
-                # Set PSGallery as trusted (suppress output)
-                Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted -ErrorAction Stop | Out-Null
-                
-                # Install the winget-install script (suppress output)
-                Install-Script -Name winget-install -Force -ErrorAction Stop | Out-Null
-                
-                # Run the winget-install script silently
-                winget-install 2>&1 | Out-Null
-                
-                # Verify winget is now installed
-                $wingetPath = Get-Command winget -ErrorAction SilentlyContinue
-                if (-not $wingetPath) {
-                    throw "winget installation failed. Please install winget manually from https://github.com/microsoft/winget-cli"
-                }
-                
-                WriteText -Type "success" -Text "winget installed successfully."
-                
-                # Need to refresh environment variables to see the new winget path
-                $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-                
-            } catch {
-                WriteText -Type "error" -Text "Failed to install winget: $($_.Exception.Message)"
-                throw
-            }
-        } else {
-            writeText -Type "plain" -Text "winget is already installed."
-        }
+        installApp -url $url -appName $appName -params "/sAll /rs /msi EULA_ACCEPT=YES" 
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
@@ -372,35 +293,4 @@ function getWinget {
 }
 function getCustomizationApps {
     WriteText -type "notice" -text "Customization software not yet implemented." -lineBefore
-}
-function findExisting {
-    param (
-        [parameter(Mandatory = $true)]
-        [array]$Paths,
-        [parameter(Mandatory = $true)]
-        [string]$App
-    )
-    try {
-        writeText -type "notice" -text "Installing $App" -lineBefore
-
-        $installationFound = $false
-
-        foreach ($path in $paths) {
-            writeText -type "plain" -text "Checking $path for existing app."
-            if (Test-Path $path) {
-                $installationFound = $true
-                break
-            }
-        }
-
-        if ($installationFound) { 
-            writeText -type "success" -text "$App already installed."
-        }
-
-        return $installationFound  
-    } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
-    }
-    
 }

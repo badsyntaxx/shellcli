@@ -697,18 +697,16 @@ function getDownload {
 
             if ($complete) {
                 Write-Host "`r $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
-                Write-Host -NoNewLine "   $progbar Complete" -ForegroundColor "DarkGray"
+                Write-Host -NoNewLine "   $progbar $([char]0x2713)" -ForegroundColor "DarkGray"
             } else {
                 Write-Host "`r $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
                 Write-Host -NoNewLine "   $progbar $($percentComplete.ToString("##0.00").PadLeft(6))%" -ForegroundColor "DarkGray"
             }         
         }
     }
-    Process {
-        if (-not $hide) {
-            log -msg "Downloading from ($url) to ($target)."
-        }
-        
+    Process {        
+        log -msg "Downloading file from $url to $target"
+
         $downloadComplete = $true 
         for ($retryCount = 1; $retryCount -le 2; $retryCount++) {
             try {
@@ -752,7 +750,8 @@ function getDownload {
                 if ($lineBefore) { Write-Host }
 
                 if (-not $hide -and $label -ne "") {
-                    Write-Host  "  $label" -ForegroundColor "Yellow"
+                    Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
+                    Write-Host " $text" -ForegroundColor "Yellow"
                 }
                 # start download
                 $finalBarCount = 0 #Show final bar only one time
@@ -968,17 +967,10 @@ function installEXE {
     $process = New-Object System.Diagnostics.Process
     $process.StartInfo = $startInfo
 
-    writeText -type "plain" -text "Running installer at ($Path)."
-
     try {
         $process.Start() | Out-Null
         if ($Wait) {
             $process.WaitForExit()
-            if ($process.ExitCode -eq 0) {
-                writeText -type "plain" -text "Installer finished successfully."
-            } else {
-                writeText -type "plain" -text "Installer failed with exit code $($process.ExitCode)."
-            }
             return $process.ExitCode  # Return the exit code
         } else {
             writeText -type "plain" -text "Installation of '$Path' started in the background."
@@ -996,15 +988,8 @@ function installMSI {
         [string]$msiArguments # Additional arguments for the MSI installer
     )
 
-    writeText -type "plain" -text "Running installer at ($Path)."
-
     try {
         $process = Start-Process "msiexec.exe" -ArgumentList "/i `"$Path`" $msiArguments" -Wait -PassThru
-        if ($process.ExitCode -eq 0) {
-            writeText -type "plain" -text "Installer finished successfully."
-        } else {
-            writeText -type "plain" -text "Installer failed with exit code $($process.ExitCode)."
-        }
         return $process.ExitCode  # Return the exit code
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
@@ -1020,6 +1005,26 @@ function installViaWinget {
 
     try {
         WriteText -Type "plain" -Text "Installing $appName via winget (ID: $wingetId)..."
+
+        $wingetPath = Get-Command winget -ErrorAction SilentlyContinue
+        if (-not $wingetPath) {
+            WriteText -Type "plain" -Text "winget not found. Installing winget..."
+            
+            Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted -ErrorAction Stop | Out-Null
+            Install-Script -Name winget-install -Force -ErrorAction Stop | Out-Null
+                
+            winget-install 2>&1 | Out-Null
+                
+            $wingetPath = Get-Command winget -ErrorAction SilentlyContinue
+            if (-not $wingetPath) {
+                writeText -Type "error" -text "winget installation failed. Please install winget manually from https://github.com/microsoft/winget-cli"
+            }
+                
+            WriteText -Type "success" -Text "winget installed successfully."
+                
+            # Need to refresh environment variables to see the new winget path
+            $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")   
+        }
 
         if (appInstalled -appName $appName) {
             WriteText -Type "plain" -Text "$appName is already installed."
@@ -1051,62 +1056,68 @@ function installViaWinget {
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }    
 }
-function installProgram {
+function installApp {
     param (
         [parameter(Mandatory = $true)]
         [string]$url,
         [parameter(Mandatory = $true)]
-        [string]$AppName,
+        [string]$appName,
         [parameter(Mandatory = $true)]
-        [string]$Args
+        [string]$params
     )
 
     try {
-        $fileName = Split-Path -Path $url -Leaf
-        $outputPath = Join-Path -Path "$env:SystemRoot\Temp" -ChildPath $fileName
+        writeText -Type "plain" -Text "Installing $appName..."
+        if (appInstalled -appName $appName) {
+            WriteText -Type "plain" -Text "$appName is already installed."
+        } else {
+            $fileName = Split-Path -Path $url -Leaf
+            $outputPath = Join-Path -Path "$env:SystemRoot\Temp" -ChildPath $fileName
 
-        if (getDownload -url $url -target $outputPath) {
-            $fileExtension = [System.IO.Path]::GetExtension($outputPath).ToLower()
-            switch ($fileExtension) {
-                ".exe" {
-                    $exitCode = installEXE -Path $outputPath -exeArguments $Args -Wait $true
-                    if ($exitCode -eq 0) {
-                        writeText -type "success" -text "Installation of $AppName completed successfully." -lineAfter
-                    } else {
-                        writeText -type "error" -text "Installation of $AppName failed with exit code $exitCode."
+            if (getDownload -url $url -target $outputPath) {
+                $fileExtension = [System.IO.Path]::GetExtension($outputPath).ToLower()
+                switch ($fileExtension) {
+                    ".exe" {
+                        writeText -type "plain" -text "Running exe installer ($outputPath)."
+                        $exitCode = installEXE -Path $outputPath -exeArguments $params -Wait $true
+                        if ($exitCode -eq 0) {
+                            writeText -type "success" -text "Installation of $appName completed successfully." -lineAfter
+                        } else {
+                            writeText -type "error" -text "Installation of $appName failed with exit code $exitCode."
+                        }
+                    }
+                    ".msi" {
+                        writeText -type "plain" -text "Running msi installer ($outputPath)."
+                        $exitCode = installMSI -Path $outputPath -msiArguments $params
+                        if ($exitCode -eq 0) {
+                            writeText -type "success" -text "Installation of $appName completed successfully." -lineAfter
+                        } else {
+                            writeText -type "error" -text "Installation of $appName failed with exit code $exitCode."
+                        }
+                    }
+                    default {
+                        writeText -type "notice" -text "Unsupported file type: $fileExtension"
                     }
                 }
-                ".msi" {
-                    $exitCode = installMSI -Path $outputPath -msiArguments $Args
-                    if ($exitCode -eq 0) {
-                        writeText -type "success" -text "Installation of $AppName completed successfully." -lineAfter
-                    } else {
-                        writeText -type "error" -text "Installation of $AppName failed with exit code $exitCode."
+
+                # Clean up the downloaded installer
+                $timeout = 10  # Timeout in seconds
+                $startTime = Get-Date
+
+                while ((Test-Path $outputPath) -and ((Get-Date) - $startTime).TotalSeconds -lt $timeout) {
+                    try {
+                        Remove-Item -Path $outputPath -Force -ErrorAction Stop
+                        break
+                    } catch {
+                        Start-Sleep -Seconds 1
                     }
                 }
-                default {
-                    writeText -type "notice" -text "Unsupported file type: $fileExtension"
+
+                if (Test-Path $outputPath) {
+                    writeText -type "error" -text "Failed to remove installer."
                 }
-            }
-
-            # Clean up the downloaded installer
-            $timeout = 10  # Timeout in seconds
-            $startTime = Get-Date
-
-            while ((Test-Path $outputPath) -and ((Get-Date) - $startTime).TotalSeconds -lt $timeout) {
-                try {
-                    Remove-Item -Path $outputPath -Force -ErrorAction Stop
-                    writeText -type "plain" -text "Removed installer."
-                    break
-                } catch {
-                    Start-Sleep -Seconds 1
-                }
-            }
-
-            if (Test-Path $outputPath) {
-                writeText -type "error" -text "Failed to remove installer."
-            }
-        }        
+            }   
+        }     
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
@@ -1132,7 +1143,7 @@ function uninstallWin32App {
             Where-Object { $_.DisplayName -like "*$AppName*" }
             foreach ($app in $apps) {
                 $found = $true
-                writeText -type "notice" -text "$($app.DisplayName) v$($app.DisplayVersion) and uninstalling: $($app.DisplayName)..."
+                writeText -type "notice" -text "Uninstalling $($app.DisplayName) v$($app.DisplayVersion)..."
 
                 $cmd = if ($app.QuietUninstallString) { 
                     $app.QuietUninstallString 
@@ -1162,7 +1173,7 @@ function uninstallWin32App {
             }
         }
         if (-not $found) {
-            writeText -type "plain" -text "$AppName not found. Skipped"
+            writeText -type "plain" -text "$AppName not found"
         }
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
@@ -1181,7 +1192,7 @@ function uninstallAppXApp {
 
     foreach ($app in $installed) {
         $found = $true
-        writeText -type "plain" -text "Removing: $($app.Name)..."
+        writeText -type "plain" -text "Uninstalling $($app.Name)..."
         try {
             Remove-AppxPackage -Package $app.PackageFullName -AllUsers -ErrorAction Stop
             writeText -type "success" -text "$FriendlyName uninstalled successfully"
@@ -1204,7 +1215,7 @@ function uninstallAppXApp {
         }
     }
     if (-not $found) {
-        writeText -type "plain" -text "$FriendlyName not found. Skipping"
+        writeText -type "plain" -text "$FriendlyName not found"
     }
 }
 function appInstalled {
