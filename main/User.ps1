@@ -25,7 +25,7 @@ function addUser {
                 "Add local user"  = "Add a local user to the system."
                 "Add domain user" = "Add a domain user to the system."
                 "Cancel"          = "Do nothing and exit this function."
-            }) -prompt "Select a user account type." -lineAfter
+            }) -prompt "Select a user account type:" -lineAfter
 
         switch ($choice) {
             0 { addLocalUser }
