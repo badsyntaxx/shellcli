@@ -7,7 +7,7 @@ function userMenu {
             "edit user"    = "Edit a users."
             "unlock user"  = "Unlock a user account."
             "Cancel"       = "Select nothing and exit this menu."
-        }) -prompt "Select a function."
+        }) -prompt "Select a function:"
 
     switch ($choice) {
         0 { listUsers }
@@ -46,7 +46,7 @@ function addLocalUser {
         $group = readOption -options $([ordered]@{
                 "Administrators" = "Set this user's group membership to administrators."
                 "Users"          = "Set this user's group membership to standard users."
-            }) -prompt "Select a user group" -returnKey
+            }) -prompt "Select a user group:" -returnKey
 
         # Create the new local user and add to the specified group
         New-LocalUser $name -Password $password -description "Local User" -AccountNeverExpires -PasswordNeverExpires -ErrorAction Stop | Out-Null
@@ -77,6 +77,11 @@ function addLocalUser {
 }
 function addADUser {
     try {
+        if (-not (Get-WmiObject Win32_ComputerSystem | Where-Object { $_.DomainRole -eq 4 -or $_.DomainRole -eq 5 })) {
+            writeText -type 'notice' -text "This machine is NOT a Domain Controller."
+            readCommand
+        }
+
         $name = readInput -prompt "Enter a user name:" -Validate "^([a-zA-Z0-9 _\-]{1,64})$"  -CheckExistingUser
         $nameParts = $name -split ' '
         $GivenName = $nameParts[0]
@@ -555,7 +560,6 @@ function listUsers {
 
         # Display user data as a list
         writeText -type "table" -Table $accounts
-        
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
@@ -564,10 +568,10 @@ function listUsers {
 function toggleAdmin {
     try {
         $choice = readOption -options $([ordered]@{
-                "enable admin"  = "Enable the built-in administrator account."
-                "disable admin" = "Disable the built-in administrator account."
-                "Cancel"        = "Do nothing and exit this function."
-            }) -prompt "Select a user account type." -lineAfter
+                "Enable"  = "Enable the built-in administrator account."
+                "Disable" = "Disable the built-in administrator account."
+                "Cancel"  = "Do nothing and exit this function."
+            }) -prompt "Choose an option:" -lineAfter
 
         switch ($choice) {
             0 { enableAdmin }
@@ -624,35 +628,53 @@ function disableAdmin {
     }
 }
 function unlockUser {
-    # Create a menu with options and descriptions using an ordered hashtable
-    $choice = readOption -options $([ordered]@{
-            "Unlock local user" = "View the user management menu."
-            "unlock AD user"    = "Edit this computers name and description."
-            "Cancel"            = "Select nothing and exit this menu."
-        }) -prompt "Select a function." -lineAfter
+    try {
+        # Create a menu with options and descriptions using an ordered hashtable
+        $choice = readOption -options $([ordered]@{
+                "Unlock local user" = "View the user management menu."
+                "unlock AD user"    = "Edit this computers name and description."
+                "Cancel"            = "Select nothing and exit this menu."
+            }) -prompt "Select a function." -lineAfter
 
-    switch ($choice) {
-        0 { unlockLocalUser }
-        1 { unlockADUser }
-        2 { readCommand }
-    }
-}
-function unlockLocalUser {
-    $user = selectUser -lineAfter
-    $user
-    if ($user.AccountLocked) {
-        writeText "User $($user["Name"]) is currently locked. Unlocking..."
-        Unlock-LocalUser -Name $user["Name"]
-        
-        # Verify unlock was successful
-        $updatedUser = Get-LocalUser -Name $user["Name"]
-        if (-not $updatedUser.AccountLocked) {
-            writeText -type "success" -text "User $($user["Name"]) successfully unlocked!"
-        } else {
-            writeText -type "error" -text "Failed to unlock user $($user["Name"])"
+        switch ($choice) {
+            0 { unlockLocalUser }
+            1 { unlockADUser }
+            2 { readCommand }
         }
-    } else {
+    } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
+    
+}
+function unlockLocalUser {
+    $user = selectUser -lineAfter
+
+    try {
+        if ($user.AccountLocked) {
+            writeText -type "plain" -text "User $($user["Name"]) is currently locked. Unlocking..."
+            Unlock-LocalUser -Name $user["Name"]
+        
+            # Verify unlock was successful
+            $updatedUser = Get-LocalUser -Name $user["Name"]
+            if (-not $updatedUser.AccountLocked) {
+                writeText -type "success" -text "User $($user["Name"]) successfully unlocked!"
+            } else {
+                writeText -type "error" -text "Failed to unlock user $($user["Name"])"
+            }
+        } else {
+            writeText -type "plain" -text "User $($user["Name"]) is not locked."
+        }
+    } catch {
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+    }
+}
+function unlockADUser {
+    if (-not (Get-WmiObject Win32_ComputerSystem | Where-Object { $_.DomainRole -eq 4 -or $_.DomainRole -eq 5 })) {
+        writeText -type 'notice' -text "This machine is NOT a Domain Controller."
+        readCommand
+    }
+        
+    writeText -type "text" -text "This function is not yet implemented."
 }

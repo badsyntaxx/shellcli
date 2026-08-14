@@ -295,11 +295,11 @@ function getAdapterInfo {
             $dnsServers = Get-DnsClientServerAddress -InterfaceIndex $index | Select-Object -ExpandProperty ServerAddresses
 
             if ($status -eq "Up") {
-                Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
+                Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Cyan"
                 Write-Host " $([char]0x2022)" -ForegroundColor "Green" -NoNewline
                 Write-Host " $name | $dhcp" -ForegroundColor "Gray" 
             } else {
-                Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
+                Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Cyan"
                 Write-Host " $([char]0x25BC)" -ForegroundColor "Red" -NoNewline
                 Write-Host " $name | $dhcp" -ForegroundColor "Gray"
             }
@@ -399,7 +399,7 @@ function getWifiCreds {
                 $password = "N/A"
             }
 
-            Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
+            Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Cyan"
             Write-Host "  ${ssid}: " -NoNewLine  -ForegroundColor DarkGray
             Write-Host "$password"
         }

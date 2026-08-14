@@ -157,7 +157,7 @@ function getWifiCreds {
                 $password = "N/A"
             }
 
-            Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Gray"
+            Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Cyan"
             Write-Host "  ${ssid}: " -NoNewLine  -ForegroundColor DarkGray
             Write-Host "$password"
         }
@@ -245,7 +245,6 @@ function fixIcons {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
-    
 }
 function techMode {
     # Check for interactive user session
