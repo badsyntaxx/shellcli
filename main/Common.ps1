@@ -130,47 +130,76 @@ function editDescription {
 }
 function disableHybernateFile {
     try {
-        if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+        # --- Elevation check ---
+        $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+        if (-not $isAdmin) {
             writeText -type "error" -text "This function must be run as Administrator to modify hiberfil.sys."
             return
         }
 
+        # --- Helpers ---
         function Get-FreeSpaceGB {
             [math]::Round(([System.IO.DriveInfo]::new('C')).AvailableFreeSpace / 1GB, 2)
         }
 
+        function Get-HiberFile {
+            # Direct Test-Path/Get-Item on hiberfil.sys is unreliable (NTFS protected system file
+            # can report "not found" even when present). Directory enumeration is reliable.
+            Get-ChildItem "C:\" -Force -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq "hiberfil.sys" }
+        }
+
+        function Remove-HiberFile($hiberFile) {
+            try {
+                attrib -r -s -h $hiberFile.FullName 2>$null
+                takeown /F $hiberFile.FullName | Out-Null
+                icacls $hiberFile.FullName /grant administrators:F | Out-Null
+                Remove-Item $hiberFile.FullName -Force -ErrorAction Stop
+                return $true
+            } catch {
+                writeText -type "error" -text "Failed to remove hiberfil.sys: $_"
+                writeText -type "notice" -text "The file may be removed automatically on next reboot."
+                return $false
+            }
+        }
+
+        # --- Initial state ---
         $currentFree = Get-FreeSpaceGB
         writeText -type "plain" -text "Current free space on C: ~${currentFree}GB"
 
         $hiberEnabled = (Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Power" -Name "HibernateEnabled" -ErrorAction SilentlyContinue).HibernateEnabled -eq 1
+        $hiberFile = Get-HiberFile
+        $fileExists = $null -ne $hiberFile
+        $fileSize = if ($fileExists) { [math]::Round($hiberFile.Length / 1GB, 2) } else { 0 }
 
-        $fileExists = Test-Path "C:\hiberfil.sys"
-        $fileSize = if ($fileExists) {
-            [math]::Round((Get-Item "C:\hiberfil.sys" -Force).Length / 1GB, 2)
-        } else { 0 }
-
+        # --- Case: hibernation already disabled, but file still present (likely Fast Startup) ---
         if (-not $hiberEnabled -and $fileExists) {
-            writeText -type "notice" -text "Hibernation is already disabled, but hiberfil.sys still exists. Removing it..."
-            try {
-                attrib -r -s -h "C:\hiberfil.sys"
-                takeown /F "C:\hiberfil.sys" | Out-Null
-                icacls "C:\hiberfil.sys" /grant administrators:F | Out-Null
-                Remove-Item "C:\hiberfil.sys" -Force -ErrorAction Stop
+            writeText -type "notice" -text "Hibernation is already disabled, but hiberfil.sys still exists (~${fileSize}GB). This is often caused by Fast Startup. Removing the file..."
+
+            $removed = Remove-HiberFile $hiberFile
+
+            if ($removed) {
                 writeText -type "success" -text "Successfully removed hiberfil.sys (freed ~${fileSize}GB)"
-            } catch {
-                writeText -type "error" -text "Failed to remove hiberfil.sys: $_"
-                writeText -type "notice" -text "The file will be removed automatically on next reboot."
             }
+
+            # Re-check to see if it came back (Fast Startup can recreate it)
+            Start-Sleep -Seconds 2
+            if (Get-HiberFile) {
+                writeText -type "notice" -text "hiberfil.sys reappeared or could not be fully removed. If this persists, disable 'Fast Startup' in Control Panel > Power Options > Choose what the power buttons do, then re-run this function."
+            }
+
             $newFree = Get-FreeSpaceGB
-            writeText -type "plain" -text "Current free space on C: ~${newFree}GB (freed ~$([math]::Round($newFree - $currentFree,2))GB)"
+            $freed = [math]::Round($newFree - $currentFree, 2)
+            writeText -type "plain" -text "Current free space on C: ~${newFree}GB (freed ~${freed}GB)"
             return
         }
 
+        # --- Case: both disabled and no file found ---
         if (-not $fileExists -and -not $hiberEnabled) {
             writeText -type "notice" -text "Hibernation was already disabled and no hiberfil.sys found. No action needed."
             return
         }
 
+        # --- Case: hibernation is enabled, disable it ---
         writeText -type "plain" -text "Disabling hibernation..."
         $global:LASTEXITCODE = $null
         $result = powercfg /hibernate off 2>&1
@@ -182,23 +211,29 @@ function disableHybernateFile {
 
         Start-Sleep -Seconds 3
 
-        if (-not (Test-Path "C:\hiberfil.sys")) {
-            writeText -type "success" -text "Hibernation disabled. File automatically removed (freed ~${fileSize}GB)"
+        $hiberFile = Get-HiberFile
+        if (-not $hiberFile) {
+            if ($fileSize -gt 0) {
+                writeText -type "success" -text "Hibernation disabled. File automatically removed (freed ~${fileSize}GB)"
+            } else {
+                writeText -type "success" -text "Hibernation disabled successfully."
+            }
         } else {
-            try {
-                attrib -r -s -h "C:\hiberfil.sys"
-                takeown /F "C:\hiberfil.sys" | Out-Null
-                icacls "C:\hiberfil.sys" /grant administrators:F | Out-Null
-                Remove-Item "C:\hiberfil.sys" -Force -ErrorAction Stop
+            # Still present after powercfg off - likely Fast Startup holding a reduced file
+            $removed = Remove-HiberFile $hiberFile
+            if ($removed) {
                 writeText -type "success" -text "Successfully removed hiberfil.sys (freed ~${fileSize}GB)"
-            } catch {
-                writeText -type "error" -text "Hibernation disabled but file removal failed: $_"
-                writeText -type "notice" -text "The file will be removed automatically on next reboot."
+            }
+
+            Start-Sleep -Seconds 2
+            if (Get-HiberFile) {
+                writeText -type "notice" -text "hiberfil.sys is still present. This is likely due to Fast Startup. Disable it via Control Panel > Power Options > Choose what the power buttons do > uncheck 'Turn on fast startup', then re-run this function."
             }
         }
 
         $newFree = Get-FreeSpaceGB
-        writeText -type "plain" -text "Current free space on C: ~${newFree}GB (freed ~$([math]::Round($newFree - $currentFree,2))GB)"
+        $freed = [math]::Round($newFree - $currentFree, 2)
+        writeText -type "plain" -text "Current free space on C: ~${newFree}GB (freed ~${freed}GB)"
 
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
