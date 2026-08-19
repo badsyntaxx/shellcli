@@ -130,84 +130,65 @@ function editDescription {
 }
 function disableHybernateFile {
     try {
-        # Show current free space
-        $currentFree = [math]::Round((Get-PSDrive C).Free / 1GB, 2)
+        if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+            writeText -type "error" -text "This function must be run as Administrator to modify hiberfil.sys."
+            return
+        }
+
+        function Get-FreeSpaceGB {
+            [math]::Round(([System.IO.DriveInfo]::new('C')).AvailableFreeSpace / 1GB, 2)
+        }
+
+        $currentFree = Get-FreeSpaceGB
         writeText -type "plain" -text "Current free space on C: ~${currentFree}GB"
-        
-        # Check if hibernation is actually enabled
+
         $hiberEnabled = (Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Power" -Name "HibernateEnabled" -ErrorAction SilentlyContinue).HibernateEnabled -eq 1
-        
-        # Get current file size before removal (for feedback)
+
         $fileExists = Test-Path "C:\hiberfil.sys"
         $fileSize = if ($fileExists) {
-            [math]::Round((Get-Item "C:\hiberfil.sys").Length / 1GB, 2)
-        } else {
-            0
-        }
-        
-        # If hibernation is already disabled but file exists, just remove the file
+            [math]::Round((Get-Item "C:\hiberfil.sys" -Force).Length / 1GB, 2)
+        } else { 0 }
+
         if (-not $hiberEnabled -and $fileExists) {
             writeText -type "notice" -text "Hibernation is already disabled, but hiberfil.sys still exists. Removing it..."
-            
             try {
-                # Clear read-only attribute if set
-                attrib -r "C:\hiberfil.sys" 2>$null
-                
-                # Try to take ownership if needed
-                takeown /F "C:\hiberfil.sys" 2>$null
-                icacls "C:\hiberfil.sys" /grant administrators:F 2>$null
-                
+                attrib -r -s -h "C:\hiberfil.sys"
+                takeown /F "C:\hiberfil.sys" | Out-Null
+                icacls "C:\hiberfil.sys" /grant administrators:F | Out-Null
                 Remove-Item "C:\hiberfil.sys" -Force -ErrorAction Stop
                 writeText -type "success" -text "Successfully removed hiberfil.sys (freed ~${fileSize}GB)"
-                
-                # Show freed space summary
-                $newFree = [math]::Round((Get-PSDrive C).Free / 1GB, 2)
-                $freed = [math]::Round($newFree - $currentFree, 2)
-                writeText -type "plain" -text "Current free space on C: ~${newFree}GB (freed ~${freed}GB)"
             } catch {
                 writeText -type "error" -text "Failed to remove hiberfil.sys: $_"
                 writeText -type "notice" -text "The file will be removed automatically on next reboot."
             }
+            $newFree = Get-FreeSpaceGB
+            writeText -type "plain" -text "Current free space on C: ~${newFree}GB (freed ~$([math]::Round($newFree - $currentFree,2))GB)"
             return
         }
-        
-        # If both disabled and file doesn't exist, inform and exit
+
         if (-not $fileExists -and -not $hiberEnabled) {
             writeText -type "notice" -text "Hibernation was already disabled and no hiberfil.sys found. No action needed."
-            $currentFree = [math]::Round((Get-PSDrive C).Free / 1GB, 2)
-            writeText -type "plain" -text "Current free space on C: ~${currentFree}GB"
             return
         }
-        
-        # Disable hibernation (this is the case where hibernation is enabled)
-        writeText -type "plain" -text "Disabling hibernation..." 
+
+        writeText -type "plain" -text "Disabling hibernation..."
+        $global:LASTEXITCODE = $null
         $result = powercfg /hibernate off 2>&1
-        
+
         if ($LASTEXITCODE -ne 0) {
             writeText -type "error" -text "Failed to disable hibernation: $result"
             return
         }
-        
-        # Wait for system to release the file
+
         Start-Sleep -Seconds 3
-        
-        # Check if file was automatically removed
+
         if (-not (Test-Path "C:\hiberfil.sys")) {
-            if ($fileSize -gt 0) {
-                writeText -type "success" -text "Hibernation disabled. File automatically removed (freed ~${fileSize}GB)"
-            } else {
-                writeText -type "success" -text "Hibernation disabled successfully."
-            }
+            writeText -type "success" -text "Hibernation disabled. File automatically removed (freed ~${fileSize}GB)"
         } else {
-            # Force remove if still present
             try {
-                # Clear read-only attribute if set
-                attrib -r "C:\hiberfil.sys" 2>$null
-                
-                # Try to take ownership if needed
-                takeown /F "C:\hiberfil.sys" 2>$null
-                icacls "C:\hiberfil.sys" /grant administrators:F 2>$null
-                
+                attrib -r -s -h "C:\hiberfil.sys"
+                takeown /F "C:\hiberfil.sys" | Out-Null
+                icacls "C:\hiberfil.sys" /grant administrators:F | Out-Null
                 Remove-Item "C:\hiberfil.sys" -Force -ErrorAction Stop
                 writeText -type "success" -text "Successfully removed hiberfil.sys (freed ~${fileSize}GB)"
             } catch {
@@ -215,12 +196,10 @@ function disableHybernateFile {
                 writeText -type "notice" -text "The file will be removed automatically on next reboot."
             }
         }
-        
-        # Show freed space summary
-        $newFree = [math]::Round((Get-PSDrive C).Free / 1GB, 2)
-        $freed = [math]::Round($newFree - $currentFree, 2)
-        writeText -type "plain" -text "Current free space on C: ~${newFree}GB (freed ~${freed}GB)"
-        
+
+        $newFree = Get-FreeSpaceGB
+        writeText -type "plain" -text "Current free space on C: ~${newFree}GB (freed ~$([math]::Round($newFree - $currentFree,2))GB)"
+
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
