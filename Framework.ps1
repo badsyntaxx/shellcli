@@ -3,7 +3,7 @@ $global:commandMap = [ordered]@{
     "help"                           = @("main", "Core", "writeHelp", "List some help info.")
     "menu"                           = @("main", "Core", "readMenu", "Display the main menu.")
     "commands"                       = @("main", "Core", "listAllCommands", "List all available commands.")
-    "read log"                       = @("main", "Core", "readLog", "Output the last 50 lines of the log file.")
+    "logs"                           = @("main", "Core", "readLog", "Output the last 50 lines of the log file.")
     #-- CUSTOMIZATION COMMANDS --#
     "toggle context menu"            = @("main", "Common", "toggleContextMenu", "Toggle the context menu.")
     "enable context menu"            = @("main", "Common", "enableContextMenu", "Enable the context menu.")

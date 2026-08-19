@@ -183,15 +183,41 @@ function disableHybernateFile {
             0
         }
         
-        # If already disabled, inform and exit
+        # If hibernation is already disabled but file exists, just remove the file
+        if (-not $hiberEnabled -and $fileExists) {
+            writeText -type "notice" -text "Hibernation is already disabled, but hiberfil.sys still exists. Removing it..."
+            
+            try {
+                # Clear read-only attribute if set
+                attrib -r "C:\hiberfil.sys" 2>$null
+                
+                # Try to take ownership if needed
+                takeown /F "C:\hiberfil.sys" 2>$null
+                icacls "C:\hiberfil.sys" /grant administrators:F 2>$null
+                
+                Remove-Item "C:\hiberfil.sys" -Force -ErrorAction Stop
+                writeText -type "success" -text "Successfully removed hiberfil.sys (freed ~${fileSize}GB)"
+                
+                # Show freed space summary
+                $newFree = [math]::Round((Get-PSDrive C).Free / 1GB, 2)
+                $freed = [math]::Round($newFree - $currentFree, 2)
+                writeText -type "plain" -text "Current free space on C: ~${newFree}GB (freed ~${freed}GB)"
+            } catch {
+                writeText -type "error" -text "Failed to remove hiberfil.sys: $_"
+                writeText -type "notice" -text "The file will be removed automatically on next reboot."
+            }
+            return
+        }
+        
+        # If both disabled and file doesn't exist, inform and exit
         if (-not $fileExists -and -not $hiberEnabled) {
-            writeText -type "notice" -text "Hibernation was already disabled. No space to free."
+            writeText -type "notice" -text "Hibernation was already disabled and no hiberfil.sys found. No action needed."
             $currentFree = [math]::Round((Get-PSDrive C).Free / 1GB, 2)
             writeText -type "plain" -text "Current free space on C: ~${currentFree}GB"
             return
         }
         
-        # Disable hibernation
+        # Disable hibernation (this is the case where hibernation is enabled)
         writeText -type "plain" -text "Disabling hibernation..." 
         $result = powercfg /hibernate off 2>&1
         
