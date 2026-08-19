@@ -15,7 +15,6 @@ function repairWindows {
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
-
 function repairSystem {
     try {
         $choice = readOption -options $([ordered]@{
@@ -46,15 +45,25 @@ function repairSystem {
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
-
 function cleanTempFiles {
     try {
-        writeText -type "plain" -text "Clearing temporary files at C:\Windows\Temp"
-        Remove-Item -Path "C:\Windows\Temp\*" -Recurse -Force -ErrorAction SilentlyContinue
-        writeText -type "plain" -text "Clearing temporary files at C:\Windows\Prefetch"
-        Remove-Item -Path "C:\Windows\Prefetch\*" -Recurse -Force -ErrorAction SilentlyContinue
-        writeText -type "plain" -text "Clearing temporary files at C:\Users\$env:USERNAME\AppData\Local\Temp"
-        Remove-Item -Path "C:\Users\$env:USERNAME\AppData\Local\Temp\*" -Recurse -Force -ErrorAction SilentlyContinue
+        $paths = @(
+            @{ Path = "C:\Windows\Temp"; Label = "C:\Windows\Temp" },
+            @{ Path = "C:\Windows\Prefetch"; Label = "C:\Windows\Prefetch" },
+            @{ Path = "C:\Users\$env:USERNAME\AppData\Local\Temp"; Label = "C:\Users\$env:USERNAME\AppData\Local\Temp" }
+        )
+
+        foreach ($item in $paths) {
+            $beforeSize = getFolderSize -Path $item.Path
+            writeText -type "plain" -text "Clearing temporary files at $($item.Label) - Before: $(formatSize $beforeSize)"
+
+            Remove-Item -Path "$($item.Path)\*" -Recurse -Force -ErrorAction SilentlyContinue
+
+            $afterSize = getFolderSize -Path $item.Path
+            $freedSize = $beforeSize - $afterSize
+            writeText -type "plain" -text "$($item.Label) - After: $(formatSize $afterSize) (Freed: $(formatSize $freedSize))"
+        }
+
         writeText -type "plain" -text "Emtying Recycle Bin"
         Clear-RecycleBin -Force
         writeText -type "success" -text "Temporary files cleaned."
@@ -63,7 +72,6 @@ function cleanTempFiles {
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
-
 function repairNetwork {
     try {
         $choice = readOption -options $([ordered]@{
