@@ -64,7 +64,7 @@ function cleanTempFiles {
             writeText -type "plain" -text "$($item.Label) - After: $(formatSize $afterSize) (Freed: $(formatSize $freedSize))"
         }
 
-        writeText -type "plain" -text "Emtying Recycle Bin"
+        writeText -type "plain" -text "Emptying Recycle Bin"
         Clear-RecycleBin -Force
         writeText -type "success" -text "Temporary files cleaned."
     } catch {
