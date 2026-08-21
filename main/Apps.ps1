@@ -118,9 +118,8 @@ function getDiagnosticApps {
 }
 function getBulkCrapUninstaller {
     try {
-        $url = "https://www.bcuninstaller.com/download/bulk-crap-uninstaller-v5.4.1-portable.zip"
-        $appName = "Bulk Crap Uninstaller"
-        installApp -url $url -appName $appName -params "" 
+        $url = (winget show --id Klocman.BulkCrapUninstaller | Select-String "Installer Url:").Line.Split(" ")[-1]
+        installApp -url $url -appName "BulkCrapUninstaller" -params "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART"
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
