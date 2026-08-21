@@ -129,17 +129,9 @@ function editDescription {
     }
 }
 function disableHybernateFile {
-    [CmdletBinding()]
     param(
         [string]$DriveLetter = $env:SystemDrive
     )
-
-    # Ensure running as Administrator (required for powercfg /hibernate off)
-    $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-    if (-not $isAdmin) {
-        writeText -type "error" -text "This function must be run as Administrator. Please relaunch PowerShell with elevated privileges."
-        return
-    }
 
     # Normalize drive letter (e.g. "C:")
     $drive = $DriveLetter.TrimEnd('\')
@@ -150,45 +142,10 @@ function disableHybernateFile {
         return [math]::Round($vol.Free / 1GB, 2)
     }
 
-    # Reliable check: registry value, not Test-Path on hiberfil.sys.
-    # Test-Path returns $false on access-denied for that file due to NTFS ACLs
-    # (only SYSTEM/TrustedInstaller can read it), even when the file genuinely exists.
-    function Test-HibernationEnabled {
-        try {
-            $regValue = Get-ItemPropertyValue -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Power" -Name "HibernateEnabled" -ErrorAction Stop
-            return ($regValue -eq 1)
-        } catch {
-            return $false
-        }
-    }
-
-    writeText -type "plain" -text "Checking current hibernation status..."
-    $hiberEnabled = Test-HibernationEnabled
-
-    if (-not $hiberEnabled) {
-        writeText -type "plain" -text "Hibernation is already disabled."
-    } else {
-        writeText -type "plain" -text "Hibernation is currently ENABLED."
-    }
-
     $spaceBefore = Get-FreeSpaceGB $drive
     writeText -type "plain" -text "Free space BEFORE: $spaceBefore GB"
 
-    if ($hiberEnabled) {
-        writeText -type "plain" -text "Disabling hibernation..."
-        try {
-            powercfg.exe /hibernate off
-            Start-Sleep -Seconds 2  # give the OS a moment to remove hiberfil.sys
-        } catch {
-            writeText -type "error" -text "Failed to disable hibernation: $_"
-            return
-        }
-
-        # Verify it actually turned off
-        if (Test-HibernationEnabled) {
-            writeText -type "error" -text "powercfg reported success but hibernation still appears enabled in the registry. A reboot may be required, or Fast Startup/Group Policy is re-enabling it."
-        }
-    }
+    & "C:\Windows\System32\cmd.exe" /c "powercfg /hibernate off"
 
     $spaceAfter = Get-FreeSpaceGB $drive
     $spaceFreed = [math]::Round($spaceAfter - $spaceBefore, 2)
