@@ -129,67 +129,57 @@ function editDescription {
     }
 }
 function disableHybernateFile {
-    try {
-        $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-        if (-not $isAdmin) {
-            writeText -type "error" -text "This function must be run as Administrator to modify hiberfil.sys."
-            return
-        }
+    [CmdletBinding()]
+    param(
+        [string]$DriveLetter = $env:SystemDrive
+    )
 
-        function Get-FreeSpaceGB {
-            [math]::Round(([System.IO.DriveInfo]::new('C')).AvailableFreeSpace / 1GB, 2)
-        }
+    # Normalize drive letter (e.g. "C:")
+    $drive = $DriveLetter.TrimEnd('\')
 
-        function Get-HiberFile {
-            Get-ChildItem "C:\" -Force -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq "hiberfil.sys" }
-        }
-
-        $currentFree = Get-FreeSpaceGB
-        writeText -type "plain" -text "Current free space on C: ~${currentFree}GB"
-
-        $hiberFile = Get-HiberFile
-        $fileSize = if ($hiberFile) { [math]::Round($hiberFile.Length / 1GB, 2) } else { 0 }
-
-        writeText -type "plain" -text "Disabling hibernation..."
-        $global:LASTEXITCODE = $null
-        $result = powercfg /hibernate off 2>&1
-        if ($LASTEXITCODE -ne 0) {
-            writeText -type "error" -text "Failed to disable hibernation: $result"
-            return
-        }
-
-        # Retry loop: Windows needs time to release the file handle after powercfg returns
-        $maxAttempts = 10
-        $removed = $false
-        for ($i = 1; $i -le $maxAttempts; $i++) {
-            $hiberFile = Get-HiberFile
-            if (-not $hiberFile) {
-                $removed = $true
-                break
-            }
-            try {
-                Remove-Item $hiberFile.FullName -Force -ErrorAction Stop
-                $removed = $true
-                break
-            } catch {
-                Start-Sleep -Milliseconds 1500
-            }
-        }
-
-        if ($removed) {
-            writeText -type "success" -text "Successfully removed hiberfil.sys (freed ~${fileSize}GB)"
-        } else {
-            writeText -type "notice" -text "hiberfil.sys (~${fileSize}GB) is still locked after $maxAttempts attempts. Fast Startup may be involved — check Control Panel > Power Options > Choose what the power buttons do."
-        }
-
-        $newFree = Get-FreeSpaceGB
-        $freed = [math]::Round($newFree - $currentFree, 2)
-        writeText -type "plain" -text "Current free space on C: ~${newFree}GB (freed ~${freed}GB)"
-
-    } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+    # Helper to get free space in GB
+    function Get-FreeSpaceGB($DriveRoot) {
+        $vol = Get-PSDrive -Name $DriveRoot.TrimEnd(':') -ErrorAction Stop
+        return [math]::Round($vol.Free / 1GB, 2)
     }
+
+    writeText -type "plain" -text "Checking current hibernation status..."
+    $hiberFile = Join-Path $drive "hiberfil.sys"
+    $hiberExists = Test-Path $hiberFile
+
+    if (-not $hiberExists) {
+        writeText -type "plain" -text "Hibernation is already disabled (no hiberfil.sys found)."
+    }
+
+    $spaceBefore = Get-FreeSpaceGB $drive
+    writeText -type "plain" -text "Free space BEFORE: $spaceBefore GB"
+
+    if ($hiberExists) {
+        writeText -type "plain" -text "Disabling hibernation..."
+        try {
+            powercfg.exe /hibernate off
+            Start-Sleep -Seconds 2  # give the OS a moment to remove hiberfil.sys
+        } catch {
+            writeText -type "error" -text "Failed to disable hibernation: $_"
+            return
+        }
+    }
+
+    $spaceAfter = Get-FreeSpaceGB $drive
+    $spaceFreed = [math]::Round($spaceAfter - $spaceBefore, 2)
+
+    writeText -type "plain" -text "Free space AFTER:  $spaceAfter GB"
+    writeText -type "plain" -text "Space freed:       $spaceFreed GB"
+
+    $data = [ordered]@{
+        "Drive"                 = $drive
+        "FreeSpaceBeforeGB"     = $spaceBefore
+        "FreeSpaceAfterGB"      = $spaceAfter
+        "SpaceFreedGB"          = $spaceFreed
+        "HibernationWasEnabled" = $hiberExists
+    }
+
+    writeText -type "table" -Table $data
 }
 function fixIcons {
     try {
