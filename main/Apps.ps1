@@ -118,7 +118,7 @@ function getDiagnosticApps {
 }
 function getBulkCrapUninstaller {
     try {
-        $url = (winget show --id Klocman.BulkCrapUninstaller | Select-String "Installer Url:").Line.Split(" ")[-1]
+        $url = (winget show --id Klocman.BulkCrapUninstaller --accept-source-agreements --accept-package-agreements | Select-String "Installer Url:").Line.Split(" ")[-1]
         installApp -url $url -appName "BulkCrapUninstaller" -params "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART"
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
@@ -245,7 +245,7 @@ function getBGInfo {
 }
 function getHWInfo {
     try {
-        $url = (winget show --id  REALiX.HWiNFO | Select-String "Installer Url:").Line.Split(" ")[-1]
+        $url = (winget show --id  REALiX.HWiNFO --accept-source-agreements --accept-package-agreements | Select-String "Installer Url:").Line.Split(" ")[-1]
         installApp -url $url -appName "HWiNFO" -params "--install --silent --system-level"
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
