@@ -22,6 +22,7 @@ function repairSystem {
                 "Cleanup & restore"             = "Scans for and repairs the Windows image."
                 "Restart update service"        = "Restart the Windows update service."
                 "Clear temporary files"         = "Removes Windows temporary and cache files."
+                "Reregister all Windows apps"   = "Reregisters all Windows apps.(Requires reboot)"
                 "Run Windows Memory Diagnostic" = "Tests RAM for errors.(Requires reboot)"
                 "Cancel"                        = "Do nothing and exit this function."
             }) -prompt "Select a repair tool."
@@ -36,7 +37,8 @@ function repairSystem {
             3 {
                 clearTempFiles
             }
-            4 { & "C:\Windows\System32\cmd.exe" /c mdsched.exe }
+            4 { & Get-AppXPackage -AllUsers | Foreach { Add-AppxPackage -DisableDevelopmentMode -Register "$($_.InstallLocation)\AppXManifest.xml" } }
+            5 { & "C:\Windows\System32\cmd.exe" /c mdsched.exe }
         }
 
         repairWindows
