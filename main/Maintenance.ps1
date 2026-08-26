@@ -4,7 +4,7 @@ function repairWindows {
                 "Repair System"  = "System Check and DISM and SFC tools."
                 "Repair Network" = "Network fixes like resetting TCP/IP stack and flush DNS."
                 "Cancel"         = "Do nothing and exit this function."
-            }) -prompt "Select a repair tool."
+            }) -prompt "Select a repair tool." -lineAfter
 
         switch ($choice) {
             0 { repairSystem } 
