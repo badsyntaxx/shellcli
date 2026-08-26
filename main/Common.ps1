@@ -128,7 +128,7 @@ function editDescription {
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
-function disableHybernateFile {
+function disableHibernateFile {
     param(
         [string]$DriveLetter = $env:SystemDrive
     )
