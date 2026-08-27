@@ -275,7 +275,7 @@ function getBGInfo {
 }
 function getHWInfo {
     try {
-        $url = (winget show --id REALiX.HWiNFO --accept-source-agreements --disable-interactivity | Select-String "Installer Url:").Line.Split(" ")[-1]
+        $url = "https://www.hwinfo.com/files/hwi64_852.exe"
         if ([string]::IsNullOrWhiteSpace($url) -or $url -notmatch '^https?://') {
             Write-Error "Failed to retrieve a valid installer URL. Aborting install."
         } else {
