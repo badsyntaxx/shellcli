@@ -1065,7 +1065,7 @@ function installApp {
     )
 
     try {
-        writeText -Type "plain" -Text "Installing $appName..."
+        writeText -Type "plain" -Text "Installing $appName..." -lineBefore
         if (appInstalled -appName $appName) {
             WriteText -Type "plain" -Text "$appName is already installed."
         } else {
@@ -1218,65 +1218,38 @@ function uninstallAppXApp {
 }
 function appInstalled {
     param([string]$appName)
-    
+
     try {
-        # Try to find the app by any means necessary
-        $found = $false
-    
-        # 1. Registry check (most common)
+        $pattern = [regex]::Escape($appName)
+
         $regPaths = @(
             "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
             "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*",
             "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*"
         )
-    
+
         foreach ($path in $regPaths) {
             $apps = Get-ItemProperty $path -ErrorAction SilentlyContinue
             foreach ($app in $apps) {
-                if ($app.DisplayName -and $app.DisplayName -match $appName) {
-                    $found = $true
-                    break
-                }
-            }
-            if ($found) { break }
-        }
-    
-        if ($found) { return $true }
-    
-        # 2. Windows Store apps
-        if (Get-AppxPackage -Name "*$appName*" -ErrorAction SilentlyContinue) {
-            return $true
-        }
-    
-        # 3. Check if it's a command-line tool
-        if (Get-Command $appName -ErrorAction SilentlyContinue) {
-            return $true
-        }
-    
-        # 4. Check common installation folders (auto-discover)
-        $foldersToCheck = @(
-            "$env:ProgramFiles",
-            "${env:ProgramFiles(x86)}",
-            "$env:LOCALAPPDATA\Programs",
-            "$env:APPDATA",
-            "$env:ProgramData"
-        )
-    
-        foreach ($folder in $foldersToCheck) {
-            if (Test-Path $folder) {
-                $subFolders = Get-ChildItem $folder -Directory -ErrorAction SilentlyContinue
-                foreach ($sub in $subFolders) {
-                    if ($sub.Name -match $appName) {
-                        return $true
-                    }
+                if ($app.DisplayName -and $app.DisplayName -match $pattern) {
+                    return $true
                 }
             }
         }
-    
+
+        # Windows Store apps must be actually registered to a user, not just have leftover metadata. Thanks Claude.
+        $pkgs = Get-AppxPackage -Name "*$appName*" -ErrorAction SilentlyContinue
+        foreach ($pkg in $pkgs) {
+            if ($pkg.PackageUserInformation -and $pkg.PackageUserInformation.Count -gt 0) {
+                return $true
+            }
+        }
+
         return $false
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+        return $false
     }
 }
 function formatSize {

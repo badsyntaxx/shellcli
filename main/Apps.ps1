@@ -3,21 +3,31 @@ function getApps {
         $wingetPath = Get-Command winget -ErrorAction SilentlyContinue
         if (-not $wingetPath) {
             WriteText -Type "plain" -Text "winget not found. Installing winget..."
-            
-            Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted -ErrorAction Stop | Out-Null
-            Install-Script -Name winget-install -Force -ErrorAction Stop | Out-Null
-                
+
+            try {
+                Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted -ErrorAction Stop | Out-Null
+                Install-Script -Name winget-install -Force -ErrorAction Stop | Out-Null
+            } catch {
+                writeText -Type "error" -text "Failed to install winget-install script: $($_.Exception.Message)"
+                return
+            }
+
+            # Refresh environment variables BEFORE invoking winget-install,
+            # in case Install-Script dropped it somewhere not yet on PATH in this session
+            $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+
             winget-install 2>&1 | Out-Null
-                
+
+            # Refresh again in case winget-install itself modified PATH
+            $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+
             $wingetPath = Get-Command winget -ErrorAction SilentlyContinue
             if (-not $wingetPath) {
                 writeText -Type "error" -text "winget installation failed. Please install winget manually from https://github.com/microsoft/winget-cli"
+                return
             }
-                
+
             WriteText -Type "success" -Text "winget installed successfully."
-                
-            # Need to refresh environment variables to see the new winget path
-            $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")   
         }
 
         $installChoice = readOption -options $([ordered]@{
@@ -118,7 +128,7 @@ function getDiagnosticApps {
 }
 function getBulkCrapUninstaller {
     try {
-        $url = (winget show --id Klocman.BulkCrapUninstaller --accept-source-agreements --accept-package-agreements | Select-String "Installer Url:").Line.Split(" ")[-1]
+        $url = (winget show --id Klocman.BulkCrapUninstaller --accept-source-agreements --disable-interactivity | Select-String "Installer Url:").Line.Split(" ")[-1]
         installApp -url $url -appName "BulkCrapUninstaller" -params "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART"
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
@@ -245,7 +255,7 @@ function getBGInfo {
 }
 function getHWInfo {
     try {
-        $url = (winget show --id  REALiX.HWiNFO --accept-source-agreements --accept-package-agreements | Select-String "Installer Url:").Line.Split(" ")[-1]
+        $url = (winget show --id REALiX.HWiNFO --accept-source-agreements --disable-interactivity | Select-String "Installer Url:").Line.Split(" ")[-1]
         installApp -url $url -appName "HWiNFO" -params "--install --silent --system-level"
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
