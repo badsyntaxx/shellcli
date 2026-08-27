@@ -79,19 +79,35 @@ function getBrowserApps {
         switch ($installChoice) {
             0 { 
                 $url = (winget show --id Vivaldi.Vivaldi | Select-String "Installer Url:").Line.Split(" ")[-1]
-                installApp -url $url -appName "Vivaldi" -params "vivaldi-silent --do-not-launch-chrome --system-level" 
+                if ([string]::IsNullOrWhiteSpace($url) -or $url -notmatch '^https?://') {
+                    Write-Error "Failed to retrieve a valid installer URL. Aborting install."
+                } else {
+                    installApp -url $url -appName "Vivaldi" -params "vivaldi-silent --do-not-launch-chrome --system-level" 
+                }
             }    
             1 { 
                 $url = (winget show --id Brave.Brave | Select-String "Installer Url:").Line.Split(" ")[-1]
-                installApp -url $url -appName "Brave" -params "--install --silent --system-level"
+                if ([string]::IsNullOrWhiteSpace($url) -or $url -notmatch '^https?://') {
+                    Write-Error "Failed to retrieve a valid installer URL. Aborting install."
+                } else {
+                    installApp -url $url -appName "Brave" -params "--install --silent --system-level"
+                }
             }
             2 {
                 $url = (winget show --id Mozilla.Firefox | Select-String "Installer Url:").Line.Split(" ")[-1]
-                installApp -url $url -appName "Mozilla Firefox" -params "/S"
+                if ([string]::IsNullOrWhiteSpace($url) -or $url -notmatch '^https?://') {
+                    Write-Error "Failed to retrieve a valid installer URL. Aborting install."
+                } else {
+                    installApp -url $url -appName "Mozilla Firefox" -params "/S"
+                }
             }    
             3 { 
                 $url = (winget show --id Google.Chrome | Select-String "Installer Url:").Line.Split(" ")[-1]
-                installApp -url $url -appName "Google Chrome" -params "/qn /norestart" 
+                if ([string]::IsNullOrWhiteSpace($url) -or $url -notmatch '^https?://') {
+                    Write-Error "Failed to retrieve a valid installer URL. Aborting install."
+                } else {
+                    installApp -url $url -appName "Google Chrome" -params "/qn /norestart" 
+                }
             }
             4 { readCommand }
         }
@@ -129,7 +145,11 @@ function getDiagnosticApps {
 function getBulkCrapUninstaller {
     try {
         $url = (winget show --id Klocman.BulkCrapUninstaller --accept-source-agreements --disable-interactivity | Select-String "Installer Url:").Line.Split(" ")[-1]
-        installApp -url $url -appName "BulkCrapUninstaller" -params "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART"
+        if ([string]::IsNullOrWhiteSpace($url) -or $url -notmatch '^https?://') {
+            Write-Error "Failed to retrieve a valid installer URL. Aborting install."
+        } else {
+            installApp -url $url -appName "BulkCrapUninstaller" -params "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART"
+        }
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
@@ -256,7 +276,11 @@ function getBGInfo {
 function getHWInfo {
     try {
         $url = (winget show --id REALiX.HWiNFO --accept-source-agreements --disable-interactivity | Select-String "Installer Url:").Line.Split(" ")[-1]
-        installApp -url $url -appName "HWiNFO" -params "--install --silent --system-level"
+        if ([string]::IsNullOrWhiteSpace($url) -or $url -notmatch '^https?://') {
+            Write-Error "Failed to retrieve a valid installer URL. Aborting install."
+        } else {
+            installApp -url $url -appName "HWiNFO" -params "--install --silent --system-level"
+        }
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
