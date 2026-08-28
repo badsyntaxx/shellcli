@@ -317,7 +317,7 @@ function writeText {
             # $l = $([char]0x2500)
             Write-Host " $([char]0x2502)" -ForegroundColor "Cyan"
             Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Cyan"
-            Write-Host " $text " -ForegroundColor "White"
+            Write-Host " $text " -ForegroundColor "Cyan"
             log -msg $text -lvl "INFO"
         }
 
