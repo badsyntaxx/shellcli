@@ -57,6 +57,7 @@ $global:commandMap = [ordered]@{
     "unlock local user"              = @("main", "User", "unlockLocalUser", "Unlock a locked local account.")
     "find dc"                        = @("main", "Common", "findDC", "Find the domain controller.")
     "storage"                        = @("main", "Common", "getStorage", "Display storage information.")
+    "stored creds"                   = @("main", "Common", "showStoredCredentials", "Show Windows stored credentials.")
     #-- PLUGIN COMMANDS --#
     "plugins"                        = @("plugins", "Core", "plugins", "List available plugins.")
     "plugins menu"                   = @("plugins", "Core", "readMenu", "Display the plugin menu.")
@@ -431,6 +432,8 @@ function readInput {
         [parameter(Mandatory = $false)]
         [regex]$Validate = $null,
         [parameter(Mandatory = $false)]
+        [string[]]$validSet = $null, # Array of acceptable values; input must match one of these
+        [parameter(Mandatory = $false)]
         [string]$ErrorMessage = "", # Provide an optional error message
         [parameter(Mandatory = $false)]
         [switch]$IsSecure = $false, # If prompting for a password
@@ -480,6 +483,14 @@ function readInput {
         if ($userInput -notmatch $Validate) { 
             $ErrorMessage = "Invalid input. Please try again." 
         } 
+
+        # Validate user input against provided array of acceptable values
+        if ($null -ne $validSet -and $validSet.Count -gt 0) {
+            $isMatch = $validSet -icontains $userInput
+            if (-not $isMatch) {
+                $ErrorMessage = "Invalid input. Please enter one of the following: $($validSet -join ', ')."
+            }
+        }
 
         # Display error message if encountered
         if ($ErrorMessage -ne "") {

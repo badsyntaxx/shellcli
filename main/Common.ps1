@@ -224,3 +224,52 @@ function getStorage {
 
     writeText -type "table" -Table $data
 }
+function showStoredCredentials {
+    [CmdletBinding()]
+    param(
+        [switch]$IncludePassword
+    )
+
+    $output = cmdkey /list
+    $storedCreds = @()
+    $current = $null
+
+    foreach ($line in $output) {
+        $line = $line.Trim()
+
+        if ($line -match '^Target:\s*(.+)$') {
+            if ($current) { $storedCreds += [PSCustomObject]$current }
+            $current = [ordered]@{
+                Target = $matches[1]
+                Type   = $null
+                User   = $null
+            }
+        } elseif ($line -match '^Type:\s*(.+)$' -and $current) {
+            $current.Type = $matches[1]
+        } elseif ($line -match '^User:\s*(.+)$' -and $current) {
+            $current.User = $matches[1]
+        }
+    }
+    if ($current) { $storedCreds += [PSCustomObject]$current }
+
+    Set-Variable -Name storedCreds -Value $storedCreds -Scope Global
+
+    if ($storedCreds.Count -eq 0) {
+        writeText -type "notice" -text "No stored credentials found."
+        return
+    }
+
+    writeText -type "header" -text "Stored Windows Credentials"
+
+    foreach ($cred in $storedCreds) {
+        $credTable = [ordered]@{
+            Type = $cred.Type
+            User = $cred.User
+        }
+
+        writeText -type "plain" -text "Target: $cred.Target"
+        writeText -type "table" -Table $credTable
+    }
+
+    writeText -type "success" -text "$($storedCreds.Count) credential(s) listed."
+}
