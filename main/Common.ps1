@@ -225,153 +225,21 @@ function getStorage {
     writeText -type "table" -Table $data
 }
 function showStoredCredentials {
-    [CmdletBinding()]
-    param(
-        [switch]$IncludePassword
-    )
 
-    if (-not ("CredMan.Util" -as [type])) {
-        Add-Type -Namespace CredMan -Name Util -MemberDefinition @"
-[DllImport("Advapi32.dll", SetLastError=true, CharSet=CharSet.Unicode)]
-public static extern bool CredEnumerate(string filter, int flag, out int count, out IntPtr pCredentials);
 
-[DllImport("Advapi32.dll", SetLastError=true)]
-public static extern void CredFree(IntPtr cred);
-
-[StructLayout(LayoutKind.Sequential, CharSet=CharSet.Unicode)]
-public struct CREDENTIAL {
-    public int Flags;
-    public int Type;
-    public string TargetName;
-    public string Comment;
-    public System.Runtime.InteropServices.ComTypes.FILETIME LastWritten;
-    public int CredentialBlobSize;
-    public IntPtr CredentialBlob;
-    public int Persist;
-    public int AttributeCount;
-    public IntPtr Attributes;
-    public string TargetAlias;
-    public string UserName;
-}
-"@
+   
+    $output = cmdkey /list
+    $targets = $output | Where-Object { $_ -match '^\s*Target:\s*(.+)$' } |
+    ForEach-Object {
+        if ($_ -match '^\s*Target:\s*(.+)$') { $matches[1].Trim() }
     }
 
-    $count = 0
-    $predPtr = [IntPtr]::Zero
-    $ok = [CredMan.Util]::CredEnumerate($null, 1, [ref]$count, [ref]$predPtr)
-
-    $storedCreds = @()
-
-    if ($ok) {
-        for ($i = 0; $i -lt $count; $i++) {
-            $currentPtr = [System.Runtime.InteropServices.Marshal]::ReadIntPtr($predPtr, $i * [IntPtr]::Size)
-            $cred = [System.Runtime.InteropServices.Marshal]::PtrToStructure($currentPtr, [type][CredMan.CREDENTIAL])
-
-            $typeNames = @{1 = "Generic"; 2 = "DomainPassword"; 3 = "DomainCertificate"; 4 = "DomainVisiblePassword"; 5 = "GenericCertificate"; 6 = "DomainExtended" }
-
-            $entry = [ordered]@{
-                Target = $cred.TargetName
-                Type   = $typeNames[$cred.Type]
-                User   = $cred.UserName
-            }
-
-            if ($IncludePassword -and $cred.CredentialBlobSize -gt 0) {
-                $bytes = New-Object byte[] $cred.CredentialBlobSize
-                [System.Runtime.InteropServices.Marshal]::Copy($cred.CredentialBlob, $bytes, 0, $cred.CredentialBlobSize)
-                # Generic creds store UTF-16 text; domain password creds are usually encrypted/inaccessible
-                try { $entry.Password = [System.Text.Encoding]::Unicode.GetString($bytes) } catch { $entry.Password = "<binary>" }
-            }
-
-            $storedCreds += [PSCustomObject]$entry
-        }
-        [CredMan.Util]::CredFree($predPtr)
+    # Build an ordered table keyed by string index to avoid the
+    # OrderedDictionary positional-indexer ambiguity with int keys
+    $table = [ordered]@{}
+    for ($i = 0; $i -lt $targets.Count; $i++) {
+        $table["$($i + 1)"] = $targets[$i]
     }
 
-    Set-Variable -Name storedCreds -Value $storedCreds -Scope Global
-
-    if ($storedCreds.Count -eq 0) {
-        writeText -type "notice" -text "No stored credentials found."
-        return
-    }
-
-    writeText -type "header" -text "Stored Windows Credentials"
-    foreach ($cred in $storedCreds) {
-        writeText -type "plain" -text "Target: $($cred.Target)"
-        writeText -type "table" -Table ([ordered]@{ Type = $cred.Type; User = $cred.User })
-    }
-
-    writeText -type "success" -text "$($storedCreds.Count) credential(s) listed."
-}
-function Set-StoredCredential {
-    [CmdletBinding()]
-    param(
-        [parameter(Mandatory = $false)]
-        [string]$Target,
-
-        [parameter(Mandatory = $false)]
-        [string]$UserName,
-
-        [parameter(Mandatory = $false)]
-        [securestring]$Password
-    )
-
-    try {
-        # Refresh the list so $storedCreds is current
-        showStoredCredentials | Out-Null
-
-        if (-not $Target) {
-            if ($storedCreds.Count -eq 0) {
-                writeText -type "notice" -text "No stored credentials to update."
-                return
-            }
-
-            writeText -type "header" -text "Select a Credential to Update"
-
-            $menu = [ordered]@{}
-            for ($i = 0; $i -lt $storedCreds.Count; $i++) {
-                $menu["$($i + 1)"] = "$($storedCreds[$i].Target) ($($storedCreds[$i].User))"
-            }
-            writeText -type "table" -Table $menu
-
-            $selection = Read-Host " Enter the number of the credential to update"
-            $index = [int]$selection - 1
-
-            if ($index -lt 0 -or $index -ge $storedCreds.Count) {
-                writeText -type "error" -text "Invalid selection."
-                return
-            }
-
-            $Target = $storedCreds[$index].Target
-        }
-
-        writeText -type "header" -text "Updating Credential: $Target"
-
-        if (-not $UserName) {
-            $UserName = Read-Host " Enter the username"
-        }
-
-        if (-not $Password) {
-            $Password = Read-Host " Enter the new password" -AsSecureString
-        }
-
-        # Convert SecureString to plain text only for the moment cmdkey needs it
-        $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password)
-        $plainPassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
-        [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
-
-        $result = cmdkey /generic:"$Target" /user:"$UserName" /pass:"$plainPassword" 2>&1
-
-        # Clear plaintext password from memory as soon as possible
-        Remove-Variable plainPassword -ErrorAction SilentlyContinue
-
-        if ($LASTEXITCODE -eq 0) {
-            writeText -type "success" -text "Credential '$Target' updated for user '$UserName'."
-        } else {
-            writeText -type "error" -text "Failed to update credential '$Target': $result"
-        }
-
-    } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
-    }
+    writeText -type "table" -Table $table
 }
