@@ -230,27 +230,62 @@ function showStoredCredentials {
         [switch]$IncludePassword
     )
 
-    $output = cmdkey /list
-    $storedCreds = @()
-    $current = $null
+    if (-not ("CredMan.Util" -as [type])) {
+        Add-Type -Namespace CredMan -Name Util -MemberDefinition @"
+[DllImport("Advapi32.dll", SetLastError=true, CharSet=CharSet.Unicode)]
+public static extern bool CredEnumerate(string filter, int flag, out int count, out IntPtr pCredentials);
 
-    foreach ($line in $output) {
-        $line = $line.Trim()
+[DllImport("Advapi32.dll", SetLastError=true)]
+public static extern void CredFree(IntPtr cred);
 
-        if ($line -match '^Target:\s*(.+)$') {
-            if ($current) { $storedCreds += [PSCustomObject]$current }
-            $current = [ordered]@{
-                Target = $matches[1]
-                Type   = $null
-                User   = $null
-            }
-        } elseif ($line -match '^Type:\s*(.+)$' -and $current) {
-            $current.Type = $matches[1]
-        } elseif ($line -match '^User:\s*(.+)$' -and $current) {
-            $current.User = $matches[1]
-        }
+[StructLayout(LayoutKind.Sequential, CharSet=CharSet.Unicode)]
+public struct CREDENTIAL {
+    public int Flags;
+    public int Type;
+    public string TargetName;
+    public string Comment;
+    public System.Runtime.InteropServices.ComTypes.FILETIME LastWritten;
+    public int CredentialBlobSize;
+    public IntPtr CredentialBlob;
+    public int Persist;
+    public int AttributeCount;
+    public IntPtr Attributes;
+    public string TargetAlias;
+    public string UserName;
+}
+"@
     }
-    if ($current) { $storedCreds += [PSCustomObject]$current }
+
+    $count = 0
+    $predPtr = [IntPtr]::Zero
+    $ok = [CredMan.Util]::CredEnumerate($null, 1, [ref]$count, [ref]$predPtr)
+
+    $storedCreds = @()
+
+    if ($ok) {
+        for ($i = 0; $i -lt $count; $i++) {
+            $currentPtr = [System.Runtime.InteropServices.Marshal]::ReadIntPtr($predPtr, $i * [IntPtr]::Size)
+            $cred = [System.Runtime.InteropServices.Marshal]::PtrToStructure($currentPtr, [type][CredMan.CREDENTIAL])
+
+            $typeNames = @{1 = "Generic"; 2 = "DomainPassword"; 3 = "DomainCertificate"; 4 = "DomainVisiblePassword"; 5 = "GenericCertificate"; 6 = "DomainExtended" }
+
+            $entry = [ordered]@{
+                Target = $cred.TargetName
+                Type   = $typeNames[$cred.Type]
+                User   = $cred.UserName
+            }
+
+            if ($IncludePassword -and $cred.CredentialBlobSize -gt 0) {
+                $bytes = New-Object byte[] $cred.CredentialBlobSize
+                [System.Runtime.InteropServices.Marshal]::Copy($cred.CredentialBlob, $bytes, 0, $cred.CredentialBlobSize)
+                # Generic creds store UTF-16 text; domain password creds are usually encrypted/inaccessible
+                try { $entry.Password = [System.Text.Encoding]::Unicode.GetString($bytes) } catch { $entry.Password = "<binary>" }
+            }
+
+            $storedCreds += [PSCustomObject]$entry
+        }
+        [CredMan.Util]::CredFree($predPtr)
+    }
 
     Set-Variable -Name storedCreds -Value $storedCreds -Scope Global
 
@@ -260,15 +295,9 @@ function showStoredCredentials {
     }
 
     writeText -type "header" -text "Stored Windows Credentials"
-
     foreach ($cred in $storedCreds) {
-        $credTable = [ordered]@{
-            Type = $cred.Type
-            User = $cred.User
-        }
-
-        writeText -type "plain" -text "Target: $cred.Target"
-        writeText -type "table" -Table $credTable
+        writeText -type "plain" -text "Target: $($cred.Target)"
+        writeText -type "table" -Table ([ordered]@{ Type = $cred.Type; User = $cred.User })
     }
 
     writeText -type "success" -text "$($storedCreds.Count) credential(s) listed."
