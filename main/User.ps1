@@ -203,13 +203,13 @@ function editUserPassword {
         if ($user["Source"] -eq "Local") { 
             $password = readInput -prompt "Password:" -IsSecure:$true -allowBlank:$true
 
+            Get-LocalUser -Name $user["Name"] | Set-LocalUser -Password $password -PasswordNeverExpires $true
+
             if ($password.Length -eq 0) { 
                 $message = "Password for user $($user['Name']) was removed." 
             } else { 
                 $message = "Password for user $($user['Name']) changed." 
             }
-
-            Get-LocalUser -Name $user["Name"] | Set-LocalUser -Password $password -PasswordNeverExpires $true
 
             $password = $null
 
