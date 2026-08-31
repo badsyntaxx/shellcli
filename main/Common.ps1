@@ -273,3 +273,76 @@ function showStoredCredentials {
 
     writeText -type "success" -text "$($storedCreds.Count) credential(s) listed."
 }
+function Set-StoredCredential {
+    [CmdletBinding()]
+    param(
+        [parameter(Mandatory = $false)]
+        [string]$Target,
+
+        [parameter(Mandatory = $false)]
+        [string]$UserName,
+
+        [parameter(Mandatory = $false)]
+        [securestring]$Password
+    )
+
+    try {
+        # Refresh the list so $storedCreds is current
+        showStoredCredentials | Out-Null
+
+        if (-not $Target) {
+            if ($storedCreds.Count -eq 0) {
+                writeText -type "notice" -text "No stored credentials to update."
+                return
+            }
+
+            writeText -type "header" -text "Select a Credential to Update"
+
+            $menu = [ordered]@{}
+            for ($i = 0; $i -lt $storedCreds.Count; $i++) {
+                $menu["$($i + 1)"] = "$($storedCreds[$i].Target) ($($storedCreds[$i].User))"
+            }
+            writeText -type "table" -Table $menu
+
+            $selection = Read-Host " Enter the number of the credential to update"
+            $index = [int]$selection - 1
+
+            if ($index -lt 0 -or $index -ge $storedCreds.Count) {
+                writeText -type "error" -text "Invalid selection."
+                return
+            }
+
+            $Target = $storedCreds[$index].Target
+        }
+
+        writeText -type "header" -text "Updating Credential: $Target"
+
+        if (-not $UserName) {
+            $UserName = Read-Host " Enter the username"
+        }
+
+        if (-not $Password) {
+            $Password = Read-Host " Enter the new password" -AsSecureString
+        }
+
+        # Convert SecureString to plain text only for the moment cmdkey needs it
+        $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password)
+        $plainPassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto($bstr)
+        [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+
+        $result = cmdkey /generic:"$Target" /user:"$UserName" /pass:"$plainPassword" 2>&1
+
+        # Clear plaintext password from memory as soon as possible
+        Remove-Variable plainPassword -ErrorAction SilentlyContinue
+
+        if ($LASTEXITCODE -eq 0) {
+            writeText -type "success" -text "Credential '$Target' updated for user '$UserName'."
+        } else {
+            writeText -type "error" -text "Failed to update credential '$Target': $result"
+        }
+
+    } catch {
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+    }
+}
