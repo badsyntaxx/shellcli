@@ -57,13 +57,14 @@ function cleanTempFiles {
 
         foreach ($item in $paths) {
             $beforeSize = getFolderSize -Path $item.Path
-            writeText -type "plain" -text "Clearing temporary files at $($item.Label) - Before: $(formatSize $beforeSize)"
+            writeText -type "plain" -text "$(formatSize $beforeSize) found at $($item.Label)."
+            writeText -type "plain" -text "Cleaning..."
 
             Remove-Item -Path "$($item.Path)\*" -Recurse -Force -ErrorAction SilentlyContinue
 
             $afterSize = getFolderSize -Path $item.Path
             $freedSize = $beforeSize - $afterSize
-            writeText -type "plain" -text "$($item.Label) - After: $(formatSize $afterSize) (Freed: $(formatSize $freedSize))"
+            writeText -type "plain" -text "$(formatSize $freedSize) has been removed. Current size: $(formatSize $afterSize)" -lineAfter
         }
 
         writeText -type "plain" -text "Emptying Recycle Bin"
