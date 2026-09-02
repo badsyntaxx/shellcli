@@ -302,6 +302,7 @@ function getProductivityApps {
                 "Windows PowerToys"    = "Install Windows PowerToys."
                 "Adobe Acrobat Reader" = "Install Adober Acrobat Reader"
                 "Winget"               = "Install Winget package manager."
+                "Claude"               = "Install Claude AI."
                 "Exit"                 = "Exit this script and go back to main command line."
             }) -prompt "Select which productivity app to install:" -lineAfter
 
@@ -309,8 +310,22 @@ function getProductivityApps {
             0 { getWindowsPowerToys }
             1 { getAdobeAcrobatReader }
             2 { getWinget }
-            3 { readCommand }
+            3 { getClaude }
+            4 { readCommand }
         } 
+    } catch {
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+    }
+}
+function getClaude {
+    try {
+        $url = (winget show --id Anthropic.Claude | Select-String "Installer Url:").Line.Split(" ")[-1]
+        if ([string]::IsNullOrWhiteSpace($url) -or $url -notmatch '^https?://') {
+            writeText -type "error" -text "Failed to retrieve a valid installer URL. Aborting install."
+        } else {
+            installApp -url $url -appName "Claude" -params "/S" 
+        }
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
