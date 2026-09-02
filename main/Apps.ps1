@@ -1,34 +1,6 @@
 function getApps {
     try {
-        $wingetPath = Get-Command winget -ErrorAction SilentlyContinue
-        if (-not $wingetPath) {
-            WriteText -Type "plain" -Text "winget not found. Installing winget..."
-
-            try {
-                Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted -ErrorAction Stop | Out-Null
-                Install-Script -Name winget-install -Force -ErrorAction Stop | Out-Null
-            } catch {
-                writeText -Type "error" -text "Failed to install winget-install script: $($_.Exception.Message)"
-                return
-            }
-
-            # Refresh environment variables BEFORE invoking winget-install,
-            # in case Install-Script dropped it somewhere not yet on PATH in this session
-            $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-
-            winget-install 2>&1 | Out-Null
-
-            # Refresh again in case winget-install itself modified PATH
-            $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-
-            $wingetPath = Get-Command winget -ErrorAction SilentlyContinue
-            if (-not $wingetPath) {
-                writeText -Type "error" -text "winget installation failed. Please install winget manually from https://github.com/microsoft/winget-cli"
-                return
-            }
-
-            WriteText -Type "success" -Text "winget installed successfully."
-        }
+        installWingetForAllUsers
 
         $installChoice = readOption -options $([ordered]@{
                 "Browsers"      = "Get a list of internet browser software."
@@ -63,7 +35,6 @@ function getApp {
     $appName = readInput -prompt "App name:"
     $params = readInput -prompt "Args:"
     
-
     installApp -url $url -appName $appName -params $params 
 }
 function getBrowserApps {

@@ -1065,6 +1065,124 @@ function installViaWinget {
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }    
 }
+function installWingetForAllUsers {
+    # Win32_UserProfile gives us actual profile-having accounts, not just AD/local accounts
+    $profiles = Get-CimInstance -ClassName Win32_UserProfile | Where-Object {
+        -not $_.Special -and
+        $_.LocalPath -notmatch '\\(systemprofile|LocalService|NetworkService)$' -and
+        $_.SID -notmatch '^S-1-5-(18|19|20)$'   # SYSTEM, LOCAL SERVICE, NETWORK SERVICE
+    }
+
+    $users = foreach ($p in $profiles) {
+        try {
+            $sid = New-Object System.Security.Principal.SecurityIdentifier($p.SID)
+            $account = $sid.Translate([System.Security.Principal.NTAccount])
+            [PSCustomObject]@{
+                UserName  = $account.Value          # DOMAIN\user or COMPUTER\user
+                SID       = $p.SID
+                Loaded    = $p.Loaded
+                LocalPath = $p.LocalPath
+            }
+        } catch {
+            # SID no longer resolves (orphaned profile) - skip
+            continue
+        }
+    }
+
+    if (-not $users) {
+        writeText -Type "error" -text "No user profiles found on this system."
+        return
+    }
+
+    WriteText -Type "plain" -Text "Found $($users.Count) user(s): $($users.UserName -join ', ')"
+
+    # Kick off one scheduled task per user, running concurrently
+    $jobs = foreach ($u in $users) {
+        WriteText -Type "plain" -Text "Queuing winget install for $($u.UserName)..."
+        installWingetForUser -UserName $u.UserName
+    }
+
+    # Poll all tasks until done or timeout
+    $timeoutSeconds = 240
+    $elapsed = 0
+    do {
+        Start-Sleep -Seconds 3
+        $elapsed += 3
+        $stillRunning = $jobs | Where-Object {
+            $_.Result -eq "PENDING" -and
+            (Get-ScheduledTask -TaskName $_.TaskName -ErrorAction SilentlyContinue).State -eq 'Running'
+        }
+    } while ($stillRunning -and $elapsed -lt $timeoutSeconds)
+
+    # Collect results
+    foreach ($j in $jobs) {
+        if ($j.Result -eq "ERROR") {
+            writeText -Type "error" -text "Failed to schedule install for $($j.UserName): $($j.Detail)"
+            continue
+        }
+
+        Unregister-ScheduledTask -TaskName $j.TaskName -Confirm:$false -ErrorAction SilentlyContinue
+
+        if (Test-Path $j.LogPath) {
+            $log = Get-Content $j.LogPath -Raw
+            Remove-Item $j.LogPath -Force -ErrorAction SilentlyContinue
+
+            if ($log -match 'SUCCESS') {
+                WriteText -Type "success" -Text "winget installed successfully for $($j.UserName)."
+            } else {
+                writeText -Type "error" -text "winget install failed for $($j.UserName). Log:`n$log"
+            }
+        } else {
+            writeText -Type "error" -text "No result for $($j.UserName) - task may have timed out."
+        }
+    }
+}
+function installWingetForUser {
+    param(
+        [Parameter(Mandatory)]
+        [string]$UserName
+    )
+
+    $taskName = "TempWingetInstall_$([guid]::NewGuid().ToString('N'))"
+    $logPath = "$env:TEMP\winget-install-$([guid]::NewGuid().ToString('N')).log"
+
+    $scriptBlock = {
+        param($LogPath)
+        try {
+            Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted -ErrorAction Stop | Out-Null
+            Install-Script -Name winget-install -Force -Scope CurrentUser -ErrorAction Stop | Out-Null
+
+            $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+            winget-install *>> $LogPath
+            $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+
+            if (Get-Command winget -ErrorAction SilentlyContinue) {
+                "SUCCESS" | Out-File -FilePath $LogPath -Append
+            } else {
+                "FAILURE" | Out-File -FilePath $LogPath -Append
+            }
+        } catch {
+            "FAILURE: $($_.Exception.Message)" | Out-File -FilePath $LogPath -Append
+        }
+    }
+
+    $encoded = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes(
+            "& { $scriptBlock } -LogPath `"$logPath`""
+        ))
+
+    $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand $encoded"
+    $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddSeconds(5)
+    $principal = New-ScheduledTaskPrincipal -UserId $UserName -LogonType S4U -RunLevel Limited
+
+    try {
+        Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal -Force | Out-Null
+        Start-ScheduledTask -TaskName $taskName
+    } catch {
+        return [PSCustomObject]@{ UserName = $UserName; Result = "ERROR"; Detail = $_.Exception.Message; TaskName = $taskName; LogPath = $logPath }
+    }
+
+    return [PSCustomObject]@{ UserName = $UserName; Result = "PENDING"; Detail = $null; TaskName = $taskName; LogPath = $logPath }
+}
 function installApp {
     param (
         [parameter(Mandatory = $true)]
