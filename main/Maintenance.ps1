@@ -51,9 +51,20 @@ function cleanTempFiles {
     try {
         $paths = @(
             @{ Path = "C:\Windows\Temp"; Label = "C:\Windows\Temp" },
-            @{ Path = "C:\Windows\Prefetch"; Label = "C:\Windows\Prefetch" },
-            @{ Path = "C:\Users\$env:USERNAME\AppData\Local\Temp"; Label = "C:\Users\$env:USERNAME\AppData\Local\Temp" }
+            @{ Path = "C:\Windows\Prefetch"; Label = "C:\Windows\Prefetch" }
         )
+
+        # Get all user profile directories under C:\Users, excluding system/service profiles
+        $excludedProfiles = @("Public", "Default", "Default User", "All Users")
+        $userProfiles = Get-ChildItem -Path "C:\Users" -Directory -ErrorAction SilentlyContinue |
+        Where-Object { $excludedProfiles -notcontains $_.Name }
+
+        foreach ($profile in $userProfiles) {
+            $tempPath = Join-Path $profile.FullName "AppData\Local\Temp"
+            if (Test-Path $tempPath) {
+                $paths += @{ Path = $tempPath; Label = "C:\Users\$($profile.Name)\AppData\Local\Temp" }
+            }
+        }
 
         foreach ($item in $paths) {
             $beforeSize = getFolderSize -Path $item.Path

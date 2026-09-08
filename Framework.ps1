@@ -1256,7 +1256,7 @@ function uninstallWin32App {
     )
 
     try {
-        writeText -type "plain" -text "Searching for $AppName" -lineBefore
+        writeText -type "plain" -text "Searching for $AppName"
 
         $found = $false
         $regPaths = @(
@@ -1313,7 +1313,7 @@ function uninstallAppXApp {
         [string]$FriendlyName = $PackageName
     )
 
-    writeText -type "plain" -text "Searching for AppX: $FriendlyName" -lineBefore
+    writeText -type "plain" -text "Searching for AppX: $FriendlyName"
     $found = $false
     $installed = Get-AppxPackage -AllUsers -Name "*$PackageName*" -ErrorAction SilentlyContinue
 
