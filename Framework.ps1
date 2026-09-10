@@ -161,13 +161,13 @@ function readCommand {
             $commandFile = $filteredCommand[1]
             $commandFunction = $filteredCommand[2]
 
-            New-Item -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -ItemType File -Force | Out-Null
+            New-Item -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -ItemType File -Force | Out-Null
             addScript -directory $commandDirectory -file $commandFile
             addScript -file "Framework"
-            Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value "invokeScript '$commandFunction'"
-            Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value "readCommand"
+            Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value "invokeScript '$commandFunction'"
+            Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value "readCommand"
 
-            $shellCLI = Get-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Raw
+            $shellCLI = Get-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Raw
             Invoke-Expression $shellCLI
         }
     } catch {
@@ -229,16 +229,16 @@ function addScript {
         $url = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main"
 
         if ($file -eq "Framework") {
-            $download = getDownload -url "$url/$file.ps1" -target "$env:SystemRoot\Temp\$file.ps1" -hide
+            $download = getDownload -url "$url/$file.ps1" -target "$env:ProgramData\shellcli\$file.ps1" -hide
         } else {
-            $download = getDownload -url "$url/$directory/$file.ps1" -target "$env:SystemRoot\Temp\$file.ps1" -hide
+            $download = getDownload -url "$url/$directory/$file.ps1" -target "$env:ProgramData\shellcli\$file.ps1" -hide
         }
 
         if ($download -eq $true) {
-            $rawScript = Get-Content -Path "$env:SystemRoot\Temp\$file.ps1" -Raw -ErrorAction SilentlyContinue
-            Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value $rawScript
+            $rawScript = Get-Content -Path "$env:ProgramData\shellcli\$file.ps1" -Raw -ErrorAction SilentlyContinue
+            Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value $rawScript
 
-            Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\$file.ps1" | Remove-Item -ErrorAction SilentlyContinue
+            Get-Item -ErrorAction SilentlyContinue "$env:ProgramData\shellcli\$file.ps1" | Remove-Item -ErrorAction SilentlyContinue
         }
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
@@ -256,7 +256,7 @@ function log {
 
     try {      
         # Define log directory
-        $logDirectory = "C:\Temp\ShellCLI"
+        $logDirectory = "$env:ProgramData\shellcli"
         
         # Create log directory if it doesn't exist
         if (-not (Test-Path -Path $logDirectory)) {
@@ -1199,7 +1199,7 @@ function installApp {
             WriteText -Type "plain" -Text "$appName is already installed."
         } else {
             $fileName = Split-Path -Path $url -Leaf
-            $outputPath = Join-Path -Path "$env:SystemRoot\Temp" -ChildPath $fileName
+            $outputPath = Join-Path -Path "$env:ProgramData\shellcli" -ChildPath $fileName
 
             if (getDownload -url $url -target $outputPath) {
                 $fileExtension = [System.IO.Path]::GetExtension($outputPath).ToLower()

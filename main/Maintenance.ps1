@@ -167,3 +167,11 @@ function updateWindows {
         writeText -type "error" -text "updateWindows-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
     }
 }
+function fixIcons {
+    try {
+        Stop-Process -Name explorer -Force; Remove-Item "$env:USERPROFILE\AppData\Local\Microsoft\Windows\Explorer\iconcache*" -Force; Start-Process explorer
+    } catch {
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+    }
+}

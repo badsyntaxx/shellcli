@@ -153,14 +153,6 @@ function disableHibernateFile {
     writeText -type "plain" -text "Free space AFTER:  $spaceAfter GB"
     writeText -type "plain" -text "Space freed:       $spaceFreed GB"
 }
-function fixIcons {
-    try {
-        Stop-Process -Name explorer -Force; Remove-Item "$env:USERPROFILE\AppData\Local\Microsoft\Windows\Explorer\iconcache*" -Force; Start-Process explorer
-    } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
-    }
-}
 function techMode {
     # Check for interactive user session
     if (-not $env:USERNAME -or $env:USERNAME -eq "SYSTEM" -or -not (Get-Process -Name explorer -ErrorAction SilentlyContinue)) {
@@ -223,23 +215,4 @@ function getStorage {
     }
 
     writeText -type "table" -Table $data
-}
-function showStoredCredentials {
-
-
-   
-    $output = cmdkey /list
-    $targets = $output | Where-Object { $_ -match '^\s*Target:\s*(.+)$' } |
-    ForEach-Object {
-        if ($_ -match '^\s*Target:\s*(.+)$') { $matches[1].Trim() }
-    }
-
-    # Build an ordered table keyed by string index to avoid the
-    # OrderedDictionary positional-indexer ambiguity with int keys
-    $table = [ordered]@{}
-    for ($i = 0; $i -lt $targets.Count; $i++) {
-        $table["$($i + 1)"] = $targets[$i]
-    }
-
-    writeText -type "table" -Table $table
 }

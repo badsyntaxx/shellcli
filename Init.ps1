@@ -10,28 +10,28 @@ function initializeShellCLI {
         }
         
         # Create the main script file
-        New-Item -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -ItemType File -Force | Out-Null
-        log -msg "Main script file created at $env:SystemRoot\Temp\SHELLCLI.ps1."
+        New-Item -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -ItemType File -Force | Out-Null
+        log -msg "Main script file created at $env:ProgramData\shellcli\SHELLCLI.ps1."
 
         $url = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main"
 
         # Download the script
-        $download = getScript -Url "$url/Framework.ps1" -Target "$env:SystemRoot\Temp\Framework.ps1"
+        $download = getScript -Url "$url/Framework.ps1" -Target "$env:ProgramData\shellcli\Framework.ps1"
         if ($download) { 
-            log -msg "Download done. Building framework..."
+            log -msg "Building main script"
             # Append the script to the main script
-            $rawScript = Get-Content -Path "$env:SystemRoot\Temp\Framework.ps1" -Raw -ErrorAction SilentlyContinue
-            Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value $rawScript
+            $rawScript = Get-Content -Path "$env:ProgramData\shellcli\Framework.ps1" -Raw -ErrorAction SilentlyContinue
+            Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value $rawScript
 
             # Remove the script file
-            Get-Item -ErrorAction SilentlyContinue "$env:SystemRoot\Temp\Framework.ps1" | Remove-Item -ErrorAction SilentlyContinue
+            Get-Item -ErrorAction SilentlyContinue "$env:ProgramData\shellcli\Framework.ps1" | Remove-Item -ErrorAction SilentlyContinue
 
             # Add a final line that will invoke the desired function
-            Add-Content -Path "$env:SystemRoot\Temp\SHELLCLI.ps1" -Value 'invokeScript -script "readCommand -command `"help`"" -initialize $true'
+            Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value 'invokeScript -script "readCommand -command `"help`"" -initialize $true'
 
             log -msg "Starting..."
             # Execute the combined script
-            . "$env:SystemRoot\Temp\SHELLCLI.ps1"
+            . "$env:ProgramData\shellcli\SHELLCLI.ps1"
         }
     } catch {
         Write-Host "  $($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor "Red"
@@ -103,7 +103,7 @@ function log {
 
     try {      
         # Define log directory
-        $logDirectory = "C:\Temp\ShellCLI"
+        $logDirectory = "$env:ProgramData\shellcli"
         
         # Create log directory if it doesn't exist
         if (-not (Test-Path -Path $logDirectory)) {

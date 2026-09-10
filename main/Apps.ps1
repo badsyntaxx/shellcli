@@ -200,20 +200,20 @@ function getBGInfo {
     try {
         $url = "https://drive.google.com/uc?export=download&id=1gBFuz6WqrgPvIqYjrcRCYZeC_x9XsUbC"
 
-        $download = getDownload -url $url -target "$env:SystemRoot\Temp\BGInfo.zip"
+        $download = getDownload -url $url -target "$env:ProgramData\shellcli\BGInfo.zip"
 
         if ($download -eq $true) { 
-            Expand-Archive -LiteralPath "$env:SystemRoot\Temp\BGInfo.zip" -DestinationPath "$env:SystemRoot\Temp\"
+            Expand-Archive -LiteralPath "$env:ProgramData\shellcli\BGInfo.zip" -DestinationPath "$env:ProgramData\shellcli\"
 
             # Test if the extracted folder exists
-            if (Test-Path "$env:SystemRoot\Temp\BGInfo") {
+            if (Test-Path "$env:ProgramData\shellcli\BGInfo") {
                 writeText -type "plain" -text "BGInfo unpacked."
             } else {
                 writeText -type "error" -text "Failed to unpack BGInfo."
             }
 
-            ROBOCOPY "$env:SystemRoot\Temp\BGInfo" "C:\Program Files\BGInfo" /E /NFL /NDL /NJH /NJS /nc /ns | Out-Null
-            ROBOCOPY "$env:SystemRoot\Temp\BGInfo" "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup" "Start BGInfo.bat" /NFL /NDL /NJH /NJS /nc /ns | Out-Null
+            ROBOCOPY "$env:ProgramData\shellcli\BGInfo" "C:\Program Files\BGInfo" /E /NFL /NDL /NJH /NJS /nc /ns | Out-Null
+            ROBOCOPY "$env:ProgramData\shellcli\BGInfo" "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup" "Start BGInfo.bat" /NFL /NDL /NJH /NJS /nc /ns | Out-Null
 
             if (Test-Path "C:\Program Files\BGInfo") {
                 writeText -type "plain" -text "BGInfo installed."
@@ -221,14 +221,14 @@ function getBGInfo {
                 writeText -type "error" -text "Failed to install BGInfo."
             }
 
-            Remove-Item -Path "$env:SystemRoot\Temp\BGInfo.zip" -Recurse
-            Remove-Item -Path "$env:SystemRoot\Temp\BGInfo" -Recurse 
+            Remove-Item -Path "$env:ProgramData\shellcli\BGInfo.zip" -Recurse
+            Remove-Item -Path "$env:ProgramData\shellcli\BGInfo" -Recurse 
 
             $filesDeleted = $true
-            if (Test-Path "$env:SystemRoot\Temp\BGInfo.zip") { 
+            if (Test-Path "$env:ProgramData\shellcli\BGInfo.zip") { 
                 $filesDeleted = $false 
             }
-            if (Test-Path "$env:SystemRoot\Temp\BGInfo") { 
+            if (Test-Path "$env:ProgramData\shellcli\BGInfo") { 
                 $filesDeleted = $false 
             } 
             if (!$filesDeleted) {
