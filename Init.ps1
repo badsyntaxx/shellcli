@@ -18,7 +18,7 @@ function initializeShellCLI {
         # Download the script
         $download = getScript -Url "$url/Framework.ps1" -Target "$env:ProgramData\shellcli\Framework.ps1"
         if ($download) { 
-            log -msg "Building main script"
+            log -msg "Building main script..."
             # Append the script to the main script
             $rawScript = Get-Content -Path "$env:ProgramData\shellcli\Framework.ps1" -Raw -ErrorAction SilentlyContinue
             Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value $rawScript
@@ -29,7 +29,7 @@ function initializeShellCLI {
             # Add a final line that will invoke the desired function
             Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value 'invokeScript -script "readCommand -command `"help`"" -initialize $true'
 
-            log -msg "Starting..."
+            log -msg "Running main script..."
             # Execute the combined script
             . "$env:ProgramData\shellcli\SHELLCLI.ps1"
         }
@@ -49,7 +49,7 @@ function getScript {
     Process {
         $downloadComplete = $true 
         try {
-            log -msg "Downloading framework."
+            log -msg "Downloading framework..."
             # Create web request and get response
             $request = [System.Net.HttpWebRequest]::Create($url)
             $response = $request.GetResponse()

@@ -1,70 +1,70 @@
 $global:commandMap = [ordered]@{
-    "?"                              = @("main", "Core", "writeHelp", "List some help info.")
-    "help"                           = @("main", "Core", "writeHelp", "List some help info.")
-    "menu"                           = @("main", "Core", "readMenu", "Display the main menu.")
-    "commands"                       = @("main", "Core", "listAllCommands", "List all available commands.")
-    "logs"                           = @("main", "Core", "readLog", "Output the last 50 lines of the log file.")
+    "?"                              = @("main", "core", "writeHelp", "List some help info.")
+    "help"                           = @("main", "core", "writeHelp", "List some help info.")
+    "menu"                           = @("main", "core", "readMenu", "Display the main menu.")
+    "commands"                       = @("main", "core", "listAllCommands", "List all available commands.")
+    "logs"                           = @("main", "core", "readLog", "Output the last 50 lines of the log file.")
     #-- CUSTOMIZATION COMMANDS --#
-    "toggle context menu"            = @("main", "Common", "toggleContextMenu", "Toggle the context menu.")
-    "enable context menu"            = @("main", "Common", "enableContextMenu", "Enable the context menu.")
-    "disable context menu"           = @("main", "Common", "disableContextMenu", "Disable the context menu.")
-    "edit hostname"                  = @("main", "Common", "editHostname", "Edit the hostname.")
-    "edit description"               = @("main", "Common", "editDescription", "Edit the host description.")
+    "toggle context menu"            = @("main", "common", "toggleContextMenu", "Toggle the context menu.")
+    "enable context menu"            = @("main", "common", "enableContextMenu", "Enable the context menu.")
+    "disable context menu"           = @("main", "common", "disableContextMenu", "Disable the context menu.")
+    "edit hostname"                  = @("main", "common", "editHostname", "Edit the hostname.")
+    "edit description"               = @("main", "common", "editDescription", "Edit the host description.")
     #-- USER COMMANDS --#
-    "toggle admin"                   = @("main", "User", "toggleAdmin", "Toggle admin privileges.")
-    "enable admin"                   = @("main", "User", "enableAdmin", "Enable admin privileges.")
-    "disable admin"                  = @("main", "User", "disableAdmin", "Disable admin privileges.")
-    "users"                          = @("main", "User", "listUsers", "List all users.")
-    "user menu"                      = @("main", "User", "userMenu", "Display the user menu.")
-    "add user"                       = @("main", "User", "addUser", "Add a new user.")
-    "add local user"                 = @("main", "User", "addLocalUser", "Add a new local user.")
-    "add ad user"                    = @("main", "User", "addADUser", "Add a new Active Directory user.")
-    "remove user"                    = @("main", "User", "removeUser", "Remove a user.")
-    "edit user"                      = @("main", "User", "editUser", "Edit a user.")
-    "edit user name"                 = @("main", "User", "editUserName", "Edit a user's name.")
-    "edit user password"             = @("main", "User", "editUserPassword", "Edit a user's password.")
-    "edit user group"                = @("main", "User", "editUserGroup", "Edit a user's group.")
-    "unlock user"                    = @("main", "User", "unlockUser", "Unlock a user.")
+    "toggle admin"                   = @("main", "user", "toggleAdmin", "Toggle admin privileges.")
+    "enable admin"                   = @("main", "user", "enableAdmin", "Enable admin privileges.")
+    "disable admin"                  = @("main", "user", "disableAdmin", "Disable admin privileges.")
+    "users"                          = @("main", "user", "listUsers", "List all users.")
+    "user menu"                      = @("main", "user", "userMenu", "Display the user menu.")
+    "add user"                       = @("main", "user", "addUser", "Add a new user.")
+    "add local user"                 = @("main", "user", "addLocalUser", "Add a new local user.")
+    "add ad user"                    = @("main", "user", "addADUser", "Add a new Active Directory user.")
+    "remove user"                    = @("main", "user", "removeUser", "Remove a user.")
+    "edit user"                      = @("main", "user", "editUser", "Edit a user.")
+    "edit user name"                 = @("main", "user", "editUserName", "Edit a user's name.")
+    "edit user password"             = @("main", "user", "editUserPassword", "Edit a user's password.")
+    "edit user group"                = @("main", "user", "editUserGroup", "Edit a user's group.")
+    "unlock user"                    = @("main", "user", "unlockUser", "Unlock a user.")
     #-- NETWORK COMMANDS --#
-    "network"                        = @("main", "Network", "network", "Get net adapter info.")
-    "edit net adapter"               = @("main", "Network", "editNetAdapter", "Edit the network adapter.")
-    "wifi"                           = @("main", "Network", "getWifiCreds", "Get WiFi credentials.")
+    "network"                        = @("main", "network", "network", "Get net adapter info.")
+    "edit network"                   = @("main", "network", "editNetAdapter", "Edit the network adapter. ()ETA")
+    "wifi"                           = @("main", "network", "getWifiCreds", "Get WiFi credentials.")
     #-- APPS COMMANDS --#
-    "get apps"                       = @("main", "Apps", "getApps", "Display a menu of available apps.")
-    "get app"                        = @("main", "Apps", "getApp", "Get an app by providing install details.")
-    "get browser apps"               = @("main", "Apps", "getBrowserApps", "Display a menu of web browsers.")
-    "get diagnostic apps"            = @("main", "Apps", "getDiagnosticApps", "Display a menu of PC diagnostic software.")
-    "get productivity apps"          = @("main", "Apps", "getProductivityApps", "Display a menu of productivity apps.")
-    "get customization apps"         = @("main", "Apps", "getCustomizationApps", "Display a menu of customization apps.")
+    "get apps"                       = @("main", "apps", "getApps", "Display a menu of available apps.")
+    "get app"                        = @("main", "apps", "getApp", "Get an app by providing install details.")
+    "get browser apps"               = @("main", "apps", "getBrowserApps", "Display a menu of web browsers.")
+    "get diagnostic apps"            = @("main", "apps", "getDiagnosticApps", "Display a menu of PC diagnostic software.")
+    "get productivity apps"          = @("main", "apps", "getProductivityApps", "Display a menu of productivity apps.")
+    "get customization apps"         = @("main", "apps", "getCustomizationApps", "Display a menu of customization apps.")
     #-- SYSTEM COMMANDS --#
-    "techmode 1"                     = @("main", "Common", "techMode", "Enable tech mode.")
-    "techmode 0"                     = @("main", "Common", "userMode", "Enable user mode.")
-    "fix icons"                      = @("main", "Common", "fixIcons", "Fix desktop icons.")
-    "disable hibernate file"         = @("main", "Common", "disableHibernateFile", "Disable the hibernate file.")
-    "services"                       = @("main", "Services", "listServices", "Display the services.")
-    "stop service"                   = @("main", "Services", "stopService", "Stop a service.")
-    "start service"                  = @("main", "Services", "startService", "Start a service.")
-    "restart service"                = @("main", "Services", "restartService", "Restart a service.")
-    "service status"                 = @("main", "Services", "getServiceStatus", "Check the status of a service.")
-    "service menu"                   = @("main", "Services", "serviceMenu", "Display the service controller menu.")
-    "schedule task"                  = @("main", "Schedule Task", "scheduleTask", "Schedule a task.")
-    "update windows"                 = @("main", "Maintenance", "updateWindows", "Update Windows.")
-    "clean temp files"               = @("main", "Maintenance", "cleanTempFiles", "Clear temporary files.")
-    "repair windows"                 = @("main", "Maintenance", "repairWindows", "Repair Windows.")
-    "install host gpu drivers on vm" = @("main", "Share GPU with VM", "installHostGPUDriversOnVM", "Install host GPU drivers on VM.")
-    "partition gpu"                  = @("main", "Share GPU with VM", "partitionGPU", "Partition the GPU.")
-    "generate encrypted password"    = @("main", "Generate Encrypted Password", "generateEncryptedPassword", "Generate an encrypted password.")
-    "unlock local user"              = @("main", "User", "unlockLocalUser", "Unlock a locked local account.")
-    "find dc"                        = @("main", "Common", "findDC", "Find the domain controller.")
-    "storage"                        = @("main", "Common", "getStorage", "Display storage information.")
-    "stored creds"                   = @("main", "Common", "showStoredCredentials", "Show Windows stored credentials.")
+    "techmode 1"                     = @("main", "common", "techMode", "Enable tech mode.")
+    "techmode 0"                     = @("main", "common", "userMode", "Enable user mode.")
+    "fix icons"                      = @("main", "fix", "fixIcons", "Fix desktop icons.")
+    "disable hibernate file"         = @("main", "common", "disableHibernateFile", "Disable the hibernate file.")
+    "services"                       = @("main", "services", "listServices", "Display the services.")
+    "stop service"                   = @("main", "services", "stopService", "Stop a service.")
+    "start service"                  = @("main", "services", "startService", "Start a service.")
+    "restart service"                = @("main", "services", "restartService", "Restart a service.")
+    "service status"                 = @("main", "services", "getServiceStatus", "Check the status of a service.")
+    "service menu"                   = @("main", "services", "serviceMenu", "Display the service controller menu.")
+    "schedule task"                  = @("main", "task", "scheduleTask", "Schedule a task.(BETA)")
+    "update windows"                 = @("main", "fix", "updateWindows", "Update Windows.")
+    "clean temp files"               = @("main", "fix", "cleanTempFiles", "Clear temporary files.")
+    "repair windows"                 = @("main", "fix", "repairWindows", "Repair Windows.")
+    "install host gpu drivers on vm" = @("main", "gpu", "installHostGPUDriversOnVM", "Install host GPU drivers on VM.")
+    "partition gpu"                  = @("main", "gpu", "partitionGPU", "Partition the GPU.")
+    "generate encrypted password"    = @("main", "common", "generateEncryptedPassword", "Generate an encrypted password.")
+    "unlock local user"              = @("main", "user", "unlockLocalUser", "Unlock a locked local account.")
+    "find dc"                        = @("main", "common", "findDC", "Find the domain controller.")
+    "storage"                        = @("main", "common", "getStorage", "Display storage information.")
+    "stored creds"                   = @("main", "common", "showStoredCredentials", "Show Windows stored credentials.")
     #-- PLUGIN COMMANDS --#
-    "plugins"                        = @("plugins", "Core", "plugins", "List available plugins.")
-    "plugins menu"                   = @("plugins", "Core", "readMenu", "Display the plugin menu.")
-    "plugins help"                   = @("plugins", "Core", "writeHelp", "Display help information for plugins.")
-    "plugins ?"                      = @("plugins", "Core", "writeHelp", "Display help information for plugins.")
+    "plugins"                        = @("plugins", "core", "plugins", "List available plugins.")
+    "plugins menu"                   = @("plugins", "core", "readMenu", "Display the plugin menu.")
+    "plugins help"                   = @("plugins", "core", "writeHelp", "Display help information for plugins.")
+    "plugins ?"                      = @("plugins", "core", "writeHelp", "Display help information for plugins.")
     "plugins massgravel"             = @("plugins", "massgravel", "massgravel", "Windows activation scripts.")
-    "plugins reclaim"                = @("plugins", "Reclaim", "reclaim", "Disable telemetry and bloatware in Windows 11.")
+    "plugins reclaim"                = @("plugins", "reclaim", "reclaim", "Disable telemetry and bloatware in Windows 11.")
 }
 
 function invokeScript {
@@ -162,11 +162,11 @@ function readCommand {
             $commandFunction = $filteredCommand[2]
 
             New-Item -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -ItemType File -Force | Out-Null
-            addScript -directory $commandDirectory -file $commandFile
-            addScript -file "Framework"
+            newAddScript -directory $commandDirectory -file $commandFile -functionName $commandFunction
+            # addScript -file "Framework"
             Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value "invokeScript '$commandFunction'"
             Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value "readCommand"
-
+            return
             $shellCLI = Get-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Raw
             Invoke-Expression $shellCLI
         }
@@ -215,6 +215,31 @@ function filterCommands {
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+    }
+}
+function newAddScript {
+    param (
+        [Parameter(Mandatory = $false)][string]$directory,
+        [Parameter(Mandatory)][string]$file,
+        [Parameter(Mandatory)][string]$functionName
+    )
+
+    $url = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main/$directory/$file.ps1"
+    $src = (Invoke-WebRequest -Uri $url -UseBasicParsing).Content
+    $ast = [System.Management.Automation.Language.Parser]::ParseInput($src, [ref]$null, [ref]$null)
+
+    $fn = $ast.FindAll({
+            param($node)
+            $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+            $node.Name -eq $functionName
+        }, $true) | Select-Object -First 1
+
+    if ($fn) {
+        # $fn.Extent.Text | Set-Content -Path ".\$functionName.ps1" -Encoding UTF8
+        write-host $fn.Extent.Text
+        return $fn.Extent.Text
+    } else {
+        Write-Warning "Function '$functionName' not found."
     }
 }
 function addScript {
