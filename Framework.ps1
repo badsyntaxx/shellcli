@@ -163,7 +163,7 @@ function readCommand {
 
             New-Item -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -ItemType File -Force | Out-Null
             newAddScript -directory $commandDirectory -file $commandFile -functionName $commandFunction
-            # addScript -file "Framework"
+            # addScript -file "framework"
             Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value "invokeScript '$commandFunction'"
             Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value "readCommand"
             return
@@ -253,7 +253,7 @@ function addScript {
     try {
         $url = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main"
 
-        if ($file -eq "Framework") {
+        if ($file -eq "framework") {
             $download = getDownload -url "$url/$file.ps1" -target "$env:ProgramData\shellcli\$file.ps1" -hide
         } else {
             $download = getDownload -url "$url/$directory/$file.ps1" -target "$env:ProgramData\shellcli\$file.ps1" -hide
