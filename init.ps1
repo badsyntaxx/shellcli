@@ -13,84 +13,63 @@ function initializeShellCLI {
         New-Item -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -ItemType File -Force | Out-Null
         log -msg "Main script file created at $env:ProgramData\shellcli\SHELLCLI.ps1."
 
-        $url = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main"
+       
+        log -msg "Building main script..."
+        appendToMainScript -directory "main" -file "core" -functionName "writeHelp"
+        appendToMainScript -file "framework"
+        
+        # Add a final line that will invoke the desired function
+        Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value 'invokeScript -script "readCommand -command `"help`"" -initialize $true'
 
-        # Download the script
-        $download = getScript -Url "$url/framework.ps1" -Target "$env:ProgramData\shellcli\framework.ps1"
-        if ($download) { 
-            log -msg "Building main script..."
-            # Append the script to the main script
-            $rawScript = Get-Content -Path "$env:ProgramData\shellcli\framework.ps1" -Raw -ErrorAction SilentlyContinue
-            Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value $rawScript
-
-            # Remove the script file
-            Get-Item -ErrorAction SilentlyContinue "$env:ProgramData\shellcli\framework.ps1" | Remove-Item -ErrorAction SilentlyContinue
-
-            # Add a final line that will invoke the desired function
-            Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value 'invokeScript -script "readCommand -command `"help`"" -initialize $true'
-
-            log -msg "Running main script..."
-            # Execute the combined script
-            . "$env:ProgramData\shellcli\SHELLCLI.ps1"
-        }
+        log -msg "Running main script..."
+        # Execute the combined script
+        . "$env:ProgramData\shellcli\SHELLCLI.ps1"
+        
     } catch {
         Write-Host "  $($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor "Red"
         log -msg "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
     }
 }
-function getScript {
+function appendToMainScript {
     param (
-        [Parameter(Mandatory)]
-        [string]$url,
-        [Parameter(Mandatory)]
-        [string]$target
+        [Parameter(Mandatory = $false)][string]$directory,
+        [Parameter(Mandatory)][string]$file,
+        [Parameter(Mandatory = $false)][string]$functionName
     )
-  
-    Process {
-        $downloadComplete = $true 
-        try {
-            log -msg "Downloading framework..."
-            # Create web request and get response
-            $request = [System.Net.HttpWebRequest]::Create($url)
-            $response = $request.GetResponse()
-            
-            # Check for unauthorized or non-existent file
-            if ($response.StatusCode -eq 401 -or $response.StatusCode -eq 403 -or $response.StatusCode -eq 404) {
-                throw "Remote file error: $($response.StatusCode) - '$url'"
-            }
-  
-            # Handle relative target path
-            if ($target -match '^\.\\') { 
-                $target = Join-Path (Get-Location) ($target -Split '^\.')[1] 
-            }
-  
-            # Open streams for reading and writing
-            $reader = $response.GetResponseStream()
-            $writer = New-Object System.IO.FileStream $target, "Create"
-            $buffer = new-object byte[] 1048576
-  
-            # Read data in chunks and write to target file
-            do {
-                $count = $reader.Read($buffer, 0, $buffer.Length)
-                $writer.Write($buffer, 0, $count)
-            } while ($count -gt 0)
-  
-            # Close streams silently (assuming success)
-            if ($downloadComplete) { 
-                return $true 
-            } else { 
-                return $false 
-            }
-        } catch {
-            log -msg "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
-            write-host $($_.Exception.Message)
-            read-host
-            return $false
-        } finally {
-            $reader.Close()
-            $writer.Close()
+
+    try {
+        $url = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main/$file.ps1"
+        if ($directory) {
+            $url = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main/$directory/$file.ps1"
         }
+
+        Write-Host $url
+        $src = (Invoke-WebRequest -Uri $url -UseBasicParsing).Content
+        $ast = [System.Management.Automation.Language.Parser]::ParseInput($src, [ref]$null, [ref]$null)
+
+        if (-not $functionName) {
+            # If no function name is provided, append the entire script
+            Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value $src
+            return
+        }
+
+        $fn = $ast.FindAll({
+                param($node)
+                $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+                $node.Name -eq $functionName
+            }, $true) | Select-Object -First 1
+
+        if ($fn) {
+            Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value $fn.Extent.Text
+        } else {
+            throw "Function '$functionName' not found."
+        }
+    } catch {
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
+
+    
 }
 function log {
     param(

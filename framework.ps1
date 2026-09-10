@@ -162,8 +162,8 @@ function readCommand {
             $commandFunction = $filteredCommand[2]
 
             New-Item -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -ItemType File -Force | Out-Null
-            newAddScript -directory $commandDirectory -file $commandFile -functionName $commandFunction
-            # addScript -file "framework"
+            appendToMainScript -directory $commandDirectory -file $commandFile -functionName $commandFunction
+            appendToMainScript -file "framework"
             Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value "invokeScript '$commandFunction'"
             Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value "readCommand"
             return
@@ -217,17 +217,28 @@ function filterCommands {
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
-function newAddScript {
+function appendToMainScript {
     param (
         [Parameter(Mandatory = $false)][string]$directory,
         [Parameter(Mandatory)][string]$file,
-        [Parameter(Mandatory)][string]$functionName
+        [Parameter(Mandatory = $false)][string]$functionName
     )
 
     try {
-        $url = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main/$directory/$file.ps1"
+        $url = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main/$file.ps1"
+        if ($directory) {
+            $url = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main/$directory/$file.ps1"
+        }
+
+        Write-Host $url
         $src = (Invoke-WebRequest -Uri $url -UseBasicParsing).Content
         $ast = [System.Management.Automation.Language.Parser]::ParseInput($src, [ref]$null, [ref]$null)
+
+        if (-not $functionName) {
+            # If no function name is provided, append the entire script
+            Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value $src
+            return
+        }
 
         $fn = $ast.FindAll({
                 param($node)
