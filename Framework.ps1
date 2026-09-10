@@ -224,23 +224,28 @@ function newAddScript {
         [Parameter(Mandatory)][string]$functionName
     )
 
-    $url = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main/$directory/$file.ps1"
-    $src = (Invoke-WebRequest -Uri $url -UseBasicParsing).Content
-    $ast = [System.Management.Automation.Language.Parser]::ParseInput($src, [ref]$null, [ref]$null)
+    try {
+        $url = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main/$directory/$file.ps1"
+        $src = (Invoke-WebRequest -Uri $url -UseBasicParsing).Content
+        $ast = [System.Management.Automation.Language.Parser]::ParseInput($src, [ref]$null, [ref]$null)
 
-    $fn = $ast.FindAll({
-            param($node)
-            $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
-            $node.Name -eq $functionName
-        }, $true) | Select-Object -First 1
+        $fn = $ast.FindAll({
+                param($node)
+                $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+                $node.Name -eq $functionName
+            }, $true) | Select-Object -First 1
 
-    if ($fn) {
-        # $fn.Extent.Text | Set-Content -Path ".\$functionName.ps1" -Encoding UTF8
-        write-host $fn.Extent.Text
-        return $fn.Extent.Text
-    } else {
-        Write-Warning "Function '$functionName' not found."
+        if ($fn) {
+            Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value $fn.Extent.Text
+        } else {
+            throw "Function '$functionName' not found."
+        }
+    } catch {
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
+
+    
 }
 function addScript {
     param (
