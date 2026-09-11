@@ -14,7 +14,7 @@ function initializeShellCLI {
         New-Item -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -ItemType File -Force | Out-Null
 
         appendToMainScript -file "framework"
-        appendToMainScript -directory "main" -file "core" -functionName "writeHelp"
+        appendToMainScript -directory "main" -file "core"
 
         # Add a final line that will invoke the desired function
         Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value 'invokeScript -script "readCommand -command `"help`"" -initialize $true'
