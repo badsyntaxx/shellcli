@@ -10,7 +10,7 @@ function initializeShellCLI {
         }
         
         # Create the main script file
-        log -msg "Building main script..."
+        log -msg "Building main script"
         New-Item -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -ItemType File -Force | Out-Null
 
         appendToMainScript -file "framework"
@@ -19,7 +19,7 @@ function initializeShellCLI {
         # Add a final line that will invoke the desired function
         Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value 'invokeScript -script "readCommand -command `"help`"" -initialize $true'
 
-        log -msg "Running main script..."
+        log -msg "Running main script"
         # Execute the combined script
         . "$env:ProgramData\shellcli\SHELLCLI.ps1"
     } catch {
