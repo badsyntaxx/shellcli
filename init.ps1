@@ -34,6 +34,9 @@ function appendToMainScript {
         [Parameter(Mandatory = $false)][string]$functionName
     )
 
+    $oldProgress = $ProgressPreference
+    $ProgressPreference = 'SilentlyContinue'
+
     try {
         $url = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main/$file.ps1"
         if ($directory) {
@@ -41,13 +44,13 @@ function appendToMainScript {
         }
 
         $src = (Invoke-WebRequest -Uri $url -UseBasicParsing).Content
-        $ast = [System.Management.Automation.Language.Parser]::ParseInput($src, [ref]$null, [ref]$null)
 
         if (-not $functionName) {
-            # If no function name is provided, append the entire script
             Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value $src
             return
         }
+
+        $ast = [System.Management.Automation.Language.Parser]::ParseInput($src, [ref]$null, [ref]$null)
 
         $fn = $ast.FindAll({
                 param($node)
@@ -63,9 +66,9 @@ function appendToMainScript {
     } catch {
         Write-Host "  $($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor "Red"
         log -msg "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
+    } finally {
+        $ProgressPreference = $oldProgress
     }
-
-    
 }
 function log {
     param(
