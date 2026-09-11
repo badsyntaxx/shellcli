@@ -162,11 +162,10 @@ function readCommand {
             $commandFunction = $filteredCommand[2]
 
             New-Item -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -ItemType File -Force | Out-Null
-            appendToMainScript -directory $commandDirectory -file $commandFile -functionName $commandFunction
             appendToMainScript -file "framework"
+            appendToMainScript -directory $commandDirectory -file $commandFile -functionName $commandFunction
             Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value "invokeScript '$commandFunction'"
             Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value "readCommand"
-            return
             $shellCLI = Get-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Raw
             Invoke-Expression $shellCLI
         }
@@ -230,7 +229,6 @@ function appendToMainScript {
             $url = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main/$directory/$file.ps1"
         }
 
-        Write-Host $url
         $src = (Invoke-WebRequest -Uri $url -UseBasicParsing).Content
         $ast = [System.Management.Automation.Language.Parser]::ParseInput($src, [ref]$null, [ref]$null)
 

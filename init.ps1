@@ -15,9 +15,9 @@ function initializeShellCLI {
 
        
         log -msg "Building main script..."
-        appendToMainScript -directory "main" -file "core" -functionName "writeHelp"
         appendToMainScript -file "framework"
-        
+        appendToMainScript -directory "main" -file "core" -functionName "writeHelp"
+
         # Add a final line that will invoke the desired function
         Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value 'invokeScript -script "readCommand -command `"help`"" -initialize $true'
 
@@ -43,7 +43,6 @@ function appendToMainScript {
             $url = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main/$directory/$file.ps1"
         }
 
-        Write-Host $url
         $src = (Invoke-WebRequest -Uri $url -UseBasicParsing).Content
         $ast = [System.Management.Automation.Language.Parser]::ParseInput($src, [ref]$null, [ref]$null)
 
