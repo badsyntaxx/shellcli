@@ -10,11 +10,9 @@ function initializeShellCLI {
         }
         
         # Create the main script file
-        New-Item -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -ItemType File -Force | Out-Null
-        log -msg "Main script file created at $env:ProgramData\shellcli\SHELLCLI.ps1."
-
-       
         log -msg "Building main script..."
+        New-Item -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -ItemType File -Force | Out-Null
+
         appendToMainScript -file "framework"
         appendToMainScript -directory "main" -file "core" -functionName "writeHelp"
 
@@ -24,7 +22,6 @@ function initializeShellCLI {
         log -msg "Running main script..."
         # Execute the combined script
         . "$env:ProgramData\shellcli\SHELLCLI.ps1"
-        
     } catch {
         Write-Host "  $($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor "Red"
         log -msg "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
