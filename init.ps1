@@ -30,8 +30,7 @@ function initializeShellCLI {
 function appendToMainScript {
     param (
         [Parameter(Mandatory = $false)][string]$directory,
-        [Parameter(Mandatory)][string]$file,
-        [Parameter(Mandatory = $false)][string]$functionName
+        [Parameter(Mandatory)][string]$file
     )
 
     $oldProgress = $ProgressPreference
@@ -44,25 +43,7 @@ function appendToMainScript {
         }
 
         $src = (Invoke-WebRequest -Uri $url -UseBasicParsing).Content
-
-        if (-not $functionName) {
-            Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value $src
-            return
-        }
-
-        $ast = [System.Management.Automation.Language.Parser]::ParseInput($src, [ref]$null, [ref]$null)
-
-        $fn = $ast.FindAll({
-                param($node)
-                $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
-                $node.Name -eq $functionName
-            }, $true) | Select-Object -First 1
-
-        if ($fn) {
-            Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value $fn.Extent.Text
-        } else {
-            throw "Function '$functionName' not found."
-        }
+        Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value $src
     } catch {
         Write-Host "  $($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor "Red"
         log -msg "$($MyInvocation.MyCommand.Name): $($_.InvocationInfo.ScriptLineNumber)-$($_.Exception.Message)"
