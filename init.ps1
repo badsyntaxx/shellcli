@@ -14,6 +14,11 @@ function initializeShellCLI {
         log -msg "Building main script"
         New-Item -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -ItemType File -Force | Out-Null
 
+        if (-not (Test-Path -Path "$env:ProgramData\shellcli\SHELLCLI.ps1")) {
+            log -msg "Failed to create main script file" -lvl "ERROR"
+            throw "Failed to create main script file"
+        }
+
         appendToMainScript -file "framework"
         appendToMainScript -directory "main" -file "core"
 
