@@ -240,34 +240,6 @@ function appendToMainScript {
         $ProgressPreference = $oldProgress
     }
 }
-function addScript {
-    param (
-        [Parameter(Mandatory = $false)]
-        [string]$directory,
-        [Parameter(Mandatory)]
-        [string]$file
-    )
-
-    try {
-        $url = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main"
-
-        if ($file -eq "framework") {
-            $download = getDownload -url "$url/$file.ps1" -target "$env:ProgramData\shellcli\$file.ps1" -hide
-        } else {
-            $download = getDownload -url "$url/$directory/$file.ps1" -target "$env:ProgramData\shellcli\$file.ps1" -hide
-        }
-
-        if ($download -eq $true) {
-            $rawScript = Get-Content -Path "$env:ProgramData\shellcli\$file.ps1" -Raw -ErrorAction SilentlyContinue
-            Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value $rawScript
-
-            Get-Item -ErrorAction SilentlyContinue "$env:ProgramData\shellcli\$file.ps1" | Remove-Item -ErrorAction SilentlyContinue
-        }
-    } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
-    }
-}
 function log {
     param(
         [Parameter(Mandatory = $true, Position = 0)]
@@ -407,6 +379,7 @@ function writeText {
             if ($orderedKeys.Count -eq 1) {
                 Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Cyan"
                 Write-Host "   $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($Table[$orderedKeys])"
+                log -msg "$($orderedKeys) - $($Table[$orderedKeys])" -lvl "INFO"
             } else {
                 # Loop through each option and display with padding and color
                 for ($i = 0; $i -lt $orderedKeys.Count; $i++) {
@@ -414,6 +387,7 @@ function writeText {
                     $padding = " " * ($longestKeyLength - $key.Length)
                     Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Cyan"
                     Write-Host "   $($key): $padding $($Table[$key])" -ForegroundColor $Color
+                    log -msg "$($key): $padding $($Table[$key])" -lvl "INFO"
                 }
             }
         }
@@ -428,6 +402,7 @@ function writeText {
             if ($orderedKeys.Count -eq 1) {
                 Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Cyan"
                 Write-Host " $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($List[$key][$ListValue])"
+                log -msg "$($orderedKeys) - $($List[$key][$ListValue])" -lvl "INFO"
             } else {
                 # Loop through each option and display with padding and color
                 for ($i = 0; $i -lt $orderedKeys.Count; $i++) {
@@ -435,6 +410,7 @@ function writeText {
                     $padding = " " * ($longestKeyLength - $key.Length)
                     Write-Host " $([char]0x2502)" -NoNewline -ForegroundColor "Cyan"
                     Write-Host "   $($key): $padding $($List[$key][$ListValue])" -ForegroundColor $Color
+                    log -msg "$($key): $padding $($List[$key][$ListValue])" -lvl "INFO"
                 }
             }
         }

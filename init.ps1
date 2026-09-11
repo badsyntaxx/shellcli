@@ -1,6 +1,5 @@
 function initializeShellCLI {
     try {
-        log -msg "Initializing ShellCLI..."
         # Check if user has administrator privileges
         if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]"Administrator")) {
             log -msg "Terminal is not admin. Self elevating."
@@ -8,6 +7,8 @@ function initializeShellCLI {
             Start-Process powershell.exe "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`" $PSCommandArgs" -WorkingDirectory $pwd -Verb RunAs
             Exit
         }
+        
+        log -msg "Initializing ShellCLI"
         
         # Create the main script file
         log -msg "Building main script"

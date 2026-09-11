@@ -566,7 +566,6 @@ function listUsers {
     }
 }
 function getUserInfo {
-
     $user = selectUser -prompt "Select a user to view details." -lineAfter
 
     $profiles = Get-CimInstance -ClassName Win32_UserProfile
@@ -709,7 +708,6 @@ function unlockADUser {
         
     writeText -type "text" -text "This function is not yet implemented."
 }
-
 function getUsers {
     Write-Host "Getting user profiles..."
 
