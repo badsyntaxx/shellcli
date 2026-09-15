@@ -1069,123 +1069,193 @@ function installViaWinget {
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }    
 }
-function installWingetForAllUsers {
-    # Win32_UserProfile gives us actual profile-having accounts, not just AD/local accounts
-    $profiles = Get-CimInstance -ClassName Win32_UserProfile | Where-Object {
-        -not $_.Special -and
-        $_.LocalPath -notmatch '\\(systemprofile|LocalService|NetworkService)$' -and
-        $_.SID -notmatch '^S-1-5-(18|19|20)$'   # SYSTEM, LOCAL SERVICE, NETWORK SERVICE
-    }
+function resolveWinget {
+    <#
+        Used for post-install verification only. Your existing
+        `winget show --id X` call sites keep working as-is.
+    #>
+    try {
+        $cmd = Get-Command winget.exe -ErrorAction SilentlyContinue
+        if ($cmd) { return $cmd.Source }
 
-    $users = foreach ($p in $profiles) {
-        try {
-            $sid = New-Object System.Security.Principal.SecurityIdentifier($p.SID)
-            $account = $sid.Translate([System.Security.Principal.NTAccount])
-            [PSCustomObject]@{
-                UserName  = $account.Value          # DOMAIN\user or COMPUTER\user
-                SID       = $p.SID
-                Loaded    = $p.Loaded
-                LocalPath = $p.LocalPath
-            }
-        } catch {
-            # SID no longer resolves (orphaned profile) - skip
-            continue
-        }
-    }
+        $candidate = Get-ChildItem -Path "$env:ProgramFiles\WindowsApps" `
+            -Filter "winget.exe" -Recurse -ErrorAction SilentlyContinue |
+        Where-Object { $_.DirectoryName -like "*Microsoft.DesktopAppInstaller_*_x64__8wekyb3d8bbwe*" } |
+        Select-Object -Last 1
 
-    if (-not $users) {
-        writeText -Type "error" -text "No user profiles found on this system."
-        return
-    }
-
-    WriteText -Type "plain" -Text "Found $($users.Count) user(s): $($users.UserName -join ', ')"
-
-    # Kick off one scheduled task per user, running concurrently
-    $jobs = foreach ($u in $users) {
-        WriteText -Type "plain" -Text "Queuing winget install for $($u.UserName)..."
-        installWingetForUser -UserName $u.UserName
-    }
-
-    # Poll all tasks until done or timeout
-    $timeoutSeconds = 240
-    $elapsed = 0
-    do {
-        Start-Sleep -Seconds 3
-        $elapsed += 3
-        $stillRunning = $jobs | Where-Object {
-            $_.Result -eq "PENDING" -and
-            (Get-ScheduledTask -TaskName $_.TaskName -ErrorAction SilentlyContinue).State -eq 'Running'
-        }
-    } while ($stillRunning -and $elapsed -lt $timeoutSeconds)
-
-    # Collect results
-    foreach ($j in $jobs) {
-        if ($j.Result -eq "ERROR") {
-            writeText -Type "error" -text "Failed to schedule install for $($j.UserName): $($j.Detail)"
-            continue
-        }
-
-        Unregister-ScheduledTask -TaskName $j.TaskName -Confirm:$false -ErrorAction SilentlyContinue
-
-        if (Test-Path $j.LogPath) {
-            $log = Get-Content $j.LogPath -Raw
-            Remove-Item $j.LogPath -Force -ErrorAction SilentlyContinue
-
-            if ($log -match 'SUCCESS') {
-                WriteText -Type "success" -Text "winget installed successfully for $($j.UserName)."
-            } else {
-                writeText -Type "error" -text "winget install failed for $($j.UserName). Log:`n$log"
-            }
-        } else {
-            writeText -Type "error" -text "No result for $($j.UserName) - task may have timed out."
-        }
+        if ($candidate) { return $candidate.FullName }
+        return $null
+    } catch {
+        return $null
     }
 }
-function installWingetForUser {
+function registerWingetForCurrentUser {
+    <#
+        Provisioning stages the package into the image, but the account running
+        the script right now may not have it registered. This binds it without
+        re-downloading anything.
+    #>
+    try {
+        Add-AppxPackage -RegisterByFamilyName `
+            -MainPackage "Microsoft.DesktopAppInstaller_8wekyb3d8bbwe" `
+            -ErrorAction Stop
+    } catch {
+        # Expected under SYSTEM, where there is no meaningful user context.
+        log -msg "registerWingetForCurrentUser: $($_.Exception.Message)" -lvl "WARN"
+    }
+}
+function installWingetForAllUsers {
+    [CmdletBinding()]
     param(
-        [Parameter(Mandatory)]
-        [string]$UserName
+        # Re-provision even if App Installer is already present.
+        [switch]$Force
     )
 
-    $taskName = "TempWingetInstall_$([guid]::NewGuid().ToString('N'))"
-    $logPath = "$env:TEMP\winget-install-$([guid]::NewGuid().ToString('N')).log"
-
-    $scriptBlock = {
-        param($LogPath)
-        try {
-            Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted -ErrorAction Stop | Out-Null
-            Install-Script -Name winget-install -Force -Scope CurrentUser -ErrorAction Stop | Out-Null
-
-            $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-            winget-install *>> $LogPath
-            $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-
-            if (Get-Command winget -ErrorAction SilentlyContinue) {
-                "SUCCESS" | Out-File -FilePath $LogPath -Append
-            } else {
-                "FAILURE" | Out-File -FilePath $LogPath -Append
-            }
-        } catch {
-            "FAILURE: $($_.Exception.Message)" | Out-File -FilePath $LogPath -Append
-        }
-    }
-
-    $encoded = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes(
-            "& { $scriptBlock } -LogPath `"$logPath`""
-        ))
-
-    $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand $encoded"
-    $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddSeconds(5)
-    $principal = New-ScheduledTaskPrincipal -UserId $UserName -LogonType S4U -RunLevel Limited
-
     try {
-        Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal -Force | Out-Null
-        Start-ScheduledTask -TaskName $taskName
-    } catch {
-        return [PSCustomObject]@{ UserName = $UserName; Result = "ERROR"; Detail = $_.Exception.Message; TaskName = $taskName; LogPath = $logPath }
-    }
+        # --- 1. Elevation is mandatory for DISM provisioning ---------------
+        $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+        $isAdmin = ([Security.Principal.WindowsPrincipal]$identity).IsInRole(
+            [Security.Principal.WindowsBuiltInRole]::Administrator)
 
-    return [PSCustomObject]@{ UserName = $UserName; Result = "PENDING"; Detail = $null; TaskName = $taskName; LogPath = $logPath }
+        if (-not $isAdmin) {
+            writeText -type "error" -text "Provisioning App Installer requires an elevated session. Re-run as Administrator."
+            log -msg "installWingetForAllUsers: not elevated, aborting." -lvl "ERROR"
+            return $false
+        }
+
+        # --- 2. Already there? ---------------------------------------------
+        if (-not $Force) {
+            $existing = Get-AppxProvisionedPackage -Online |
+            Where-Object { $_.DisplayName -eq 'Microsoft.DesktopAppInstaller' }
+
+            if ($existing) {
+                writeText -type "plain" -text "App Installer already provisioned (v$($existing.Version))."
+                if (-not (resolveWinget)) { registerWingetForCurrentUser }
+                return $true
+            }
+        }
+
+        # --- 3. Scratch space -------------------------------------------------
+        $work = Join-Path $env:ProgramData "shellcli\wingetProvision"
+        if (Test-Path $work) { Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue }
+        New-Item -ItemType Directory -Path $work -Force | Out-Null
+
+        # --- 4. Work out what to download --------------------------------------
+        writeText -type "plain" -text "Querying latest winget-cli release..."
+
+        $apiJson = Join-Path $work "release.json"
+        if (-not (getDownload -url "https://api.github.com/repos/microsoft/winget-cli/releases/latest" -target $apiJson)) {
+            writeText -type "error" -text "Failed to query the winget-cli release feed."
+            log -msg "installWingetForAllUsers: release feed download failed." -lvl "ERROR"
+            return $false
+        }
+
+        try {
+            $release = Get-Content -LiteralPath $apiJson -Raw | ConvertFrom-Json
+        } catch {
+            # Almost always a 403 from GitHub because no User-Agent header was sent.
+            writeText -type "error" -text "Release feed did not return valid JSON. If getDownload uses WebClient or BITS, add a User-Agent header."
+            log -msg "installWingetForAllUsers: release feed parse failed - $($_.Exception.Message)" -lvl "ERROR"
+            return $false
+        }
+
+        if (-not $release.assets) {
+            writeText -type "error" -text "Release feed contained no assets."
+            return $false
+        }
+
+        $bundleAsset = $release.assets | Where-Object { $_.name -like "*.msixbundle" }   | Select-Object -First 1
+        $licenseAsset = $release.assets | Where-Object { $_.name -like "*_License1.xml" } | Select-Object -First 1
+        $depsAsset = $release.assets | Where-Object { $_.name -eq "DesktopAppInstaller_Dependencies.zip" } | Select-Object -First 1
+
+        if (-not $bundleAsset -or -not $licenseAsset -or -not $depsAsset) {
+            writeText -type "error" -text "Could not locate all required assets in release $($release.tag_name)."
+            log -msg "installWingetForAllUsers: missing release assets in $($release.tag_name)." -lvl "ERROR"
+            return $false
+        }
+
+        writeText -type "plain" -text "Found $($release.tag_name)."
+
+        # --- 5. Download via getDownload ----------------------------------------
+        $bundlePath = Join-Path $work $bundleAsset.name
+        $licensePath = Join-Path $work $licenseAsset.name
+        $depsZipPath = Join-Path $work $depsAsset.name
+
+        $downloads = @(
+            @{ Url = $bundleAsset.browser_download_url; Target = $bundlePath; Label = "App Installer bundle" },
+            @{ Url = $licenseAsset.browser_download_url; Target = $licensePath; Label = "license file" },
+            @{ Url = $depsAsset.browser_download_url; Target = $depsZipPath; Label = "dependency package" }
+        )
+
+        foreach ($item in $downloads) {
+            if (-not (getDownload -url $item.Url -target $item.Target)) {
+                writeText -type "error" -text "Failed to download the $($item.Label)."
+                log -msg "installWingetForAllUsers: download failed - $($item.Url)" -lvl "ERROR"
+                return $false
+            }
+            if (-not (Test-Path $item.Target)) {
+                writeText -type "error" -text "getDownload reported success but $($item.Target) is missing."
+                return $false
+            }
+        }
+
+        # --- 6. Unpack the dependencies -------------------------------------------
+        $depsDir = Join-Path $work "deps"
+        Expand-Archive -LiteralPath $depsZipPath -DestinationPath $depsDir -Force
+
+        # Zip layout is <arch>\<package>.appx - we only need the host arch.
+        $arch = if ([Environment]::Is64BitOperatingSystem) { "x64" } else { "x86" }
+        $dependencies = @(
+            Get-ChildItem -Path (Join-Path $depsDir $arch) -Filter "*.appx" -ErrorAction SilentlyContinue |
+            Select-Object -ExpandProperty FullName
+        )
+
+        if ($dependencies.Count -eq 0) {
+            writeText -type "notice" -text "No $arch dependency packages found; attempting provision without them."
+        } else {
+            writeText -type "plain" -text "Staging $($dependencies.Count) dependency package(s)."
+        }
+
+        # --- 7. Provision -------------------------------------------------------
+        writeText -type "plain" -text "Provisioning App Installer for all users..."
+
+        $provisionArgs = @{
+            Online      = $true
+            PackagePath = $bundlePath
+            LicensePath = $licensePath
+        }
+        if ($dependencies.Count -gt 0) {
+            $provisionArgs['DependencyPackagePath'] = $dependencies
+        }
+
+        Add-AppxProvisionedPackage @provisionArgs -ErrorAction Stop | Out-Null
+
+        # --- 8. Register for the current account so winget works right now ------
+        registerWingetForCurrentUser
+
+        # --- 9. Verify -----------------------------------------------------------
+        $exe = resolveWinget
+        if ($exe) {
+            $version = (& $exe --version) 2>$null
+            writeText -type "success" -text "winget $version provisioned and available."
+            log -msg "installWingetForAllUsers: provisioned $($release.tag_name)." -lvl "INFO"
+        } else {
+            writeText -type "notice" -text "Provisioning succeeded but winget is not resolvable in this session. It will be available to users at next sign-in."
+            log -msg "installWingetForAllUsers: provisioned but not resolvable in current session." -lvl "WARN"
+        }
+
+        # --- 10. Clean up ----------------------------------------------------------
+        Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue
+        if (Test-Path $work) {
+            writeText -type "error" -text "Some temp files were not deleted. This is harmless."
+        }
+
+        return $true
+    } catch {
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+        return $false
+    }
 }
 function installApp {
     param (
