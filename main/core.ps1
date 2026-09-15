@@ -51,7 +51,7 @@ function readLog {
     )
 
     try {
-        $logDirectory = "C:\Temp\ShellCLI"
+        $logDirectory = "$env:ProgramData\shellcli"
         
         if ($date) {
             $logFileName = "${date}.log"
