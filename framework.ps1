@@ -1,3 +1,4 @@
+$global:moduleCache = @{}
 $global:commandMap = [ordered]@{
     "?"                              = @("main", "core", "writeHelp", "List some help info.")
     "help"                           = @("main", "core", "writeHelp", "List some help info.")
@@ -150,10 +151,10 @@ function readCommand {
         $filteredCommand = filterCommands -command $command
 
         log -msg "Running command: $command"
-            
-        # Check if filterCommands returned a valid array (4 elements)
+        
         if ($filteredCommand -and $filteredCommand.Count -eq 4) {
             dispatchCommand -filteredCommand $filteredCommand
+            readCommand
         }
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
@@ -202,6 +203,152 @@ function filterCommands {
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
+function getModuleCachePath {
+    param(
+        [Parameter(Mandatory)][string]$key
+    )
+
+    $cacheDir = Join-Path -Path $env:ProgramData -ChildPath 'shellcli\cache'
+    if (-not (Test-Path -LiteralPath $cacheDir)) {
+        New-Item -Path $cacheDir -ItemType Directory -Force -ErrorAction Stop | Out-Null
+    }
+
+    # "main/user" -> "main_user.ps1"
+    $safeName = $key -replace '[\\/:*?"<>|]', '_'
+    return (Join-Path -Path $cacheDir -ChildPath "$safeName.ps1")
+}
+
+function getModuleSource {
+    <#
+        Returns the source text of a command module, or $null if it cannot be
+        obtained. Resolution order:
+          1. memory cache  - no I/O at all
+          2. network       - authoritative, refreshes the disk cache
+          3. disk cache    - so the tool still works offline
+    #>
+    param(
+        [Parameter(Mandatory = $false)][string]$directory,
+        [Parameter(Mandatory)][string]$file
+    )
+
+    $key = if ($directory) { "$directory/$file" } else { $file }
+
+    # --- 1. memory ---------------------------------------------------
+    if ($global:moduleCache.ContainsKey($key)) {
+        log -msg "Module '$key' served from memory." -lvl "DEBUG"
+        return $global:moduleCache[$key]
+    }
+
+    $base = 'https://raw.githubusercontent.com/badsyntaxx/shellcli/main'
+    $url = if ($directory) { "$base/$directory/$file.ps1" } else { "$base/$file.ps1" }
+    $cachePath = getModuleCachePath -key $key
+
+    # --- 2. network --------------------------------------------------
+    $oldProgress = $ProgressPreference
+    $ProgressPreference = 'SilentlyContinue'
+
+    try {
+        [Net.ServicePointManager]::SecurityProtocol = `
+            [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+
+        $resp = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 20 -ErrorAction Stop
+
+        # Decode UTF-8 explicitly rather than trusting the response header.
+        $src = [System.Text.Encoding]::UTF8.GetString($resp.RawContentStream.ToArray())
+
+        if ([string]::IsNullOrWhiteSpace($src)) {
+            throw "Empty response body from $url"
+        }
+
+        # Reject anything unparseable before it reaches Invoke-Expression.
+        # Catches proxy error pages and truncated transfers.
+        $parseErrors = $null
+        [void][System.Management.Automation.Language.Parser]::ParseInput(
+            $src, [ref]$null, [ref]$parseErrors)
+
+        if ($parseErrors -and $parseErrors.Count -gt 0) {
+            throw "Module '$key' failed to parse: $($parseErrors[0].Message)"
+        }
+
+        $global:moduleCache[$key] = $src
+
+        try {
+            $utf8Bom = New-Object System.Text.UTF8Encoding($true)
+            [System.IO.File]::WriteAllText($cachePath, $src, $utf8Bom)
+        } catch {
+            log -msg "Disk cache write failed for '$key': $($_.Exception.Message)" -lvl "WARNING"
+        }
+
+        log -msg "Module '$key' downloaded ($($src.Length) chars)." -lvl "DEBUG"
+        return $src
+    } catch {
+        log -msg "Download of '$key' failed: $($_.Exception.Message)" -lvl "WARNING"
+    } finally {
+        $ProgressPreference = $oldProgress
+    }
+
+    # --- 3. disk fallback --------------------------------------------
+    if (Test-Path -LiteralPath $cachePath) {
+        try {
+            $src = [System.IO.File]::ReadAllText($cachePath)
+            if (-not [string]::IsNullOrWhiteSpace($src)) {
+                $global:moduleCache[$key] = $src
+                $age = (Get-Date) - (Get-Item -LiteralPath $cachePath).LastWriteTime
+                writeText -type "notice" -text "Offline - using cached '$key' from $([int]$age.TotalDays) day(s) ago."
+                return $src
+            }
+        } catch {
+            log -msg "Disk cache read failed for '$key': $($_.Exception.Message)" -lvl "ERROR"
+        }
+    }
+
+    log -msg "Module '$key' unavailable from network and cache." -lvl "ERROR"
+    return $null
+}
+
+function clearModuleCache {
+    $count = $global:moduleCache.Count
+    $global:moduleCache = @{}
+
+    $cacheDir = Join-Path -Path $env:ProgramData -ChildPath 'shellcli\cache'
+    if (Test-Path -LiteralPath $cacheDir) {
+        Remove-Item -LiteralPath $cacheDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
+    writeText -type "success" -text "Cleared $count cached module(s)."
+    log -msg "Module cache cleared." -lvl "INFO"
+}
+
+function dispatchCommand {
+    param(
+        [Parameter(Mandatory)][array]$filteredCommand
+    )
+
+    $commandDirectory = $filteredCommand[0]
+    $commandFile = $filteredCommand[1]
+    $commandFunction = $filteredCommand[2]
+
+    # Framework-resident command (empty directory/file) - already defined.
+    if ([string]::IsNullOrEmpty($commandFile)) {
+        invokeScript -script $commandFunction
+        return
+    }
+
+    # The framework itself is already loaded - readCommand could not be
+    # running otherwise. Only the command module needs fetching.
+    $src = getModuleSource -directory $commandDirectory -file $commandFile
+
+    if ($null -eq $src) {
+        writeText -type "error" -text "Could not load '$commandDirectory/$commandFile'. Check your connection."
+        return
+    }
+
+    # Defines the module's functions in this scope. invokeScript is called
+    # from here, so its scope chain reaches them.
+    Invoke-Expression $src
+
+    invokeScript -script $commandFunction
+}
 function appendToMainScript {
     param (
         [Parameter(Mandatory = $false)][string]$directory,
@@ -231,169 +378,6 @@ function appendToMainScript {
         $ProgressPreference = $oldProgress
     }
 }
-# =====================================================================
-#  Module loading / caching
-#
-#  Replaces the old pattern of truncating SHELLCLI.ps1 and re-downloading
-#  framework.ps1 plus the command module on every single command.
-#
-#  Resolution order for a module:
-#    1. In-memory cache  (instant, no I/O)
-#    2. Network          (authoritative, refreshes the disk cache)
-#    3. Disk cache       (fallback so the tool still works offline)
-# =====================================================================
-
-$script:moduleCache = @{}
-
-function getModuleCachePath {
-    param(
-        [Parameter(Mandatory)][string]$key
-    )
-
-    $cacheDir = Join-Path -Path $env:ProgramData -ChildPath 'shellcli\cache'
-    if (-not (Test-Path -LiteralPath $cacheDir)) {
-        New-Item -Path $cacheDir -ItemType Directory -Force -ErrorAction Stop | Out-Null
-    }
-
-    # "main/user" -> "main_user.ps1"
-    $safeName = $key -replace '[\\/:*?"<>|]', '_'
-    return (Join-Path -Path $cacheDir -ChildPath "$safeName.ps1")
-}
-
-function getModuleSource {
-    <#
-        Returns the source text of a command module, or $null if it cannot be
-        obtained from any source. Never partially returns.
-    #>
-    param(
-        [Parameter(Mandatory = $false)][string]$directory,
-        [Parameter(Mandatory)][string]$file
-    )
-
-    $key = if ($directory) { "$directory/$file" } else { $file }
-
-    # --- 1. In-memory ------------------------------------------------
-    if ($script:moduleCache.ContainsKey($key)) {
-        log -msg "Module '$key' served from memory cache." -lvl "DEBUG"
-        return $script:moduleCache[$key]
-    }
-
-    $base = 'https://raw.githubusercontent.com/badsyntaxx/shellcli/main'
-    $url = if ($directory) { "$base/$directory/$file.ps1" } else { "$base/$file.ps1" }
-    $cachePath = getModuleCachePath -key $key
-
-    # --- 2. Network --------------------------------------------------
-    $oldProgress = $ProgressPreference
-    $ProgressPreference = 'SilentlyContinue'
-
-    try {
-        [Net.ServicePointManager]::SecurityProtocol = `
-            [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
-
-        $resp = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 20 -ErrorAction Stop
-
-        # Decode as UTF-8 explicitly rather than trusting the response header.
-        $src = [System.Text.Encoding]::UTF8.GetString($resp.RawContentStream.ToArray())
-
-        if ([string]::IsNullOrWhiteSpace($src)) {
-            throw "Empty response body from $url"
-        }
-
-        # Reject anything that is not parseable PowerShell before it reaches
-        # Invoke-Expression. Catches captive portals and proxy error pages.
-        $parseErrors = $null
-        [void][System.Management.Automation.Language.Parser]::ParseInput(
-            $src, [ref]$null, [ref]$parseErrors)
-
-        if ($parseErrors -and $parseErrors.Count -gt 0) {
-            throw "Downloaded module '$key' failed to parse: $($parseErrors[0].Message)"
-        }
-
-        $script:moduleCache[$key] = $src
-
-        # Refresh the disk cache. A failure here is not fatal.
-        try {
-            $utf8Bom = New-Object System.Text.UTF8Encoding($true)
-            [System.IO.File]::WriteAllText($cachePath, $src, $utf8Bom)
-        } catch {
-            log -msg "Could not write disk cache for '$key': $($_.Exception.Message)" -lvl "WARNING"
-        }
-
-        log -msg "Module '$key' downloaded ($($src.Length) chars)." -lvl "DEBUG"
-        return $src
-    } catch {
-        log -msg "Download of '$key' failed: $($_.Exception.Message)" -lvl "WARNING"
-    } finally {
-        $ProgressPreference = $oldProgress
-    }
-
-    # --- 3. Disk fallback --------------------------------------------
-    if (Test-Path -LiteralPath $cachePath) {
-        try {
-            $src = [System.IO.File]::ReadAllText($cachePath)
-            if (-not [string]::IsNullOrWhiteSpace($src)) {
-                $script:moduleCache[$key] = $src
-                $age = (Get-Date) - (Get-Item -LiteralPath $cachePath).LastWriteTime
-                writeText -type "notice" -text "Offline - using cached '$key' from $([int]$age.TotalDays) day(s) ago."
-                log -msg "Module '$key' served from disk cache." -lvl "WARNING"
-                return $src
-            }
-        } catch {
-            log -msg "Disk cache read failed for '$key': $($_.Exception.Message)" -lvl "ERROR"
-        }
-    }
-
-    log -msg "Module '$key' unavailable from network and cache." -lvl "ERROR"
-    return $null
-}
-
-function clearModuleCache {
-    <#
-        Drops both caches so the next command pulls fresh source.
-        Wire this to a "reload" command during development.
-    #>
-    $script:moduleCache = @{}
-
-    $cacheDir = Join-Path -Path $env:ProgramData -ChildPath 'shellcli\cache'
-    if (Test-Path -LiteralPath $cacheDir) {
-        Remove-Item -LiteralPath $cacheDir -Recurse -Force -ErrorAction SilentlyContinue
-    }
-
-    writeText -type "success" -text "Module cache cleared."
-    log -msg "Module cache cleared." -lvl "INFO"
-}
-
-# =====================================================================
-#  The dispatch portion of readCommand, rewritten.
-#  Drop this in place of the New-Item / appendToMainScript / Add-Content /
-#  Get-Content / Invoke-Expression block.
-# =====================================================================
-
-function dispatchCommand {
-    param(
-        [Parameter(Mandatory)][array]$filteredCommand
-    )
-
-    $commandDirectory = $filteredCommand[0]
-    $commandFile = $filteredCommand[1]
-    $commandFunction = $filteredCommand[2]
-
-    # The framework is already loaded in this session - readCommand could not
-    # be running otherwise. Only the command module needs fetching.
-    $src = getModuleSource -directory $commandDirectory -file $commandFile
-
-    if ($null -eq $src) {
-        writeText -type "error" -text "Could not load '$commandDirectory/$commandFile'. Check your connection."
-        return
-    }
-
-    # Defines the module's functions in this scope; invokeScript is called from
-    # here, so its scope chain reaches them.
-    Invoke-Expression $src
-
-    invokeScript -script $commandFunction
-}
-
 function log {
     param(
         [Parameter(Mandatory = $true, Position = 0)]
