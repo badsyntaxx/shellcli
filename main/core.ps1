@@ -2,21 +2,34 @@ function readMenu {
     try {
         # Create a menu with options and descriptions using an ordered hashtable
         $choice = readOption -options $([ordered]@{
-                "user menu"           = "View the user management menu."
-                "edit hostname"       = "Edit this computers name and description."
-                "edit net adapter"    = "(BETA) Edit a network adapter."
-                "get wifi creds"      = "View all saved WiFi credentials on the system."
-                "toggle context menu" = "Enable or Disable the Windows 11 context menu."
-                "repair windows"      = "Repair Windows."
-                "update windows"      = "(BETA) Install Windows updates silently."
-                "clear temp files"    = "Removes Windows temporary and cache files."
-                "get software"        = "Get a list of installed software that can be installed."
-                "schedule task "      = "(ALPHA) Schedule a new task."
-                "Cancel"              = "Select nothing and exit this menu."
+                "User menu"            = "View the user management menu."
+                "Edit hostname"        = "Edit this computers name and description."
+                "Edit net adapter"     = "(BETA) Edit a network adapter."
+                "Get wifi credentials" = "View all saved WiFi credentials on the system."
+                "Toggle context menu"  = "Enable or Disable the Windows 11 context menu."
+                "Repair windows"       = "Repair Windows."
+                "Update windows"       = "(BETA) Install Windows updates silently."
+                "Clear temp files"     = "Removes Windows temporary and cache files."
+                "Get software"         = "Get a list of installed software that can be installed."
+                "Schedule task "       = "(ALPHA) Schedule a new task."
+                "Cancel"               = "Select nothing and exit this menu."
             }) -prompt "Select a function." -returnKey -lineAfter
 
         if ($choice -eq "Cancel") {
             readCommand
+        }
+        
+        switch ($choice) {
+            "User menu" { $choice = "user menu" }
+            "Edit hostname" { $choice = "edit hostname" }
+            "Edit net adapter" { $choice = "edit net adapter" }
+            "Get wifi credentials" { $choice = "wifi" }
+            "Toggle context menu" { $choice = "toggle context menu" }
+            "Repair windows" { $choice = "repair windows" }
+            "Update windows" { $choice = "update windows" }
+            "Clear temp files" { $choice = "clear temp files" }
+            "Get software" { $choice = "get apps" }
+            "Schedule task" { $choice = "schedule task" }
         }
 
         readCommand -command $choice
