@@ -156,10 +156,9 @@ function disableHibernateFile {
 function techMode {
     # Check for interactive user session
     if (-not $env:USERNAME -or $env:USERNAME -eq "SYSTEM" -or -not (Get-Process -Name explorer -ErrorAction SilentlyContinue)) {
-        writeText "This is not a logged in user terminal. Adding the GodMode folder wont work."
+        writeText -type "notice" -text "This is not a logged in user terminal. Adding the GodMode folder wont work."
     }
     
-    writeText -type "plain" -text "Enabling TechMode"
     writeText -type "plain" -text "Showing file extensions"
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "HideFileExt" -Value 0
     writeText -type "plain" -text "Showing hidden folders and files"
@@ -177,14 +176,18 @@ function techMode {
 function userMode {
     # Check for interactive user session
     if (-not $env:USERNAME -or $env:USERNAME -eq "SYSTEM" -or -not (Get-Process -Name explorer -ErrorAction SilentlyContinue)) {
-        writeText "This is not a logged in user terminal. Removing the GodMode folder wont work."
+        writeText -type "notice" -text "This is not a logged in user terminal. Removing the GodMode folder wont work."
     }
 
-    writeText "Disabling TechMode"
+    writeText -type "plain" -text "Hiding file extensions"
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "HideFileExt" -Value 1
+    writeText -type "plain" -text "Hiding hidden folders and files"
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "Hidden" -Value 0
+    writeText -type "plain" -text "Hiding full paths title bar"
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\CabinetState" -Name "FullPath" -Value 0
+    writeText -type "plain" -text "Hiding all try icons"
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer" -Name "EnableAutoTray" -Value 1
+    writeText -type "plain" -text "Removing GodMode folder from desktop"
     Remove-Item -Path "$env:USERPROFILE\Desktop\GodMode.{ED7BA470-8E54-465E-825C-99712043E01C}"
     Stop-Process -ProcessName explorer
     Start-Process explorer
