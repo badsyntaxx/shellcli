@@ -10,11 +10,7 @@ function initializeShellCLI {
         $principal = [Security.Principal.WindowsPrincipal]$identity
 
         if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-            log -msg "Not elevated. Requesting administrator privileges." -lvl "WARNING"
-
             try {
-                # Re-invoke through the distribution URL. $PSCommandPath is empty
-                # under `irm | iex` because there is no script file on disk.
                 Start-Process -FilePath 'powershell.exe' -Verb RunAs -ErrorAction Stop `
                     -WorkingDirectory $env:SystemRoot -ArgumentList @(
                     '-NoProfile'
@@ -26,7 +22,6 @@ function initializeShellCLI {
                 # Thrown when the user cancels the UAC prompt (error 1223) or
                 # when a policy blocks elevation entirely.
                 Write-Host "  ShellCLI requires administrator privileges." -ForegroundColor "Yellow"
-                log -msg "Elevation declined or failed: $($_.Exception.Message)" -lvl "WARNING"
             }
 
             # `return`, never `Exit` - Exit closes the user's console window.
