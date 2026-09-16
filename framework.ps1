@@ -5,6 +5,7 @@ $global:commandMap = [ordered]@{
     "menu"                           = @("main", "core", "readMenu", "Display the main menu.")
     "commands"                       = @("main", "core", "listAllCommands", "List all available commands.")
     "logs"                           = @("main", "core", "readLog", "Output the last 50 lines of the log file.")
+    "reload"                         = @("", "", "clearModuleCache", "Refetch module source on next command.")
     #-- CUSTOMIZATION COMMANDS --#
     "toggle context menu"            = @("main", "common", "toggleContextMenu", "Toggle the context menu.")
     "enable context menu"            = @("main", "common", "enableContextMenu", "Enable the context menu.")
@@ -99,112 +100,180 @@ function invokeScript {
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
-function readCommand {
+function startShell {
+    <#
+        The command loop. This is the only place that ever prompts.
+        Replaces the old recursive readCommand, which grew the call stack by
+        two frames per command and eventually died with an uncatchable
+        StackOverflowException.
+    #>
     param (
-        [Parameter(Mandatory = $false)]
-        [string]$command = ""
+        [Parameter(Mandatory = $false)][string]$firstCommand = "help"
     )
 
-    try {
-        if ($command -eq "") { 
-            # Draw the prompt lines once           
-            # Keep the cursor on this line for the prompt
-            # Write-Host " $([char]0x251C)" -NoNewline -ForegroundColor "Cyan"
-            Write-Host
-            Write-Host "$([char]0x203A) " -NoNewline -ForegroundColor "Gray"
+    $pending = $firstCommand
 
-            $esc = [char]27
-            Write-Host "$esc[1 q" -NoNewline
-            # Read the input - this will stay on the same line
-            $command = Read-Host
-            
-            # Check if empty
-            if ([string]::IsNullOrWhiteSpace($command)) {
-                # Move cursor back to the start of the prompt line
-                $cursorPos = [System.Console]::CursorTop - 1
-                [System.Console]::SetCursorPosition(0, $cursorPos)
-                
-                # Clear the line
-                Write-Host (" " * [System.Console]::WindowWidth) -NoNewline
-                [System.Console]::SetCursorPosition(0, $cursorPos)
-                
-                # Redraw the prompt on the same line
-                Write-Host "$([char]0x203A) " -NoNewline -ForegroundColor "Gray"
-                
-                # Read again
-                $command = Read-Host
-                # Keep redrawing until user types something
-                while ([string]::IsNullOrWhiteSpace($command)) {
-                    $cursorPos = [System.Console]::CursorTop - 1
-                    [System.Console]::SetCursorPosition(0, $cursorPos)
-                    Write-Host (" " * [System.Console]::WindowWidth) -NoNewline
-                    [System.Console]::SetCursorPosition(0, $cursorPos)
-                    Write-Host "$([char]0x203A) " -NoNewline -ForegroundColor "Gray"
-                    $command = Read-Host
-                }
+    while ($true) {
+        try {
+            $command = if ($pending) { $pending } else { promptForCommand }
+            $pending = $null
+
+            if ([string]::IsNullOrWhiteSpace($command)) { continue }
+
+            $command = $command.ToLower().Trim()
+
+            if ($command -in @('exit', 'quit')) {
+                log -msg "Session ended by user." -lvl "INFO"
+                break
             }
-            Write-Host
-        }
 
-        $command = $command.ToLower()
-        $command = $command.Trim()
-        $filteredCommand = filterCommands -command $command
-
-        log -msg "Running command: $command"
-        
-        if ($filteredCommand -and $filteredCommand.Count -eq 4) {
-            dispatchCommand -filteredCommand $filteredCommand
-            readCommand
+            runCommand -command $command
+        } catch {
+            # A failing command must not take the shell down with it.
+            writeText -type "error" -text "$($_.Exception.Message)"
+            log -msg "startShell-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
         }
-    } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
+}
+function promptForCommand {
+    <#
+        Draws the prompt and returns a non-empty command string.
+        Contains no dispatch logic and never recurses.
+    #>
+    while ($true) {
+        Write-Host
+        Write-Host "$([char]0x203A) " -NoNewline -ForegroundColor "Gray"
+
+        $esc = [char]27
+        Write-Host "$esc[1 q" -NoNewline
+
+        $entry = Read-Host
+
+        if (-not [string]::IsNullOrWhiteSpace($entry)) {
+            Write-Host
+            return $entry
+        }
+
+        # Blank entry: wipe the line and redraw the prompt in place.
+        try {
+            $cursorPos = [System.Console]::CursorTop - 1
+            [System.Console]::SetCursorPosition(0, $cursorPos)
+            Write-Host (" " * [System.Console]::WindowWidth) -NoNewline
+            [System.Console]::SetCursorPosition(0, $cursorPos)
+        } catch {
+            # Redirected or non-interactive host: cursor control is
+            # unavailable, so fall through and prompt again on a new line.
+        }
+    }
+}
+function runCommand {
+    <#
+        Resolves a command and runs it. Always returns.
+    #>
+    param (
+        [Parameter(Mandatory)][string]$command
+    )
+
+    log -msg "Running command: $command"
+
+    $filteredCommand = filterCommands -command $command
+
+    if ($filteredCommand -and $filteredCommand.Count -eq 4) {
+        dispatchCommand -filteredCommand $filteredCommand
+    }
+}
+function readCommand {
+    <#
+        COMPATIBILITY SHIM.
+
+        43 call sites across the modules call `readCommand` with no arguments
+        to mean "abandon this and go back to the prompt". Returning here
+        unwinds to startShell's loop instead of recursing, which is what stops
+        the stack growing.
+
+        This does NOT fix fall-through: code placed after such a call still
+        executes. Those sites want `return` instead. Migrate them per file,
+        then delete this shim and rename the remaining chaining calls to
+        runCommand.
+    #>
+    param (
+        [Parameter(Mandatory = $false)][string]$command = ""
+    )
+
+    if ([string]::IsNullOrWhiteSpace($command)) { return }
+
+    runCommand -command $command.ToLower().Trim()
 }
 function filterCommands {
     param (
-        [Parameter(Mandatory = $false)]
-        [string]$command
+        [Parameter(Mandatory = $false)][string]$command
     )
 
     try {
-        # Normalize the command
-        $normalizedCommand = $command.ToLower().Trim()
-        
-        # Find matching key (case-insensitive)
-        $matchingKey = $global:commandMap.Keys | Where-Object { $_ -eq $normalizedCommand }
-        
-        if ($matchingKey) {
-            return $global:commandMap[$matchingKey]
-        } else {
-            # Check if it's a PowerShell/Windows command
-            if ($normalizedCommand -ne "help" -and $normalizedCommand -ne "" -and $normalizedCommand -match "^(?-i)(\w+(-\w+)*)") {
-                $cmdName = $matches[1]
-                if (Get-Command $cmdName -ErrorAction SilentlyContinue) {
-                    # It's a valid PowerShell command, execute it
-                    try {
-                        $output = Invoke-Expression -Command $command
-                        if ($output) {
-                            $output | Format-Table | Out-String | ForEach-Object { Write-Host $_ }
-                        }
-                    } catch {
-                        writeText -type "error" -text "Error executing command: $($_.Exception.Message)"
-                    }
-                    readCommand
-                }
-            }
-            
-            # Command not found in map and not a PowerShell command
-            writeText -type "plain" -text "Unknown command '$command' | Try 'help' or 'menu'."
-            readCommand
+        $normalized = $command.ToLower().Trim()
+
+        if ([string]::IsNullOrWhiteSpace($normalized)) { return $null }
+
+        # 1. Known shellcli command
+        if ($global:commandMap.Contains($normalized)) {
+            return $global:commandMap[$normalized]
         }
+
+        # 2. Passthrough to PowerShell
+        if (tryInvokePassthrough -command $command) { return $null }
+
+        # 3. Nothing matched. Single exit point, no fall-through.
+        writeText -type "plain" -text "Unknown command '$command' | Try 'help' or 'menu'."
+        return $null
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+        return $null
     }
 }
+function tryInvokePassthrough {
+    <#
+        Runs the input as PowerShell when it looks like PowerShell.
+        Returns $true if handled, $false to treat it as an unknown command.
+    #>
+    param (
+        [Parameter(Mandatory)][string]$command
+    )
+
+    $trimmed = $command.Trim()
+
+    # Expression-shaped: (...), $var, [type], @(...), &
+    $looksLikeExpression = $trimmed -match '^[\(\$\[@&]'
+
+    # Command-shaped: first token resolves as a cmdlet, alias, function or exe
+    $firstToken = ($trimmed -split '\s+')[0]
+    $resolvesAsCommand = $firstToken -and
+    (Get-Command -Name $firstToken -ErrorAction SilentlyContinue)
+
+    if (-not ($looksLikeExpression -or $resolvesAsCommand)) { return $false }
+
+    $parseErrors = $null
+    [void][System.Management.Automation.Language.Parser]::ParseInput(
+        $trimmed, [ref]$null, [ref]$parseErrors)
+
+    if ($parseErrors -and $parseErrors.Count -gt 0) {
+        writeText -type "error" -text "Parse error: $($parseErrors[0].Message)"
+        return $true
+    }
+
+    try {
+        $output = Invoke-Expression -Command $trimmed
+        if ($null -ne $output) {
+            $output | Format-Table -AutoSize | Out-String | Write-Host
+        }
+    } catch {
+        writeText -type "error" -text "Error executing command: $($_.Exception.Message)"
+    }
+
+    return $true
+}
 function getModuleCachePath {
-    param(
+    param (
         [Parameter(Mandatory)][string]$key
     )
 
@@ -213,27 +282,21 @@ function getModuleCachePath {
         New-Item -Path $cacheDir -ItemType Directory -Force -ErrorAction Stop | Out-Null
     }
 
-    # "main/user" -> "main_user.ps1"
     $safeName = $key -replace '[\\/:*?"<>|]', '_'
     return (Join-Path -Path $cacheDir -ChildPath "$safeName.ps1")
 }
-
 function getModuleSource {
     <#
-        Returns the source text of a command module, or $null if it cannot be
-        obtained. Resolution order:
-          1. memory cache  - no I/O at all
-          2. network       - authoritative, refreshes the disk cache
-          3. disk cache    - so the tool still works offline
+        Returns a command module's source text, or $null if unobtainable.
+        Order: memory cache, then network, then disk cache (offline fallback).
     #>
-    param(
+    param (
         [Parameter(Mandatory = $false)][string]$directory,
         [Parameter(Mandatory)][string]$file
     )
 
     $key = if ($directory) { "$directory/$file" } else { $file }
 
-    # --- 1. memory ---------------------------------------------------
     if ($global:moduleCache.ContainsKey($key)) {
         log -msg "Module '$key' served from memory." -lvl "DEBUG"
         return $global:moduleCache[$key]
@@ -243,7 +306,6 @@ function getModuleSource {
     $url = if ($directory) { "$base/$directory/$file.ps1" } else { "$base/$file.ps1" }
     $cachePath = getModuleCachePath -key $key
 
-    # --- 2. network --------------------------------------------------
     $oldProgress = $ProgressPreference
     $ProgressPreference = 'SilentlyContinue'
 
@@ -256,12 +318,9 @@ function getModuleSource {
         # Decode UTF-8 explicitly rather than trusting the response header.
         $src = [System.Text.Encoding]::UTF8.GetString($resp.RawContentStream.ToArray())
 
-        if ([string]::IsNullOrWhiteSpace($src)) {
-            throw "Empty response body from $url"
-        }
+        if ([string]::IsNullOrWhiteSpace($src)) { throw "Empty response body from $url" }
 
-        # Reject anything unparseable before it reaches Invoke-Expression.
-        # Catches proxy error pages and truncated transfers.
+        # Reject unparseable content before it reaches Invoke-Expression.
         $parseErrors = $null
         [void][System.Management.Automation.Language.Parser]::ParseInput(
             $src, [ref]$null, [ref]$parseErrors)
@@ -287,7 +346,6 @@ function getModuleSource {
         $ProgressPreference = $oldProgress
     }
 
-    # --- 3. disk fallback --------------------------------------------
     if (Test-Path -LiteralPath $cachePath) {
         try {
             $src = [System.IO.File]::ReadAllText($cachePath)
@@ -305,7 +363,6 @@ function getModuleSource {
     log -msg "Module '$key' unavailable from network and cache." -lvl "ERROR"
     return $null
 }
-
 function clearModuleCache {
     $count = $global:moduleCache.Count
     $global:moduleCache = @{}
@@ -318,9 +375,8 @@ function clearModuleCache {
     writeText -type "success" -text "Cleared $count cached module(s)."
     log -msg "Module cache cleared." -lvl "INFO"
 }
-
 function dispatchCommand {
-    param(
+    param (
         [Parameter(Mandatory)][array]$filteredCommand
     )
 
@@ -328,14 +384,13 @@ function dispatchCommand {
     $commandFile = $filteredCommand[1]
     $commandFunction = $filteredCommand[2]
 
-    # Framework-resident command (empty directory/file) - already defined.
+    # Framework-resident command (empty directory/file): already defined.
     if ([string]::IsNullOrEmpty($commandFile)) {
         invokeScript -script $commandFunction
         return
     }
 
-    # The framework itself is already loaded - readCommand could not be
-    # running otherwise. Only the command module needs fetching.
+    # The framework itself is already loaded, so only the module is fetched.
     $src = getModuleSource -directory $commandDirectory -file $commandFile
 
     if ($null -eq $src) {
@@ -348,35 +403,6 @@ function dispatchCommand {
     Invoke-Expression $src
 
     invokeScript -script $commandFunction
-}
-function appendToMainScript {
-    param (
-        [Parameter(Mandatory = $false)][string]$directory,
-        [Parameter(Mandatory)][string]$file
-    )
-
-    $oldProgress = $ProgressPreference
-    $ProgressPreference = 'SilentlyContinue'
-
-    try {
-        $url = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main/$file.ps1"
-        if ($directory) {
-            $url = "https://raw.githubusercontent.com/badsyntaxx/shellcli/main/$directory/$file.ps1"
-        }
-
-        $src = (Invoke-WebRequest -Uri $url -UseBasicParsing).Content
-        if ($null -eq $src -or $src -eq "") {
-            writeText -type "error" -text "Failed to retrieve script from $url"
-            log -msg "Failed to retrieve script from $url" -lvl "ERROR"
-            return
-        }
-        Add-Content -Path "$env:ProgramData\shellcli\SHELLCLI.ps1" -Value $src        
-    } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
-    } finally {
-        $ProgressPreference = $oldProgress
-    }
 }
 function log {
     param(
@@ -541,7 +567,7 @@ function writeText {
         # Add a new line after output if specified
         if ($lineAfter) { Write-Host }
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        Write-Host "  $($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber): $($_.Exception.Message)" -ForegroundColor "Red"
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }

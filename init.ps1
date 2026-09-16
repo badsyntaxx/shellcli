@@ -57,7 +57,7 @@ function initializeShellCLI {
 
         # Bootstrap line that hands control to the CLI
         Add-Content -LiteralPath $mainScript -Encoding UTF8 -ErrorAction Stop `
-            -Value 'invokeScript -script "readCommand -command `"help`"" -initialize $true'
+            -Value 'invokeScript -script "startShell" -initialize $true'
 
         # Cheap sanity check: a successful build is never this small
         $builtSize = (Get-Item -LiteralPath $mainScript).Length
