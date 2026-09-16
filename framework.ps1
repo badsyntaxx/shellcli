@@ -5,7 +5,6 @@ $global:commandMap = [ordered]@{
     "menu"                           = @("main", "core", "readMenu", "Display the main menu.")
     "commands"                       = @("main", "core", "listAllCommands", "List all available commands.")
     "logs"                           = @("main", "core", "readLog", "Output the last 50 lines of the log file.")
-    "reload"                         = @("", "", "clearModuleCache", "Refetch module source on next command.")
     #-- CUSTOMIZATION COMMANDS --#
     "toggle context menu"            = @("main", "common", "toggleContextMenu", "Toggle the context menu.")
     "enable context menu"            = @("main", "common", "enableContextMenu", "Enable the context menu.")
@@ -362,18 +361,6 @@ function getModuleSource {
 
     log -msg "Module '$key' unavailable from network and cache." -lvl "ERROR"
     return $null
-}
-function clearModuleCache {
-    $count = $global:moduleCache.Count
-    $global:moduleCache = @{}
-
-    $cacheDir = Join-Path -Path $env:ProgramData -ChildPath 'shellcli\cache'
-    if (Test-Path -LiteralPath $cacheDir) {
-        Remove-Item -LiteralPath $cacheDir -Recurse -Force -ErrorAction SilentlyContinue
-    }
-
-    writeText -type "success" -text "Cleared $count cached module(s)."
-    log -msg "Module cache cleared." -lvl "INFO"
 }
 function dispatchCommand {
     param (
