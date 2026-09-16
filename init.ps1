@@ -17,14 +17,12 @@ function initializeShellCLI {
                     '-ExecutionPolicy', 'Bypass'
                     '-Command', 'irm shellcli.com | iex'
                 )
-                log -msg "Elevated process launched." -lvl "INFO"
             } catch {
                 # Thrown when the user cancels the UAC prompt (error 1223) or
                 # when a policy blocks elevation entirely.
                 Write-Host "  ShellCLI requires administrator privileges." -ForegroundColor "Yellow"
             }
 
-            # `return`, never `Exit` - Exit closes the user's console window.
             return
         }
 
