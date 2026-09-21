@@ -530,23 +530,22 @@ function writeText {
             }
         }
 
-        if ($type -eq 'list') { 
-            # Get a list of keys from the options dictionary
-            $orderedKeys = $List.Keys | ForEach-Object { $_ }
-            # Find the length of the longest key for padding
-            $longestKeyLength = ($orderedKeys | Measure-Object -Property Length -Maximum).Maximum
-
-            # Display single option if only one exists
-            if ($orderedKeys.Count -eq 1) {
-                Write-Host " $($orderedKeys) $(" " * ($longestKeyLength - $orderedKeys.Length)) - $($List[$key][$ListValue])"
-                log -msg "$($orderedKeys) - $($List[$key][$ListValue])" -lvl "INFO"
+        if ($type -eq 'list') {
+            if (-not $List -or $List.Count -eq 0) {
+                Write-Host "None" -ForegroundColor $Color
+                log -msg "No errors recorded." -lvl "INFO"
             } else {
-                # Loop through each option and display with padding and color
-                for ($i = 0; $i -lt $orderedKeys.Count; $i++) {
-                    $key = $orderedKeys[$i]
+                $orderedKeys = @($List.Keys)
+                $longestKeyLength = ($orderedKeys | Measure-Object -Property Length -Maximum).Maximum
+
+                foreach ($key in $orderedKeys) {
                     $padding = " " * ($longestKeyLength - $key.Length)
-                    Write-Host "$($key): $padding $($List[$key][$ListValue])" -ForegroundColor $Color
-                    log -msg "$($key): $padding $($List[$key][$ListValue])" -lvl "INFO"
+                    $value = $List[$key]
+                    if ($ListValue -and $value -is [System.Collections.IDictionary]) {
+                        $value = $value[$ListValue]
+                    }
+                    Write-Host "$($key): $padding $value" -ForegroundColor $Color
+                    log -msg "$($key): $padding $value" -lvl "INFO"
                 }
             }
         }
