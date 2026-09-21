@@ -48,39 +48,165 @@ function repairSystem {
     }
 }
 function cleanTempFiles {
+
     try {
-        $paths = @(
-            @{ Path = "C:\Windows\Temp"; Label = "C:\Windows\Temp" },
-            @{ Path = "C:\Windows\Prefetch"; Label = "C:\Windows\Prefetch" }
+        $paths = @()
+
+        # ---- System-wide ----
+        $systemPaths = @(
+            "$env:SystemRoot\Temp",
+            "$env:SystemDrive\Temp",
+            "$env:SystemRoot\Logs\CBS",
+            "$env:SystemRoot\Minidump",
+            "$env:ProgramData\Microsoft\Windows\WER\ReportQueue",
+            "$env:ProgramData\Microsoft\Windows\WER\ReportArchive",
+            "$env:ProgramData\Microsoft\Windows\RetailDemo",
+            "$env:ProgramData\Package Cache\.unverified"
+        )
+        foreach ($p in $systemPaths) {
+            if (Test-Path -LiteralPath $p) { $paths += @{ Path = $p; Label = $p } }
+        }
+
+        # ---- Per-user, relative to each profile root ----
+        $userRelativePaths = @(
+            "AppData\Local\Temp",
+            "AppData\Local\CrashDumps",
+            "AppData\Local\Microsoft\Windows\INetCache",
+            "AppData\Local\Microsoft\Windows\WebCache",
+            "AppData\Local\Microsoft\Windows\Explorer",          # thumbnail/icon cache
+            "AppData\Local\Microsoft\Windows\WER",
+            "AppData\Local\Microsoft\Terminal Server Client\Cache",
+            "AppData\Local\D3DSCache",
+            "AppData\Local\Downloaded Installations"
         )
 
-        # Get all user profile directories under C:\Users, excluding system/service profiles
-        $excludedProfiles = @("Public", "Default", "Default User", "All Users")
-        $userProfiles = Get-ChildItem -Path "C:\Users" -Directory -ErrorAction SilentlyContinue |
-        Where-Object { $excludedProfiles -notcontains $_.Name }
+        # wildcard patterns, matched with -like
+        $excludedProfiles = @(
+            "Public", "Default", "Default User", "All Users",
+            "defaultuser0", "WDAGUtilityAccount", 'MSSQL$*'
+        )
 
-        foreach ($profile in $userProfiles) {
-            $tempPath = Join-Path $profile.FullName "AppData\Local\Temp"
-            if (Test-Path $tempPath) {
-                $paths += @{ Path = $tempPath; Label = "C:\Users\$($profile.Name)\AppData\Local\Temp" }
+        $userProfiles = Get-ChildItem -LiteralPath "$env:SystemDrive\Users" -Directory -Force -ErrorAction SilentlyContinue |
+        Where-Object {
+            $name = $_.Name
+            -not ($excludedProfiles | Where-Object { $name -like $_ })
+        }
+
+        foreach ($userProfile in $userProfiles) {
+            foreach ($rel in $userRelativePaths) {
+                $full = Join-Path $userProfile.FullName $rel
+                if (Test-Path -LiteralPath $full) {
+                    $paths += @{ Path = $full; Label = "$($userProfile.Name)\$rel" }
+                }
             }
         }
 
-        foreach ($item in $paths) {
-            $beforeSize = getFolderSize -Path $item.Path
-            writeText -type "plain" -text "$(formatSize $beforeSize) found at $($item.Label)."
-            writeText -type "plain" -text "Cleaning..."
-
-            Remove-Item -Path "$($item.Path)\*" -Recurse -Force -ErrorAction SilentlyContinue
-
-            $afterSize = getFolderSize -Path $item.Path
-            $freedSize = $beforeSize - $afterSize
-            writeText -type "plain" -text "$(formatSize $freedSize) has been removed. Current size: $(formatSize $afterSize)" -lineAfter
+        # ---- Recycle bin for every user, on every fixed drive ----
+        try {
+            $fixedDrives = Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" -ErrorAction Stop |
+            Select-Object -ExpandProperty DeviceID
+            foreach ($drive in $fixedDrives) {
+                $binRoot = Join-Path $drive '$Recycle.Bin'
+                if (-not (Test-Path -LiteralPath $binRoot)) { continue }
+                $sidFolders = Get-ChildItem -LiteralPath $binRoot -Directory -Force -ErrorAction SilentlyContinue
+                foreach ($sid in $sidFolders) {
+                    $paths += @{ Path = $sid.FullName; Label = "$drive Recycle Bin ($($sid.Name))" }
+                }
+            }
+        } catch {
+            writeText -type "warning" -text "Could not enumerate recycle bins; skipping."
+            log -msg "cleanTempFiles:recycleBin:$($_.Exception.Message)" -lvl "WARN"
         }
 
-        writeText -type "plain" -text "Emptying Recycle Bin"
-        Clear-RecycleBin -Force
-        writeText -type "success" -text "Temporary files cleaned."
+        # ---- Clean each target independently ----
+        $totalFreed = 0
+        foreach ($item in $paths) {
+            try {
+                $beforeSize = getFolderSize -Path $item.Path
+                if ($beforeSize -eq 0) { continue }
+
+                writeText -type "plain" -text "$(formatSize $beforeSize) found at $($item.Label)."
+                writeText -type "plain" -text "Cleaning..."
+
+                Get-ChildItem -LiteralPath $item.Path -Force -ErrorAction SilentlyContinue |
+                Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+
+                $afterSize = getFolderSize -Path $item.Path
+                $freed = $beforeSize - $afterSize
+                $totalFreed += $freed
+
+                writeText -type "plain" -text "$(formatSize $freed) removed. Current size: $(formatSize $afterSize)" -lineAfter
+            } catch {
+                writeText -type "warning" -text "Could not fully clean $($item.Label)."
+                log -msg "cleanTempFiles:$($item.Label):$($_.Exception.Message)" -lvl "WARN"
+            }
+        }
+
+        # ---- Delivery Optimization cache (needs dosvc RUNNING) ----
+        try {
+            Delete-DeliveryOptimizationCache -Force -ErrorAction Stop
+            writeText -type "plain" -text "Delivery Optimization cache cleared." -lineAfter
+        } catch {
+            writeText -type "warning" -text "Delivery Optimization cache not cleared."
+            log -msg "cleanTempFiles:doCache:$($_.Exception.Message)" -lvl "WARN"
+        }
+
+        # ---- Windows Update cache (service-dependent) ----
+        $services = @("wuauserv", "bits", "dosvc")
+        $serviceStates = @{}
+        foreach ($svc in $services) {
+            $s = Get-Service -Name $svc -ErrorAction SilentlyContinue
+            if ($s) { $serviceStates[$svc] = $s.Status }
+        }
+
+        try {
+            foreach ($svc in $serviceStates.Keys) {
+                Stop-Service -Name $svc -Force -ErrorAction SilentlyContinue
+            }
+            foreach ($svc in $serviceStates.Keys) {
+                $s = Get-Service -Name $svc -ErrorAction SilentlyContinue
+                if ($s) {
+                    try { $s.WaitForStatus('Stopped', [TimeSpan]::FromSeconds(20)) } catch { }
+                }
+            }
+
+            $pendingReboot =
+            (Test-Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired') -or
+            (Test-Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending')
+
+            $updatePaths = @(
+                "$env:SystemRoot\ServiceProfiles\NetworkService\AppData\Local\Temp",
+                "$env:SystemRoot\ServiceProfiles\LocalService\AppData\Local\Temp"
+            )
+            if ($pendingReboot) {
+                writeText -type "warning" -text "Reboot pending; skipping SoftwareDistribution\Download."
+            } else {
+                $updatePaths += "$env:SystemRoot\SoftwareDistribution\Download"
+            }
+
+            foreach ($p in $updatePaths) {
+                if (-not (Test-Path -LiteralPath $p)) { continue }
+                $before = getFolderSize -Path $p
+                if ($before -eq 0) { continue }
+                writeText -type "plain" -text "$(formatSize $before) found at $p."
+                Get-ChildItem -LiteralPath $p -Force -ErrorAction SilentlyContinue |
+                Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+                $after = getFolderSize -Path $p
+                $totalFreed += ($before - $after)
+                writeText -type "plain" -text "$(formatSize ($before - $after)) removed." -lineAfter
+            }
+        } catch {
+            writeText -type "warning" -text "Update cache cleanup incomplete."
+            log -msg "cleanTempFiles:updateCache:$($_.Exception.Message)" -lvl "WARN"
+        } finally {
+            foreach ($svc in $serviceStates.Keys) {
+                if ($serviceStates[$svc] -eq 'Running') {
+                    Start-Service -Name $svc -ErrorAction SilentlyContinue
+                }
+            }
+        }
+
+        writeText -type "success" -text "Temporary files cleaned. Total freed: $(formatSize $totalFreed)"
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
