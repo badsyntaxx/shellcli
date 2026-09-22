@@ -848,6 +848,13 @@ function getDownload {
         
                 # invoke request
                 $request = [System.Net.HttpWebRequest]::Create($url)
+                [Net.ServicePointManager]::SecurityProtocol =
+                [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+
+                $request = [System.Net.HttpWebRequest]::Create($url)
+                $request.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) NuviaOnboarding/1.0"
+                $request.Timeout = 60000
+                $request.ReadWriteTimeout = 300000
                 $response = $request.GetResponse()
   
                 if ($response.StatusCode -eq 401 -or $response.StatusCode -eq 403 -or $response.StatusCode -eq 404) {
@@ -883,7 +890,7 @@ function getDownload {
                 if ($lineBefore) { Write-Host }
 
                 if (-not $hide -and $label -ne "") {
-                    Write-Host " $text" -ForegroundColor "Yellow"
+                    Write-Host " $label" -ForegroundColor "Yellow"
                 }
                 # start download
                 $finalBarCount = 0 #Show final bar only one time
@@ -915,11 +922,7 @@ function getDownload {
                     Write-Host
                 }
                 
-                if ($downloadComplete) { 
-                    return $true 
-                } else { 
-                    return $false 
-                }
+                return $true
             } catch {
                 $downloadComplete = $false
             
@@ -931,14 +934,15 @@ function getDownload {
                     log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
                 }
             } finally {
-                # cleanup
-                if ($reader) { $reader.Close() }
-                if ($writer) { $writer.Flush(); $writer.Close() }
+                if ($reader) { $reader.Close(); $reader = $null }
+                if ($writer) { $writer.Flush(); $writer.Close(); $writer = $null }
+                if ($response) { $response.Close(); $response = $null }
         
                 $ErrorActionPreference = $storeEAP
                 [GC]::Collect()
             } 
-        }   
+        }  
+        return $false 
     }
 }
 function getUserData {
@@ -1129,6 +1133,216 @@ function installMSI {
         return -1  # Return -1 to indicate a failure to start the process
     }
 }
+function installApp {
+    param (
+        [parameter(Mandatory = $true)][string]$url,
+        [parameter(Mandatory = $true)][string]$appName,
+        [parameter(Mandatory = $true)][string]$fileName,
+        [parameter(Mandatory = $false)][string]$params = ""
+    )
+
+    try {
+        writeText -Type "plain" -Text "Installing $appName..." -lineBefore
+
+        if (appInstalled -appName $appName) {
+            writeText -Type "plain" -Text "$appName is already installed."
+            return
+        }
+
+        $outputPath = Join-Path -Path "$env:ProgramData\shellcli" -ChildPath $fileName
+
+        if (-not (getDownload -url $url -target $outputPath)) {
+            writeText -type "error" -text "Download failed for $appName."
+            addError -source "installApp-$appName" -message "Download failed from $url"
+            return
+        }
+
+        $size = (Get-Item $outputPath -ErrorAction SilentlyContinue).Length
+        if (-not $size -or $size -lt 1MB) {
+            writeText -type "error" -text "$appName download is only $([math]::Round($size / 1KB)) KB - likely an error page."
+            addError -source "installApp-$appName" -message "Downloaded file too small: $size bytes"
+            Remove-Item $outputPath -Force -ErrorAction SilentlyContinue
+            return
+        }
+
+        $fileExtension = [System.IO.Path]::GetExtension($outputPath).ToLower()
+
+        $exitCode = switch ($fileExtension) {
+            ".exe" {
+                writeText -type "plain" -text "Running exe installer ($outputPath)."
+                installEXE -Path $outputPath -exeArguments $params -Wait $true
+            }
+            ".msi" {
+                writeText -type "plain" -text "Running msi installer ($outputPath)."
+                installMSI -Path $outputPath -msiArguments $params
+            }
+            default {
+                writeText -type "notice" -text "Unsupported file type: $fileExtension"
+                addError -source "installApp-$appName" -message "Unsupported file type: $fileExtension"
+                $null
+            }
+        }
+
+        if ($null -ne $exitCode) {
+            if ($exitCode -in @(0, 3010)) {
+                $note = if ($exitCode -eq 3010) { " (reboot pending)" } else { "" }
+                writeText -type "success" -text "Installation of $appName completed successfully$note." -lineAfter
+            } else {
+                writeText -type "error" -text "Installation of $appName failed with exit code $exitCode."
+                addError -source "installApp-$appName" -message "Installer exit code $exitCode"
+            }
+        }
+
+        # Clean up the downloaded installer
+        $timeout = 10
+        $startTime = Get-Date
+        while ((Test-Path $outputPath) -and ((Get-Date) - $startTime).TotalSeconds -lt $timeout) {
+            try {
+                Remove-Item -Path $outputPath -Force -ErrorAction Stop
+                break
+            } catch {
+                Start-Sleep -Seconds 1
+            }
+        }
+        if (Test-Path $outputPath) {
+            writeText -type "notice" -text "Could not remove installer at $outputPath. This is harmless."
+        }
+    } catch {
+        addError -source "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)" -message $_.Exception.Message
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+    }
+}
+function appInstalled {
+    param([string]$appName)
+
+    try {
+        $pattern = [regex]::Escape($appName)
+
+        $regPaths = @(
+            "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
+            "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*",
+            "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*"
+        )
+
+        foreach ($path in $regPaths) {
+            $apps = Get-ItemProperty $path -ErrorAction SilentlyContinue
+            foreach ($app in $apps) {
+                if ($app.DisplayName -and $app.DisplayName -match $pattern) {
+                    return $true
+                }
+            }
+        }
+
+        # Windows Store apps must be actually registered to a user, not just have leftover metadata. Thanks Claude.
+        $pkgs = Get-AppxPackage -Name "*$appName*" -ErrorAction SilentlyContinue
+        foreach ($pkg in $pkgs) {
+            if ($pkg.PackageUserInformation -and $pkg.PackageUserInformation.Count -gt 0) {
+                return $true
+            }
+        }
+
+        return $false
+    } catch {
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+        return $false
+    }
+}
+function uninstallWin32App {
+    param(
+        [string]$AppName
+    )
+
+    try {
+        writeText -type "plain" -text "Searching for $AppName"
+
+        $found = $false
+        $regPaths = @(
+            "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
+            "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*",
+            "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*"
+        )
+
+        foreach ($regPath in $regPaths) {
+            $apps = Get-ItemProperty $regPath -ErrorAction SilentlyContinue |
+            Where-Object { $_.DisplayName -like "*$AppName*" }
+            foreach ($app in $apps) {
+                $found = $true
+                writeText -type "plain" -text "Uninstalling $($app.DisplayName) v$($app.DisplayVersion)..."
+
+                $cmd = if ($app.QuietUninstallString) { 
+                    $app.QuietUninstallString 
+                } elseif ($app.UninstallString) { 
+                    $app.UninstallString 
+                } else { 
+                    $null 
+                }
+
+                if ($cmd) {
+                    if ($cmd -match "msiexec") {
+                        $cmd = $cmd -replace "/I", "/X"
+                        if ($cmd -notmatch "/quiet|/qn|/qb") { $cmd += " /quiet /norestart" }
+                    } elseif ($cmd -match "OfficeClickToRun|C2RClient|officec2rclient") {
+                        if ($cmd -notmatch "DisplayLevel") { $cmd = $cmd.TrimEnd() + " DisplayLevel=False" }
+                    }
+                    try {
+                        Start-Process -FilePath "cmd.exe" -ArgumentList "/c $cmd" -Wait -WindowStyle Hidden
+                        writeText -type "success" -text "$($app.DisplayName) v$($app.DisplayVersion) uninstalled"
+                    } catch {
+                        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+                        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+                    }
+                } else {
+                    writeText -type "notice" -text "Uninstall failed. No uninstall string found."
+                }
+            }
+        }
+        if (-not $found) {
+            writeText -type "plain" -text "$AppName not found"
+        }
+    } catch {
+        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+    }
+}
+function uninstallAppXApp {
+    param(
+        [string]$PackageName, 
+        [string]$FriendlyName = $PackageName
+    )
+
+    writeText -type "plain" -text "Searching for AppX: $FriendlyName"
+    $found = $false
+    $installed = Get-AppxPackage -AllUsers -Name "*$PackageName*" -ErrorAction SilentlyContinue
+
+    foreach ($app in $installed) {
+        $found = $true
+        writeText -type "plain" -text "Uninstalling $($app.Name)..."
+        try {
+            Remove-AppxPackage -Package $app.PackageFullName -AllUsers -ErrorAction Stop
+            writeText -type "success" -text "$FriendlyName uninstalled successfully"
+        } catch {
+            writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+            log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+        }
+    }
+
+    $provisioned = Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*$PackageName*" }
+    
+    foreach ($app in $provisioned) {
+        $found = $true
+        try {
+            Remove-AppxProvisionedPackage -Online -PackageName $app.PackageName -ErrorAction Stop
+            writeText "$FriendlyName (Provisioned) removed successfully"
+        } catch {
+            writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+            log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+        }
+    }
+    if (-not $found) {
+        writeText -type "plain" -text "$FriendlyName not found"
+    }
+}
 function installViaWinget {
     param(
         [string]$appName,
@@ -1239,7 +1453,7 @@ function installWingetForAllUsers {
         }
 
         # Scratch space -------------------------------------------------
-        $work = Join-Path $env:ProgramData "shellcli\wingetProvision"
+        $work = Join-Path $env:SystemDrive "shellcli\wingetProvision"
         if (Test-Path $work) { Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue }
         New-Item -ItemType Directory -Path $work -Force | Out-Null
 
@@ -1355,204 +1569,6 @@ function installWingetForAllUsers {
     } catch {
         writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
-    }
-}
-function installApp {
-    param (
-        [parameter(Mandatory = $true)]
-        [string]$url,
-        [parameter(Mandatory = $true)]
-        [string]$appName,
-        [parameter(Mandatory = $true)]
-        [string]$params
-    )
-
-    try {
-        writeText -Type "plain" -Text "Installing $appName..." -lineBefore
-        if (appInstalled -appName $appName) {
-            WriteText -Type "plain" -Text "$appName is already installed."
-        } else {
-            $fileName = Split-Path -Path $url -Leaf
-            $outputPath = Join-Path -Path "$env:ProgramData\shellcli" -ChildPath $fileName
-
-            if (getDownload -url $url -target $outputPath) {
-                $fileExtension = [System.IO.Path]::GetExtension($outputPath).ToLower()
-                switch ($fileExtension) {
-                    ".exe" {
-                        writeText -type "plain" -text "Running exe installer ($outputPath)."
-                        $exitCode = installEXE -Path $outputPath -exeArguments $params -Wait $true
-                        if ($exitCode -eq 0) {
-                            writeText -type "success" -text "Installation of $appName completed successfully." -lineAfter
-                        } else {
-                            writeText -type "error" -text "Installation of $appName failed with exit code $exitCode."
-                        }
-                    }
-                    ".msi" {
-                        writeText -type "plain" -text "Running msi installer ($outputPath)."
-                        $exitCode = installMSI -Path $outputPath -msiArguments $params
-                        if ($exitCode -eq 0) {
-                            writeText -type "success" -text "Installation of $appName completed successfully." -lineAfter
-                        } else {
-                            writeText -type "error" -text "Installation of $appName failed with exit code $exitCode."
-                        }
-                    }
-                    default {
-                        writeText -type "notice" -text "Unsupported file type: $fileExtension"
-                    }
-                }
-
-                # Clean up the downloaded installer
-                $timeout = 10  # Timeout in seconds
-                $startTime = Get-Date
-
-                while ((Test-Path $outputPath) -and ((Get-Date) - $startTime).TotalSeconds -lt $timeout) {
-                    try {
-                        Remove-Item -Path $outputPath -Force -ErrorAction Stop
-                        break
-                    } catch {
-                        Start-Sleep -Seconds 1
-                    }
-                }
-
-                if (Test-Path $outputPath) {
-                    writeText -type "error" -text "Failed to remove installer."
-                }
-            }   
-        }     
-    } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
-    }
-}
-function uninstallWin32App {
-    param(
-        [string]$AppName
-    )
-
-    try {
-        writeText -type "plain" -text "Searching for $AppName"
-
-        $found = $false
-        $regPaths = @(
-            "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
-            "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*",
-            "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*"
-        )
-
-        foreach ($regPath in $regPaths) {
-            $apps = Get-ItemProperty $regPath -ErrorAction SilentlyContinue |
-            Where-Object { $_.DisplayName -like "*$AppName*" }
-            foreach ($app in $apps) {
-                $found = $true
-                writeText -type "plain" -text "Uninstalling $($app.DisplayName) v$($app.DisplayVersion)..."
-
-                $cmd = if ($app.QuietUninstallString) { 
-                    $app.QuietUninstallString 
-                } elseif ($app.UninstallString) { 
-                    $app.UninstallString 
-                } else { 
-                    $null 
-                }
-
-                if ($cmd) {
-                    if ($cmd -match "msiexec") {
-                        $cmd = $cmd -replace "/I", "/X"
-                        if ($cmd -notmatch "/quiet|/qn|/qb") { $cmd += " /quiet /norestart" }
-                    } elseif ($cmd -match "OfficeClickToRun|C2RClient|officec2rclient") {
-                        if ($cmd -notmatch "DisplayLevel") { $cmd = $cmd.TrimEnd() + " DisplayLevel=False" }
-                    }
-                    try {
-                        Start-Process -FilePath "cmd.exe" -ArgumentList "/c $cmd" -Wait -WindowStyle Hidden
-                        writeText -type "success" -text "$($app.DisplayName) v$($app.DisplayVersion) uninstalled"
-                    } catch {
-                        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-                        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
-                    }
-                } else {
-                    writeText -type "notice" -text "Uninstall failed. No uninstall string found."
-                }
-            }
-        }
-        if (-not $found) {
-            writeText -type "plain" -text "$AppName not found"
-        }
-    } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
-    }
-}
-function uninstallAppXApp {
-    param(
-        [string]$PackageName, 
-        [string]$FriendlyName = $PackageName
-    )
-
-    writeText -type "plain" -text "Searching for AppX: $FriendlyName"
-    $found = $false
-    $installed = Get-AppxPackage -AllUsers -Name "*$PackageName*" -ErrorAction SilentlyContinue
-
-    foreach ($app in $installed) {
-        $found = $true
-        writeText -type "plain" -text "Uninstalling $($app.Name)..."
-        try {
-            Remove-AppxPackage -Package $app.PackageFullName -AllUsers -ErrorAction Stop
-            writeText -type "success" -text "$FriendlyName uninstalled successfully"
-        } catch {
-            writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-            log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
-        }
-    }
-
-    $provisioned = Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*$PackageName*" }
-    
-    foreach ($app in $provisioned) {
-        $found = $true
-        try {
-            Remove-AppxProvisionedPackage -Online -PackageName $app.PackageName -ErrorAction Stop
-            writeText "$FriendlyName (Provisioned) removed successfully"
-        } catch {
-            writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-            log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
-        }
-    }
-    if (-not $found) {
-        writeText -type "plain" -text "$FriendlyName not found"
-    }
-}
-function appInstalled {
-    param([string]$appName)
-
-    try {
-        $pattern = [regex]::Escape($appName)
-
-        $regPaths = @(
-            "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
-            "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*",
-            "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*"
-        )
-
-        foreach ($path in $regPaths) {
-            $apps = Get-ItemProperty $path -ErrorAction SilentlyContinue
-            foreach ($app in $apps) {
-                if ($app.DisplayName -and $app.DisplayName -match $pattern) {
-                    return $true
-                }
-            }
-        }
-
-        # Windows Store apps must be actually registered to a user, not just have leftover metadata. Thanks Claude.
-        $pkgs = Get-AppxPackage -Name "*$appName*" -ErrorAction SilentlyContinue
-        foreach ($pkg in $pkgs) {
-            if ($pkg.PackageUserInformation -and $pkg.PackageUserInformation.Count -gt 0) {
-                return $true
-            }
-        }
-
-        return $false
-    } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
-        return $false
     }
 }
 function formatSize {
