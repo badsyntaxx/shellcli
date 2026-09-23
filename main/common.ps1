@@ -231,7 +231,7 @@ function generateEncryptedPassword {
     }
 
     # Prompt the user for a password
-    $password = readInput -prompt "Enter the password to encrypt:" -IsSecure
+    $password = readInput -prompt "Enter the password to encrypt:" -isSecure
 
     # Generate a random 32-byte (256-bit) encryption key
     $encryptionKey = New-Object Byte[] 32

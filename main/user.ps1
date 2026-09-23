@@ -42,7 +42,7 @@ function addLocalUser {
         writeText -type "prompt" -text "Enter user credentials."
 
         $name = readInput -prompt "Username:" -Validate "^(\s*|[a-zA-Z0-9 ._\-]{1,64})$" -CheckExistingUser
-        $password = readInput -prompt "Password:" -IsSecure -lineAfter
+        $password = readInput -prompt "Password:" -isSecure -lineAfter
         $group = readOption -options $([ordered]@{
                 "Administrators" = "Set this user's group membership to administrators."
                 "Users"          = "Set this user's group membership to standard users."
@@ -87,7 +87,7 @@ function addADUser {
         $GivenName = $nameParts[0]
         $Surname = $nameParts[-1]
         $samAccountName = readInput -prompt "Enter a sam name:" -Validate "^([a-zA-Z0-9 _\-]{1,20})$"  -CheckExistingUser
-        $password = readInput -prompt "Enter a password:" -IsSecure
+        $password = readInput -prompt "Enter a password:" -isSecure
         $choice = readOption -options $([ordered]@{
                 "Administrator" = "Create admin user"
                 "Standard user" = "Create standard user"
@@ -201,7 +201,7 @@ function editUserPassword {
         }
 
         if ($user["Source"] -eq "Local") { 
-            $password = readInput -prompt "Password:" -IsSecure:$true -allowBlank:$true
+            $password = readInput -prompt "Password:" -isSecure:$true -allowBlank:$true
 
             Get-LocalUser -Name $user["Name"] | Set-LocalUser -Password $password -PasswordNeverExpires $true
 

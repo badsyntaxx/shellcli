@@ -570,7 +570,7 @@ function readInput {
         [parameter(Mandatory = $false)]
         [string]$ErrorMessage = "", # Provide an optional error message
         [parameter(Mandatory = $false)]
-        [switch]$IsSecure = $false, # If prompting for a password
+        [switch]$isSecure = $false, # If prompting for a password
         [parameter(Mandatory = $false)]
         [switch]$CheckExistingUser = $false,
         [parameter(Mandatory = $false)]
@@ -593,7 +593,7 @@ function readInput {
         # Write-Host " ? " -NoNewline -ForegroundColor "Cyan"
         Write-Host "  $prompt " -NoNewline
 
-        if ($IsSecure) { 
+        if ($isSecure) { 
             $userInput = Read-Host -AsSecureString 
         } else { 
             $userInput = Read-Host 
@@ -636,13 +636,13 @@ function readInput {
         }
 
         # Use provided default value if user enters nothing for a non-secure input
-        if ($userInput.Length -eq 0 -and $Value -ne "" -and !$IsSecure) { $userInput = $Value }
+        if ($userInput.Length -eq 0 -and $Value -ne "" -and !$isSecure) { $userInput = $Value }
 
         # Reset cursor position
         [Console]::SetCursorPosition($currPos.X, $currPos.Y)
         
         # Write-Host " ? " -ForegroundColor "Cyan" -NoNewline
-        if ($IsSecure -and ($userInput.Length -eq 0)) { 
+        if ($isSecure -and ($userInput.Length -eq 0)) { 
             Write-Host "  $prompt                                                "
         } else { 
             Write-Host "  $prompt " -NoNewline
