@@ -257,14 +257,10 @@ function generateEncryptedPassword {
     writeText -type "success" -text "Success. An encrypted password and decryption key have been generated."
 }
 function download {
-    # Trailing slash is required: without it, a missing C:\Temp would be treated as
-    # a *file* named "Temp" instead of a folder to save into.
-    $downloadDir = "C:\Temp\"
-
-    $downloadDir = readInput -prompt "Where do you want the download:"
+    $downloadDir = readInput -prompt "Where do you want the download:" -allowBlank
 
     if ($null -ne $downloadDir) {
-        # Strip whitespace and quotes pasted along with the URL (e.g. from "Copy as path")
+        # Strip whitespace and quotes pasted along with the dir (e.g. from "Copy as path")
         $downloadDir = "$downloadDir".Trim().Trim('"', "'").Trim()
     }
 
