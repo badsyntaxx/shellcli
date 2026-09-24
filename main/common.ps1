@@ -257,22 +257,80 @@ function generateEncryptedPassword {
     writeText -type "success" -text "Success. An encrypted password and decryption key have been generated."
 }
 function download {
-    param (
-        [parameter(Mandatory)]
-        [string]$url,
-        [parameter(Mandatory)]
-        [string]$target,
-        [parameter(Mandatory = $false)]
-        [string]$label = "",
-        [parameter(Mandatory = $false)]
-        [string]$failText = 'Download failed...',
-        [parameter(Mandatory = $false)]
-        [switch]$lineBefore = $false,
-        [parameter(Mandatory = $false)]
-        [switch]$lineAfter = $false,
-        [parameter(Mandatory = $false)]
-        [switch]$hide = $false
-    )
-    
-    $downloadUrl = readInput -prompt "URL:" 
+    # Trailing slash is required: without it, a missing C:\Temp would be treated as
+    # a *file* named "Temp" instead of a folder to save into.
+    $downloadDir = "C:\Temp\"
+
+    $downloadDir = readInput -prompt "Where do you want the download:"
+
+    if ($null -ne $downloadDir) {
+        # Strip whitespace and quotes pasted along with the URL (e.g. from "Copy as path")
+        $downloadDir = "$downloadDir".Trim().Trim('"', "'").Trim()
+    }
+
+    if ([string]::IsNullOrWhiteSpace($downloadDir)) {
+        $downloadDir = "C:\Temp\"
+        writeText -type "notice" -text "Download directory was left blank. Download will be in $downloadDir"
+    }
+
+    # --- Check the input ---
+    $downloadUrl = readInput -prompt "URL:"
+    if ($null -ne $downloadUrl) {
+        # Strip whitespace and quotes pasted along with the URL (e.g. from "Copy as path")
+        $downloadUrl = "$downloadUrl".Trim().Trim('"', "'").Trim()
+    }
+
+    if ([string]::IsNullOrWhiteSpace($downloadUrl)) {
+        writeText -type "notice" -text "No URL entered. Download cancelled."
+        return $false
+    }
+
+    # Allow "example.com/file.exe" by assuming https
+    if ($downloadUrl -notmatch '^[a-z][a-z0-9+.-]*://') {
+        $downloadUrl = "https://$downloadUrl"
+    }
+
+    $uri = $null
+    if (-not [Uri]::TryCreate($downloadUrl, [UriKind]::Absolute, [ref]$uri) -or
+        $uri.Scheme -notin @('http', 'https') -or
+        [string]::IsNullOrWhiteSpace($uri.Host)) {
+        writeText -type "error" -text "Invalid URL: $downloadUrl"
+        return $false
+    }
+
+    # --- Check the destination ---
+    if (Test-Path -LiteralPath $downloadDir.TrimEnd('\') -PathType Leaf) {
+        writeText -type "error" -text "Cannot save to $downloadDir because a file with that name already exists."
+        return $false
+    }
+
+    # --- Download (getDownload prints its own error on failure) ---
+    $file = getDownload -url $uri.AbsoluteUri -target $downloadDir -label "Downloading..." -failText "Download failed." -passThru
+    if (-not $file) {
+        return $false
+    }
+
+    # --- Check the result ---
+    $size = (Get-Item -LiteralPath $file -ErrorAction SilentlyContinue).Length
+    if (-not $size) {
+        writeText -type "error" -text "Downloaded file is empty. Removing it."
+        Remove-Item -LiteralPath $file -Force -ErrorAction SilentlyContinue
+        return $false
+    }
+
+    # A small HTML file usually means a login page, error page or "click here" redirect,
+    # not the file you wanted. Warn rather than delete, since it might be intentional.
+    $extension = [System.IO.Path]::GetExtension($file).ToLower()
+    if ($extension -notin @('.htm', '.html') -and $size -lt 1MB) {
+        try {
+            $head = (Get-Content -LiteralPath $file -TotalCount 5 -ErrorAction Stop) -join ' '
+            if ($head -match '^\s*(<!DOCTYPE html|<html)') {
+                writeText -type "notice" -text "Warning: $([System.IO.Path]::GetFileName($file)) looks like a web page, not a download. Check the URL."
+            }
+        } catch { }
+    }
+
+    $sizeText = if ($size -ge 1MB) { "$([math]::Round($size / 1MB, 2)) MB" } else { "$([math]::Round($size / 1KB, 1)) KB" }
+    writeText -type "success" -text "Saved to $file ($sizeText)"
+    return $file
 }

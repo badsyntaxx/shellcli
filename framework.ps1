@@ -1,17 +1,12 @@
 $global:moduleCache = @{}
 $global:commandMap = [ordered]@{
+    # core
     "?"                              = @("main", "core", "writeHelp", "List some help info.")
     "help"                           = @("main", "core", "writeHelp", "List some help info.")
     "menu"                           = @("main", "core", "readMenu", "Display the main menu.")
     "commands"                       = @("main", "core", "listAllCommands", "List all available commands.")
     "logs"                           = @("main", "core", "readLog", "Output the last 50 lines of the log file.")
-    #-- CUSTOMIZATION COMMANDS --#
-    "toggle context menu"            = @("main", "common", "toggleContextMenu", "Toggle the context menu.")
-    "enable context menu"            = @("main", "common", "enableContextMenu", "Enable the context menu.")
-    "disable context menu"           = @("main", "common", "disableContextMenu", "Disable the context menu.")
-    "edit hostname"                  = @("main", "common", "editHostname", "Edit the hostname.")
-    "edit description"               = @("main", "common", "editDescription", "Edit the host description.")
-    #-- USER COMMANDS --#
+    # user
     "toggle admin"                   = @("main", "user", "toggleAdmin", "Toggle admin privileges.")
     "enable admin"                   = @("main", "user", "enableAdmin", "Enable admin privileges.")
     "disable admin"                  = @("main", "user", "disableAdmin", "Disable admin privileges.")
@@ -26,18 +21,23 @@ $global:commandMap = [ordered]@{
     "edit user password"             = @("main", "user", "editUserPassword", "Edit a user's password.")
     "edit user group"                = @("main", "user", "editUserGroup", "Edit a user's group.")
     "unlock user"                    = @("main", "user", "unlockUser", "Unlock a user.")
-    #-- NETWORK COMMANDS --#
+    # network
     "network"                        = @("main", "network", "network", "Get net adapter info.")
     "edit network"                   = @("main", "network", "editNetAdapter", "Edit the network adapter. ()ETA")
     "wifi"                           = @("main", "network", "getWifiCreds", "Get WiFi credentials.")
-    #-- APPS COMMANDS --#
+    # apps
     "get apps"                       = @("main", "apps", "getApps", "Display a menu of available apps.")
     "get app"                        = @("main", "apps", "getApp", "Get an app by providing install details.")
     "get browser apps"               = @("main", "apps", "getBrowserApps", "Display a menu of web browsers.")
     "get diagnostic apps"            = @("main", "apps", "getDiagnosticApps", "Display a menu of PC diagnostic software.")
     "get productivity apps"          = @("main", "apps", "getProductivityApps", "Display a menu of productivity apps.")
     "get customization apps"         = @("main", "apps", "getCustomizationApps", "Display a menu of customization apps.")
-    #-- SYSTEM COMMANDS --#
+    # common
+    "toggle context menu"            = @("main", "common", "toggleContextMenu", "Toggle the context menu.")
+    "enable context menu"            = @("main", "common", "enableContextMenu", "Enable the context menu.")
+    "disable context menu"           = @("main", "common", "disableContextMenu", "Disable the context menu.")
+    "edit hostname"                  = @("main", "common", "editHostname", "Edit the hostname.")
+    "edit description"               = @("main", "common", "editDescription", "Edit the host description.")
     "techmode 1"                     = @("main", "common", "techMode", "Enable tech mode.")
     "techmode 0"                     = @("main", "common", "userMode", "Enable user mode.")
     "fix icons"                      = @("main", "fix", "fixIcons", "Fix desktop icons.")
@@ -50,8 +50,6 @@ $global:commandMap = [ordered]@{
     "service menu"                   = @("main", "services", "serviceMenu", "Display the service controller menu.")
     "schedule task"                  = @("main", "task", "scheduleTask", "Schedule a task.(BETA)")
     "update windows"                 = @("main", "fix", "updateWindows", "Update Windows.")
-    "clean temp files"               = @("main", "fix", "cleanTempFiles", "Clear temporary files.")
-    "repair windows"                 = @("main", "fix", "repairWindows", "Repair Windows.")
     "install host gpu drivers on vm" = @("main", "gpu", "installHostGPUDriversOnVM", "Install host GPU drivers on VM.")
     "partition gpu"                  = @("main", "gpu", "partitionGPU", "Partition the GPU.")
     "generate encrypted password"    = @("main", "common", "generateEncryptedPassword", "Generate an encrypted password.")
@@ -59,6 +57,10 @@ $global:commandMap = [ordered]@{
     "find dc"                        = @("main", "common", "findDC", "Find the domain controller.")
     "storage"                        = @("main", "common", "getStorage", "Display storage information.")
     "stored creds"                   = @("main", "common", "showStoredCredentials", "Show Windows stored credentials.")
+    "download"                       = @("main", "common", "download", "Download stuff.")
+    # fix
+    "clean temp files"               = @("main", "fix", "cleanTempFiles", "Clear temporary files.")
+    "repair windows"                 = @("main", "fix", "repairWindows", "Repair Windows.")
     #-- PLUGIN COMMANDS --#
     "plugins"                        = @("plugins", "core", "plugins", "List available plugins.")
     "plugins menu"                   = @("plugins", "core", "readMenu", "Display the plugin menu.")
