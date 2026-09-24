@@ -565,36 +565,6 @@ function listUsers {
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
-function getUserInfo {
-    $user = selectUser -prompt "Select a user to view details." -lineAfter
-
-    $profiles = Get-CimInstance -ClassName Win32_UserProfile
-
-    foreach ($p in $profiles) {
-        try {
-            $sid = New-Object System.Security.Principal.SecurityIdentifier($p.SID)
-            $account = $sid.Translate([System.Security.Principal.NTAccount])
-
-            # Match against just the "user" part (strip DOMAIN\ or COMPUTER\)
-            $shortName = $account.Value.Split('\')[-1]
-
-            if ($shortName -eq $username) {
-                [PSCustomObject]@{
-                    UserName  = $account.Value
-                    SID       = $p.SID
-                    Loaded    = $p.Loaded
-                    LocalPath = $p.LocalPath
-                }
-                return
-            }
-        } catch {
-            # Skip SIDs that can't be resolved (e.g. orphaned profiles)
-            continue
-        }
-    }
-
-    Write-Host "No matching profile found for user '$username'."
-}
 function toggleAdmin {
     try {
         $choice = readOption -options $([ordered]@{

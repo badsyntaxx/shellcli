@@ -168,7 +168,7 @@ function techMode {
     writeText -type "plain" -text "Showing all try icons"
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer" -Name "EnableAutoTray" -Value 0
     writeText -type "plain" -text "Adding GodMode folder to desktop"
-    $godmode = New-Item -Path "$env:USERPROFILE\Desktop\GodMode.{ED7BA470-8E54-465E-825C-99712043E01C}" -ItemType Directory -ErrorAction SilentlyContinue
+    New-Item -Path "$env:USERPROFILE\Desktop\GodMode.{ED7BA470-8E54-465E-825C-99712043E01C}" -ItemType Directory -ErrorAction SilentlyContinue
     Stop-Process -ProcessName explorer
     Start-Process explorer
     writeText -type "success" -text "TechMode enabled"

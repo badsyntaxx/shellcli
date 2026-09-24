@@ -842,7 +842,6 @@ function getDownload {
     Process {        
         log -msg "Downloading file from $url to $target"
 
-        $downloadComplete = $true 
         for ($retryCount = 1; $retryCount -le 2; $retryCount++) {
             try {
                 $storeEAP = $ErrorActionPreference
@@ -926,8 +925,6 @@ function getDownload {
                 
                 return $true
             } catch {
-                $downloadComplete = $false
-            
                 if ($retryCount -lt 2) {
                     writeText -type "plain" -text "Retrying..."
                     Start-Sleep -Seconds 1
