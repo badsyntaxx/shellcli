@@ -256,3 +256,23 @@ function generateEncryptedPassword {
     writeText -type "plain" -text "Encrypted password saved to: $passwordFilePath"
     writeText -type "success" -text "Success. An encrypted password and decryption key have been generated."
 }
+function download {
+    param (
+        [parameter(Mandatory)]
+        [string]$url,
+        [parameter(Mandatory)]
+        [string]$target,
+        [parameter(Mandatory = $false)]
+        [string]$label = "",
+        [parameter(Mandatory = $false)]
+        [string]$failText = 'Download failed...',
+        [parameter(Mandatory = $false)]
+        [switch]$lineBefore = $false,
+        [parameter(Mandatory = $false)]
+        [switch]$lineAfter = $false,
+        [parameter(Mandatory = $false)]
+        [switch]$hide = $false
+    )
+    
+    $downloadUrl = readInput -prompt "URL:" 
+}

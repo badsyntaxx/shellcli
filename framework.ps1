@@ -795,8 +795,13 @@ function getDownload {
     param (
         [parameter(Mandatory)]
         [string]$url,
-        [parameter(Mandatory)]
-        [string]$target,
+        # A full file path, or a folder (existing, or ending in '\' or '/') to keep the
+        # remote filename. Omit to save into the current location with the remote filename.
+        [parameter(Mandatory = $false)]
+        [string]$target = "",
+        # Return the saved file's full path on success instead of $true
+        [parameter(Mandatory = $false)]
+        [switch]$passThru = $false,
         [parameter(Mandatory = $false)]
         [string]$label = "",
         [parameter(Mandatory = $false)]
@@ -808,7 +813,42 @@ function getDownload {
         [parameter(Mandatory = $false)]
         [switch]$hide = $false
     )
-    Begin {       
+    Begin {
+        function getRemoteFileName {
+            param (
+                [parameter(Mandatory)]
+                [System.Net.WebResponse]$response
+            )
+
+            $name = $null
+
+            # 1. Content-Disposition header (prefer RFC 5987 filename*= over filename=)
+            $disposition = $response.Headers['Content-Disposition']
+            if ($disposition) {
+                if ($disposition -match "filename\*\s*=\s*(?:[\w-]+'[\w-]*')?`"?([^`";]+)`"?") {
+                    $name = [Uri]::UnescapeDataString($Matches[1].Trim())
+                } elseif ($disposition -match 'filename\s*=\s*"?([^";]+)"?') {
+                    $name = $Matches[1].Trim()
+                }
+            }
+
+            # 2. Last segment of the final URL (ResponseUri reflects redirects)
+            if (-not $name) {
+                $name = [Uri]::UnescapeDataString([System.IO.Path]::GetFileName($response.ResponseUri.AbsolutePath))
+            }
+
+            # Never trust a server-supplied name: strip any directory parts (blocks
+            # "..\..\evil.exe") and characters Windows doesn't allow in filenames
+            if ($name) {
+                $name = [System.IO.Path]::GetFileName(($name -replace '/', '\'))
+                $invalid = [regex]::Escape( -join [System.IO.Path]::GetInvalidFileNameChars())
+                $name = ($name -replace "[$invalid]", '_').Trim(' ', '.')
+            }
+
+            if (-not $name) { $name = 'download' }
+            return $name
+        }
+
         function showProgress {
             param (
                 [parameter(Mandatory)]
@@ -818,131 +858,178 @@ function getDownload {
                 [parameter(Mandatory = $false)]
                 [switch]$complete = $false
             )
-            
-            # calc %
+
             $barSize = 30
-            $percent = $currentValue / $totalValue
+            $percent = if ($totalValue -gt 0) { $currentValue / $totalValue } else { 0 }
+            # Clamp in case the server's Content-Length is wrong
+            $percent = [Math]::Max(0, [Math]::Min(1, $percent))
             $percentComplete = $percent * 100
-  
-            # build progressbar with string function
-            $curBarSize = $barSize * $percent
-            $progbar = ""
-            $progbar = $progbar.PadRight($curBarSize, [char]9608)
-            $progbar = $progbar.PadRight($barSize, [char]9617)
+
+            $curBarSize = [int][Math]::Floor($barSize * $percent)
+            $progbar = "".PadRight($curBarSize, [char]9608).PadRight($barSize, [char]9617)
 
             if ($complete) {
-                Write-Host -NoNewLine "`r$progbar" -ForegroundColor "Gray"
+                # Trailing spaces overwrite the " 100.00%" left over from the previous draw
+                Write-Host -NoNewLine "`r$progbar        " -ForegroundColor "Gray"
             } else {
                 Write-Host -NoNewLine "`r$progbar $($percentComplete.ToString("##0.00").PadLeft(6))%" -ForegroundColor "Gray"
-            }         
+            }
         }
     }
-    Process {        
-        log -msg "Downloading file from $url to $target"
+    Process {
+        # $null = ... keeps helper output from polluting the function's return value
+        $null = log -msg "Downloading file from $url to $target"
 
-        $downloadComplete = $true 
-        for ($retryCount = 1; $retryCount -le 2; $retryCount++) {
+        # Resolve the target once, against PowerShell's current location (not the .NET
+        # process directory). Handles "file.zip", ".\file.zip", "sub\file.zip", "..\file.zip".
+        # A folder target means "keep the remote filename"; the name is picked per attempt
+        # once the response headers are available.
+        $outFile = $null
+        try {
+            $targetIsFolder = ($target -eq "") -or ($target -match '[\\/]$')
+            if ($target -eq "") { $target = "." }
+            $target = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($target)
+            if (Test-Path -LiteralPath $target -PathType Container) { $targetIsFolder = $true }
+
+            $fileDirectory = if ($targetIsFolder) { $target } else { [System.IO.Path]::GetDirectoryName($target) }
+            if ($fileDirectory -and -not (Test-Path -LiteralPath $fileDirectory)) {
+                [System.IO.Directory]::CreateDirectory($fileDirectory) | Out-Null
+            }
+        } catch {
+            $null = writeText -type "error" -text $failText
+            $null = log -msg "$($MyInvocation.MyCommand.Name): invalid target '$target': $($_.Exception.Message)" -lvl "ERROR"
+            return $false
+        }
+
+        # Must be set before the request is created
+        [Net.ServicePointManager]::SecurityProtocol =
+        [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+
+        $maxAttempts = 2
+
+        for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+            # Initialize in this scope so 'finally' never touches a caller's variables
+            $reader = $null
+            $writer = $null
+            $response = $null
+            $success = $false
+            $retryable = $true
+            $progressDrawn = $false
+            $errorMessage = $null
+            $errorLine = $null
+
+            $storeEAP = $ErrorActionPreference
             try {
-                $storeEAP = $ErrorActionPreference
                 $ErrorActionPreference = 'Stop'
-        
-                # invoke request
-                $request = [System.Net.HttpWebRequest]::Create($url)
-                [Net.ServicePointManager]::SecurityProtocol =
-                [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 
                 $request = [System.Net.HttpWebRequest]::Create($url)
                 $request.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) NuviaOnboarding/1.0"
                 $request.Timeout = 60000
                 $request.ReadWriteTimeout = 300000
+
+                # Throws WebException for any non-2xx status (handled below)
                 $response = $request.GetResponse()
-  
-                if ($response.StatusCode -eq 401 -or $response.StatusCode -eq 403 -or $response.StatusCode -eq 404) {
-                    throw "Remote file either doesn't exist, is unauthorized, or is forbidden for '$url'."
-                }
-  
-                if ($target -match '^\.\\') {
-                    $target = Join-Path (Get-Location -PSProvider "FileSystem") ($target -Split '^\.')[1]
-                }
-            
-                if ($target -and !(Split-Path $target)) {
-                    $target = Join-Path (Get-Location -PSProvider "FileSystem") $target
+
+                [long]$fullSize = $response.ContentLength   # -1 if the server didn't send it
+                $fullSizeMB = $fullSize / 1024 / 1024
+
+                [byte[]]$buffer = New-Object byte[] 1048576
+                [long]$total = 0
+                [int]$count = 0
+
+                $outFile = if ($targetIsFolder) {
+                    Join-Path $target (getRemoteFileName -response $response)
+                } else {
+                    $target
                 }
 
-                if ($target) {
-                    $fileDirectory = $([System.IO.Path]::GetDirectoryName($target))
-                    if (!(Test-Path($fileDirectory))) {
-                        [System.IO.Directory]::CreateDirectory($fileDirectory) | Out-Null
+                $reader = $response.GetResponseStream()
+                $writer = [System.IO.FileStream]::new($outFile, [System.IO.FileMode]::Create)
+
+                # Only print the header on the first attempt
+                if ($attempt -eq 1) {
+                    if ($lineBefore) { Write-Host }
+                    if (-not $hide -and $label -ne "") {
+                        Write-Host " $label" -ForegroundColor "Yellow"
                     }
                 }
 
-                [long]$fullSize = $response.ContentLength
-                $fullSizeMB = $fullSize / 1024 / 1024
-  
-                # define buffer
-                [byte[]]$buffer = new-object byte[] 1048576
-                [long]$total = [long]$count = 0
-  
-                # create reader / writer
-                $reader = $response.GetResponseStream()
-                $writer = new-object System.IO.FileStream $target, "Create"
-                
-                if ($lineBefore) { Write-Host }
-
-                if (-not $hide -and $label -ne "") {
-                    Write-Host " $label" -ForegroundColor "Yellow"
-                }
-                # start download
-                $finalBarCount = 0 #Show final bar only one time
                 do {
                     $count = $reader.Read($buffer, 0, $buffer.Length)
-          
-                    $writer.Write($buffer, 0, $count)
-              
-                    $total += $count
-                    $totalMB = $total / 1024 / 1024
-                    if (-not $hide) {
-                        if ($fullSize -gt 0) {
-                            showProgress -totalValue $fullSizeMB -currentValue $totalMB
-                        }
+                    if ($count -gt 0) {
+                        $writer.Write($buffer, 0, $count)
+                        $total += $count
 
-                        if ($total -eq $fullSize -and $count -eq 0 -and $finalBarCount -eq 0) {
-                            showProgress -totalValue $fullSizeMB -currentValue $totalMB -complete
-                            $finalBarCount++
+                        if (-not $hide -and $fullSize -gt 0) {
+                            showProgress -totalValue $fullSizeMB -currentValue ($total / 1024 / 1024)
+                            $progressDrawn = $true
                         }
                     }
                 } while ($count -gt 0)
 
-                if (-not $hide) {
-                    Write-Host
+                # A dropped connection often just ends the stream early; don't call that success
+                if ($fullSize -gt 0 -and $total -ne $fullSize) {
+                    throw "Incomplete download: received $total of $fullSize bytes."
                 }
 
-                # Prevent the following output from appearing on the same line as the progress bar
-                if ($lineAfter) { 
-                    Write-Host
+                if (-not $hide -and $fullSize -gt 0) {
+                    showProgress -totalValue $fullSizeMB -currentValue $fullSizeMB -complete
+                    $progressDrawn = $true
                 }
-                
-                return $true
+
+                $success = $true
+            } catch [System.Net.WebException] {
+                $errorMessage = $_.Exception.Message
+                $errorLine = $_.InvocationInfo.ScriptLineNumber
+
+                $webResponse = $_.Exception.Response
+                if ($webResponse) {
+                    $statusCode = [int]$webResponse.StatusCode
+                    if ($statusCode -in 401, 403, 404) {
+                        # Permanent errors: retrying won't help
+                        $retryable = $false
+                        $errorMessage = "Remote file either doesn't exist, is unauthorized, or is forbidden (HTTP $statusCode) for '$url'."
+                    }
+                    $webResponse.Close()
+                }
             } catch {
-                $downloadComplete = $false
-            
-                if ($retryCount -lt 2) {
-                    writeText -type "plain" -text "Retrying..."
-                    Start-Sleep -Seconds 1
-                } else {
-                    writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-                    log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
-                }
+                $errorMessage = $_.Exception.Message
+                $errorLine = $_.InvocationInfo.ScriptLineNumber
             } finally {
-                if ($reader) { $reader.Close(); $reader = $null }
-                if ($writer) { $writer.Flush(); $writer.Close(); $writer = $null }
-                if ($response) { $response.Close(); $response = $null }
-        
+                if ($reader) { $reader.Close() }
+                if ($writer) { $writer.Flush(); $writer.Close() }
+                if ($response) { $response.Close() }
                 $ErrorActionPreference = $storeEAP
-                [GC]::Collect()
-            } 
-        }  
-        return $false 
+            }
+
+            # End the progress-bar line so following output starts on a fresh line
+            if ($progressDrawn) { Write-Host }
+
+            if ($success) {
+                if ($lineAfter) { Write-Host }
+                $null = log -msg "Download complete: $outFile ($total bytes)"
+                if ($passThru) { return $outFile }
+                return $true
+            }
+
+            if ($attempt -lt $maxAttempts -and $retryable) {
+                $null = log -msg "$($MyInvocation.MyCommand.Name)-$($errorLine): attempt $attempt failed: $errorMessage" -lvl "WARN"
+                $null = writeText -type "plain" -text "Retrying..."
+                Start-Sleep -Seconds 1
+                continue
+            }
+
+            $null = writeText -type "error" -text "$failText ($($MyInvocation.MyCommand.Name)-$errorLine)"
+            $null = log -msg "$($MyInvocation.MyCommand.Name)-$($errorLine): $errorMessage" -lvl "ERROR"
+            break
+        }
+
+        # Don't leave a partial/corrupt file behind for later checks to mistake as valid
+        if ($outFile -and (Test-Path -LiteralPath $outFile -PathType Leaf)) {
+            Remove-Item -LiteralPath $outFile -Force -ErrorAction SilentlyContinue
+        }
+
+        return $false
     }
 }
 function getUserData {
@@ -1137,7 +1224,7 @@ function installApp {
     param (
         [parameter(Mandatory = $true)][string]$url,
         [parameter(Mandatory = $true)][string]$appName,
-        [parameter(Mandatory = $true)][string]$fileName,
+        [parameter(Mandatory = $false)][string]$fileName,
         [parameter(Mandatory = $false)][string]$params = "",
         [parameter(Mandatory = $false)][string]$outputPath = "$env:ProgramData\shellcli"
     )
