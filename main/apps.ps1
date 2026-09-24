@@ -26,8 +26,7 @@ function getApps {
             readCommand
         }
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+        writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     }
 }
 function getApp {
@@ -51,7 +50,7 @@ function getBrowserApps {
             0 { 
                 $url = (winget show --id Vivaldi.Vivaldi | Select-String "Installer Url:").Line.Split(" ")[-1]
                 if ([string]::IsNullOrWhiteSpace($url) -or $url -notmatch '^https?://') {
-                    Write-Error "Failed to retrieve a valid installer URL. Aborting install."
+                    throw "Failed to retrieve a valid installer URL. Aborting install."
                 } else {
                     installApp -url $url -appName "Vivaldi" -params "vivaldi-silent --do-not-launch-chrome --system-level" 
                 }
@@ -59,7 +58,7 @@ function getBrowserApps {
             1 { 
                 $url = (winget show --id Brave.Brave | Select-String "Installer Url:").Line.Split(" ")[-1]
                 if ([string]::IsNullOrWhiteSpace($url) -or $url -notmatch '^https?://') {
-                    Write-Error "Failed to retrieve a valid installer URL. Aborting install."
+                    throw "Failed to retrieve a valid installer URL. Aborting install."
                 } else {
                     installApp -url $url -appName "Brave" -params "--install --silent --system-level"
                 }
@@ -67,15 +66,17 @@ function getBrowserApps {
             2 {
                 $url = (winget show --id Mozilla.Firefox | Select-String "Installer Url:").Line.Split(" ")[-1]
                 if ([string]::IsNullOrWhiteSpace($url) -or $url -notmatch '^https?://') {
-                    Write-Error "Failed to retrieve a valid installer URL. Aborting install."
+                    throw "Failed to retrieve a valid installer URL. Aborting install."
                 } else {
-                    installApp -url $url -appName "Mozilla Firefox" -params "/S"
+                    if (-not (installApp -url $url -appName "Mozilla Firefox" -params "/S")) {
+                        writeText -type "error" -text "Firefox did not install."
+                    }
                 }
             }    
             3 { 
                 $url = (winget show --id Google.Chrome | Select-String "Installer Url:").Line.Split(" ")[-1]
                 if ([string]::IsNullOrWhiteSpace($url) -or $url -notmatch '^https?://') {
-                    Write-Error "Failed to retrieve a valid installer URL. Aborting install."
+                    throw "Failed to retrieve a valid installer URL. Aborting install."
                 } else {
                     installApp -url $url -appName "Google Chrome" -params "/qn /norestart" 
                 }
@@ -83,8 +84,7 @@ function getBrowserApps {
             4 { readCommand }
         }
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+        writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     }
 }
 function getDiagnosticApps {
@@ -109,8 +109,7 @@ function getDiagnosticApps {
             6 { readCommand }
         } 
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+        writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     }
 }
 function getBulkCrapUninstaller {
@@ -122,8 +121,7 @@ function getBulkCrapUninstaller {
             installApp -url $url -appName "BulkCrapUninstaller" -params "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART"
         }
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+        writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     }
 }
 function getRevoUninstaller {
@@ -138,8 +136,7 @@ function getRevoUninstaller {
             Remove-Item -Path $publicDesktopLink -Force
         } 
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+        writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     }
 }
 function getWinDirStat {
@@ -192,8 +189,7 @@ function getWinDirStat {
             writeText -type "notice" -text "WinDirStat.exe already exists in: $tempDir. Skipping download and extraction."
         }
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+        writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     }
 }
 function getBGInfo {
@@ -240,8 +236,7 @@ function getBGInfo {
             writeText -type "success" -text "BGInfo installed and applied."
         }
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+        writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     }
 }
 function getHWInfo {
@@ -253,8 +248,7 @@ function getHWInfo {
             installApp -url $url -appName "HWiNFO" -params "--install --silent --system-level"
         }
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+        writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     }
 }
 function getAIPS {
@@ -263,8 +257,7 @@ function getAIPS {
         $appName = "Advanced IP Scanner"
         installApp -url $url -appName $appName -params "/VERYSILENT /NORESTART" 
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+        writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     } 
 }
 function getProductivityApps {
@@ -285,8 +278,7 @@ function getProductivityApps {
             4 { readCommand }
         } 
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+        writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     }
 }
 function getClaude {
@@ -298,8 +290,7 @@ function getClaude {
             installApp -url $url -appName "Claude" -params "/S" 
         }
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+        writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     }
 }
 function getWindowsPowerToys {
@@ -308,8 +299,7 @@ function getWindowsPowerToys {
         $appName = "Windows PowerToys"
         installApp -url $url -appName $appName -params "" 
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+        writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     }
 }
 function getAdobeAcrobatReader {
@@ -318,8 +308,7 @@ function getAdobeAcrobatReader {
         $appName = "Adobe Acrobat Reader"
         installApp -url $url -appName $appName -params "/sAll /rs /msi EULA_ACCEPT=YES" 
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+        writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     }
 }
 function getCustomizationApps {

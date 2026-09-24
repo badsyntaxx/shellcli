@@ -97,8 +97,7 @@ function invokeScript {
 
         Invoke-Expression $script
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+        writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     }
 }
 function startShell {
@@ -227,8 +226,7 @@ function filterCommands {
         writeText -type "plain" -text "Unknown command '$command' | Try 'help' or 'menu'."
         return $null
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+        writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
         return $null
     }
 }
@@ -659,8 +657,7 @@ function readInput {
         # Return the validated user input
         return $userInput
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+        writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     }
 }
 function readOption {
@@ -789,8 +786,147 @@ function readOption {
             return $pos 
         }
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+        writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
+    }
+}
+function getUserData {
+    param (
+        [parameter(Mandatory = $true)]
+        [string]$username
+    )
+
+    try {
+        $user = Get-LocalUser -Name $username
+        $groups = Get-LocalGroup | Where-Object { $user.SID -in ($_ | Get-LocalGroupMember | Select-Object -ExpandProperty "SID") } | Select-Object -ExpandProperty "Name"
+        $userProfile = Get-CimInstance Win32_UserProfile -Filter "SID = '$($user.SID)'"
+        $dir = $userProfile.LocalPath
+        if ($null -ne $userProfile) { $dir = $userProfile.LocalPath } else { $dir = "Awaiting first sign in." }
+
+        $source = Get-LocalUser -Name $username | Select-Object -ExpandProperty PrincipalSource
+
+        $data = [ordered]@{
+            "Name"   = "$username"
+            "Groups" = "$($groups -join ';')"
+            "Path"   = "$dir"
+            "Source" = "$source"
+        }
+
+        return $data
+    } catch {
+        writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
+    }
+}
+function selectUser {
+    param (
+        [parameter(Mandatory = $false)]
+        [string]$prompt = "Select a user account:",
+        [parameter(Mandatory = $false)]
+        [switch]$lineBefore = $false,
+        [parameter(Mandatory = $false)]
+        [switch]$lineAfter = $false,
+        [parameter(Mandatory = $false)]
+        [switch]$writeResult = $false
+    )
+
+    try {
+        # Add a line break before the menu if lineBefore is specified
+        if ($lineBefore) { Write-Host "" }
+         
+        # Initialize empty array to store user names
+        $userNames = @()
+
+        # Get all local users on the system
+        $localUsers = Get-LocalUser
+
+        # Define a list of accounts to exclude from selection
+        $excludedAccounts = @("DefaultAccount", "WDAGUtilityAccount", "Guest", "defaultuser0")
+
+        # Check if the "Administrator" account is disabled and add it to excluded list if so
+        $adminEnabled = Get-LocalUser -Name "Administrator" | Select-Object -ExpandProperty Enabled
+        if (!$adminEnabled) { $excludedAccounts += "Administrator" }
+
+        # Filter local users to exclude predefined accounts
+        foreach ($user in $localUsers) {
+            if ($user.Name -notin $excludedAccounts) { $userNames += $user.Name }
+        }
+
+        # Create an ordered dictionary to store username and group information
+        $accounts = [ordered]@{}
+        
+        # Get all local groups once (more efficient)
+        $allGroups = Get-LocalGroup
+        
+        foreach ($name in $userNames) {
+            # Get details for the current username
+            $username = Get-LocalUser -Name $name
+            
+            $groupNames = @()
+            
+            # Check each group for membership with improved error handling
+            foreach ($group in $allGroups) {
+                try {
+                    # Use SilentlyContinue to handle groups with domain members
+                    $members = Get-LocalGroupMember -Group $group.Name -ErrorAction SilentlyContinue 2>$null
+                    
+                    # Only check membership if we got results
+                    if ($members) {
+                        # Check if the user's SID is in the group members
+                        if ($username.SID -in ($members | Select-Object -ExpandProperty SID)) {
+                            $groupNames += $group.Name
+                        }
+                    }
+                } catch [System.ComponentModel.Win32Exception] {
+                    # Handle error 1789 specifically (Domain unavailable)
+                    if ($_.Exception.ErrorCode -eq 1789) {
+                        # Domain is unavailable, skip this group
+                        Write-Verbose "Domain unavailable, skipping group: $($group.Name)"
+                        continue
+                    }
+                    # Handle other Win32 exceptions
+                    log -msg "Win32 error checking group $($group.Name): $($_.Exception.Message)" -lvl "WARNING"
+                    continue
+                } catch {
+                    # Handle any other errors
+                    log -msg "Could not enumerate members for group: $($group.Name) - $($_.Exception.Message)" -lvl "WARNING"
+                    continue
+                }
+            }
+            
+            # Convert groups to a semicolon-separated string
+            $groupString = $groupNames -join ';'
+
+            # Get the users source
+            $source = Get-LocalUser -Name $username | Select-Object -ExpandProperty PrincipalSource
+
+            # Add username and group string to the dictionary
+            $accounts["$username"] = "$source | $groupString"
+        }
+
+        $accounts["Cancel"] = "Do not select a user and exit this function."
+
+        # Prompt user to select a user from the list and return the key (username)
+        $choice = readOption -options $accounts -prompt $prompt -returnKey
+
+        if ($choice -eq "Cancel") {
+            readCommand
+        }
+
+        # Get user data using the selected username
+        $data = getUserData -Username $choice
+
+        if ($writeResult) {
+            Write-Host
+            # Display user data as a list
+            writeText -type "table" -Table $data -Color "Green"
+        }
+
+        # Add a line break after the menu if lineAfter is specified
+        if ($lineAfter) { Write-Host "" }
+
+        # Return the user data dictionary
+        return $data
+    } catch {
+        writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     }
 }
 function getDownload {
@@ -1034,153 +1170,39 @@ function getDownload {
         return $false
     }
 }
-function getUserData {
+function waitForProcess {
     param (
-        [parameter(Mandatory = $true)]
-        [string]$username
+        [parameter(Mandatory)][System.Diagnostics.Process]$process,
+        [string]$label = "Installing"
     )
 
-    try {
-        $user = Get-LocalUser -Name $username
-        $groups = Get-LocalGroup | Where-Object { $user.SID -in ($_ | Get-LocalGroupMember | Select-Object -ExpandProperty "SID") } | Select-Object -ExpandProperty "Name"
-        $userProfile = Get-CimInstance Win32_UserProfile -Filter "SID = '$($user.SID)'"
-        $dir = $userProfile.LocalPath
-        if ($null -ne $userProfile) { $dir = $userProfile.LocalPath } else { $dir = "Awaiting first sign in." }
+    $frames = '|', '/', '-', '\'
+    $i = 0
+    $timer = [System.Diagnostics.Stopwatch]::StartNew()
+    $lastLength = 0
 
-        $source = Get-LocalUser -Name $username | Select-Object -ExpandProperty PrincipalSource
-
-        $data = [ordered]@{
-            "Name"   = "$username"
-            "Groups" = "$($groups -join ';')"
-            "Path"   = "$dir"
-            "Source" = "$source"
-        }
-
-        return $data
-    } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+    # WaitForExit(250) returns $false while the process is still running
+    while (-not $process.WaitForExit(250)) {
+        $line = " $($frames[$i % $frames.Count]) $label... $($timer.Elapsed.ToString('mm\:ss'))"
+        Write-Host -NoNewline "`r$line" -ForegroundColor "Gray"
+        $lastLength = $line.Length
+        $i++
     }
-}
-function selectUser {
-    param (
-        [parameter(Mandatory = $false)]
-        [string]$prompt = "Select a user account:",
-        [parameter(Mandatory = $false)]
-        [switch]$lineBefore = $false,
-        [parameter(Mandatory = $false)]
-        [switch]$lineAfter = $false,
-        [parameter(Mandatory = $false)]
-        [switch]$writeResult = $false
-    )
 
-    try {
-        # Add a line break before the menu if lineBefore is specified
-        if ($lineBefore) { Write-Host "" }
-         
-        # Initialize empty array to store user names
-        $userNames = @()
+    # Call again with no timeout so the process state is fully settled
+    $process.WaitForExit()
 
-        # Get all local users on the system
-        $localUsers = Get-LocalUser
-
-        # Define a list of accounts to exclude from selection
-        $excludedAccounts = @("DefaultAccount", "WDAGUtilityAccount", "Guest", "defaultuser0")
-
-        # Check if the "Administrator" account is disabled and add it to excluded list if so
-        $adminEnabled = Get-LocalUser -Name "Administrator" | Select-Object -ExpandProperty Enabled
-        if (!$adminEnabled) { $excludedAccounts += "Administrator" }
-
-        # Filter local users to exclude predefined accounts
-        foreach ($user in $localUsers) {
-            if ($user.Name -notin $excludedAccounts) { $userNames += $user.Name }
-        }
-
-        # Create an ordered dictionary to store username and group information
-        $accounts = [ordered]@{}
-        
-        # Get all local groups once (more efficient)
-        $allGroups = Get-LocalGroup
-        
-        foreach ($name in $userNames) {
-            # Get details for the current username
-            $username = Get-LocalUser -Name $name
-            
-            $groupNames = @()
-            
-            # Check each group for membership with improved error handling
-            foreach ($group in $allGroups) {
-                try {
-                    # Use SilentlyContinue to handle groups with domain members
-                    $members = Get-LocalGroupMember -Group $group.Name -ErrorAction SilentlyContinue 2>$null
-                    
-                    # Only check membership if we got results
-                    if ($members) {
-                        # Check if the user's SID is in the group members
-                        if ($username.SID -in ($members | Select-Object -ExpandProperty SID)) {
-                            $groupNames += $group.Name
-                        }
-                    }
-                } catch [System.ComponentModel.Win32Exception] {
-                    # Handle error 1789 specifically (Domain unavailable)
-                    if ($_.Exception.ErrorCode -eq 1789) {
-                        # Domain is unavailable, skip this group
-                        Write-Verbose "Domain unavailable, skipping group: $($group.Name)"
-                        continue
-                    }
-                    # Handle other Win32 exceptions
-                    log -msg "Win32 error checking group $($group.Name): $($_.Exception.Message)" -lvl "WARNING"
-                    continue
-                } catch {
-                    # Handle any other errors
-                    log -msg "Could not enumerate members for group: $($group.Name) - $($_.Exception.Message)" -lvl "WARNING"
-                    continue
-                }
-            }
-            
-            # Convert groups to a semicolon-separated string
-            $groupString = $groupNames -join ';'
-
-            # Get the users source
-            $source = Get-LocalUser -Name $username | Select-Object -ExpandProperty PrincipalSource
-
-            # Add username and group string to the dictionary
-            $accounts["$username"] = "$source | $groupString"
-        }
-
-        $accounts["Cancel"] = "Do not select a user and exit this function."
-
-        # Prompt user to select a user from the list and return the key (username)
-        $choice = readOption -options $accounts -prompt $prompt -returnKey
-
-        if ($choice -eq "Cancel") {
-            readCommand
-        }
-
-        # Get user data using the selected username
-        $data = getUserData -Username $choice
-
-        if ($writeResult) {
-            Write-Host
-            # Display user data as a list
-            writeText -type "table" -Table $data -Color "Green"
-        }
-
-        # Add a line break after the menu if lineAfter is specified
-        if ($lineAfter) { Write-Host "" }
-
-        # Return the user data dictionary
-        return $data
-    } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+    # Erase the spinner line so the next message starts cleanly
+    if ($lastLength -gt 0) {
+        Write-Host -NoNewline ("`r" + (' ' * $lastLength) + "`r")
     }
 }
 function installEXE {
     param (
         [string]$Path, # Path to the .exe file
         [string]$exeArguments, # Arguments for the installer
-        [bool]$Wait = $true # Whether to wait for the process to complete
+        [bool]$Wait = $true, # Whether to wait for the process to complete
+        [string]$label = "Installing" # Text shown next to the spinner
     )
 
     $startInfo = New-Object System.Diagnostics.ProcessStartInfo
@@ -1195,112 +1217,148 @@ function installEXE {
     try {
         $process.Start() | Out-Null
         if ($Wait) {
-            $process.WaitForExit()
-            return $process.ExitCode  # Return the exit code
+            waitForProcess -process $process -label $label
+            return $process.ExitCode
         } else {
-            writeText -type "plain" -text "Installation of '$Path' started in the background."
-            return 0  # Return 0 if not waiting
+            $null = writeText -type "plain" -text "Installation of '$Path' started in the background."
+            return 0
         }
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
-        return -1  # Return -1 to indicate a failure to start the process
+        $null = writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
+        return -1
     }
 }
 function installMSI {
     param (
         [string]$Path, # Path to the .msi file
-        [string]$msiArguments # Additional arguments for the MSI installer
+        [string]$msiArguments, # Additional arguments for the MSI installer
+        [string]$label = "Installing" # Text shown next to the spinner
     )
 
     try {
-        $process = Start-Process "msiexec.exe" -ArgumentList "/i `"$Path`" $msiArguments" -Wait -PassThru
-        return $process.ExitCode  # Return the exit code
+        # No -Wait: waitForProcess does the waiting so it can draw the spinner
+        $process = Start-Process "msiexec.exe" -ArgumentList "/i `"$Path`" $msiArguments" -PassThru
+
+        # Known quirk: without touching Handle right away, ExitCode can come back
+        # empty for processes started with Start-Process -PassThru
+        $null = $process.Handle
+
+        waitForProcess -process $process -label $label
+        return $process.ExitCode
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
-        return -1  # Return -1 to indicate a failure to start the process
+        $null = writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
+        return -1
     }
 }
 function installApp {
     param (
         [parameter(Mandatory = $true)][string]$url,
         [parameter(Mandatory = $true)][string]$appName,
-        [parameter(Mandatory = $true)][string]$fileName,
+        [parameter(Mandatory = $false)][string]$fileName,
         [parameter(Mandatory = $false)][string]$params = "",
         [parameter(Mandatory = $false)][string]$outputPath = "$env:ProgramData\shellcli"
     )
 
+    # Exit codes that mean the install worked: 0 = success,
+    # 1641 = success and a reboot was initiated, 3010 = success, reboot required
+    $successCodes = @(0, 1641, 3010)
+    $rebootCodes = @(1641, 3010)
+
+    $installerPath = $null
+    $success = $false
+
     try {
-        writeText -Type "plain" -Text "Installing $appName..." -lineBefore
+        # $null = ... everywhere keeps helper output out of this function's return value
+        $null = writeText -Type "plain" -Text "Installing $appName..." -lineBefore
 
-        if (appInstalled -appName $appName) {
-            writeText -Type "plain" -Text "$appName is already installed."
-            return
+        # Select-Object -Last 1 guards against helpers that write extra output to the pipeline
+        if ((appInstalled -appName $appName | Select-Object -Last 1) -eq $true) {
+            $null = writeText -Type "plain" -Text "$appName is already installed."
+            return $true
         }
 
-        $outputPath = Join-Path -Path "$outputPath" -ChildPath $fileName
-
-        if (-not (getDownload -url $url -target $outputPath)) {
-            writeText -type "error" -text "Download failed for $appName."
-            addError -source "installApp-$appName" -message "Download failed from $url"
-            return
+        # Download: use the given name, or let the server's filename decide
+        if ($fileName) {
+            $installerPath = Join-Path -Path $outputPath -ChildPath $fileName
+            if (-not (getDownload -url $url -target $installerPath)) {
+                throw "Download failed from $url."
+            }
+        } else {
+            $installerPath = getDownload -url $url -target "$outputPath\" -passThru | Select-Object -Last 1
+            if ($installerPath -isnot [string]) {
+                $installerPath = $null
+                throw "Download failed from $url."
+            }
         }
 
-        $size = (Get-Item $outputPath -ErrorAction SilentlyContinue).Length
-        if (-not $size -or $size -lt 1MB) {
-            writeText -type "error" -text "$appName download is only $([math]::Round($size / 1KB)) KB - likely an error page."
-            addError -source "installApp-$appName" -message "Downloaded file too small: $size bytes"
-            Remove-Item $outputPath -Force -ErrorAction SilentlyContinue
-            return
+        # Detect the real type from the file signature. EXE = 'MZ';
+        # MSI = OLE compound document D0 CF 11 E0 A1 B1 1A E1.
+        $header = [byte[]]::new(8)
+        $stream = [System.IO.File]::OpenRead($installerPath)
+        try { $bytesRead = $stream.Read($header, 0, $header.Length) } finally { $stream.Close() }
+
+        $detected = if ($bytesRead -ge 2 -and $header[0] -eq 0x4D -and $header[1] -eq 0x5A) { ".exe" }
+        elseif ($bytesRead -ge 8 -and ( -join ($header | ForEach-Object { $_.ToString('X2') })) -eq 'D0CF11E0A1B11AE1') { ".msi" }
+
+        if (-not $detected) {
+            $sizeKB = [math]::Round((Get-Item -LiteralPath $installerPath).Length / 1KB)
+            throw "$appName download ($sizeKB KB) is not a valid .exe or .msi file - likely an error page."
         }
 
-        $fileExtension = [System.IO.Path]::GetExtension($outputPath).ToLower()
+        $fileExtension = [System.IO.Path]::GetExtension($installerPath).ToLower()
+        if ($fileExtension -and $fileExtension -ne $detected) {
+            if ($fileName) { throw "'$fileName' is actually a $detected file." }
+        }
+
+        # Make sure the extension matches the content (msiexec/CreateProcess are happier)
+        if ($fileExtension -ne $detected) {
+            $newPath = "$installerPath$detected"
+            Move-Item -LiteralPath $installerPath -Destination $newPath -Force
+            $installerPath = $newPath
+        }
+        $fileExtension = $detected
+
+        # Messages are written before the switch so they can't end up in $exitCode
+        $null = writeText -type "plain" -text "Running $($fileExtension.TrimStart('.')) installer ($installerPath)."
 
         $exitCode = switch ($fileExtension) {
-            ".exe" {
-                writeText -type "plain" -text "Running exe installer ($outputPath)."
-                installEXE -Path $outputPath -exeArguments $params -Wait $true
-            }
-            ".msi" {
-                writeText -type "plain" -text "Running msi installer ($outputPath)."
-                installMSI -Path $outputPath -msiArguments $params
-            }
-            default {
-                writeText -type "notice" -text "Unsupported file type: $fileExtension"
-                addError -source "installApp-$appName" -message "Unsupported file type: $fileExtension"
-                $null
-            }
+            ".exe" { installEXE -Path $installerPath -exeArguments $params -Wait $true | Select-Object -Last 1 }
+            ".msi" { installMSI -Path $installerPath -msiArguments $params | Select-Object -Last 1 }
         }
 
-        if ($null -ne $exitCode) {
-            if ($exitCode -in @(0, 3010)) {
-                $note = if ($exitCode -eq 3010) { " (reboot pending)" } else { "" }
-                writeText -type "success" -text "Installation of $appName completed successfully$note." -lineAfter
-            } else {
-                writeText -type "error" -text "Installation of $appName failed with exit code $exitCode."
-                addError -source "installApp-$appName" -message "Installer exit code $exitCode"
-            }
+        if ($null -eq $exitCode -or $exitCode -isnot [int]) {
+            throw "Installer for $appName returned no usable exit code ('$exitCode')."
         }
 
-        # Clean up the downloaded installer
-        $timeout = 10
-        $startTime = Get-Date
-        while ((Test-Path $outputPath) -and ((Get-Date) - $startTime).TotalSeconds -lt $timeout) {
-            try {
-                Remove-Item -Path $outputPath -Force -ErrorAction Stop
-                break
-            } catch {
-                Start-Sleep -Seconds 1
-            }
+        if ($exitCode -notin $successCodes) {
+            throw "Installation of $appName failed with exit code $exitCode."
         }
-        if (Test-Path $outputPath) {
-            writeText -type "notice" -text "Could not remove installer at $outputPath. This is harmless."
-        }
+
+        $note = if ($exitCode -in $rebootCodes) { " (reboot pending)" } else { "" }
+        $null = writeText -type "success" -text "Installation of $appName completed successfully$note." -lineAfter
+        $success = $true
     } catch {
-        addError -source "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)" -message $_.Exception.Message
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
+        $null = writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
+    } finally {
+        # Runs on success AND failure, so failed installers don't pile up
+        if ($installerPath -and (Test-Path -LiteralPath $installerPath)) {
+            $deadline = (Get-Date).AddSeconds(10)
+            do {
+                try {
+                    Remove-Item -LiteralPath $installerPath -Force -ErrorAction Stop
+                    break
+                } catch {
+                    Start-Sleep -Seconds 1
+                }
+            } while ((Get-Date) -lt $deadline)
+
+            if (Test-Path -LiteralPath $installerPath) {
+                $null = writeText -type "notice" -text "Could not remove installer at $installerPath. This is harmless."
+            }
+        }
     }
+
+    return $success
 }
 function appInstalled {
     param([string]$appName)
@@ -1333,8 +1391,7 @@ function appInstalled {
 
         return $false
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+        writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
         return $false
     }
 }
@@ -1391,8 +1448,7 @@ function uninstallWin32App {
             writeText -type "plain" -text "$AppName not found"
         }
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+        writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     }
 }
 function uninstallAppXApp {
@@ -1488,8 +1544,7 @@ function installViaWinget {
             }
         }
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+        writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     }    
 }
 function resolveWinget {
@@ -1657,8 +1712,7 @@ function installWingetForAllUsers {
             writeText -type "error" -text "Some temp files were not deleted. This is harmless."
         }
     } catch {
-        writeText -type "error" -text "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
+        writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     }
 }
 function formatSize {
