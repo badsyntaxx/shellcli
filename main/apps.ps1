@@ -23,7 +23,7 @@ function getApps {
             getCustomizationApps
         }
         if ($installChoice -eq 4) { 
-            readCommand
+            return
         }
     } catch {
         writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
@@ -81,7 +81,7 @@ function getBrowserApps {
                     installApp -url $url -appName "Google Chrome" -params "/qn /norestart" 
                 }
             }
-            4 { readCommand }
+            4 { return }
         }
     } catch {
         writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
@@ -106,7 +106,7 @@ function getDiagnosticApps {
             3 { getBGInfo }
             4 { getHWInfo }
             5 { getAIPS }
-            6 { readCommand }
+            6 { return }
         } 
     } catch {
         writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
@@ -275,7 +275,7 @@ function getProductivityApps {
             1 { getAdobeAcrobatReader }
             2 { getWinget }
             3 { getClaude }
-            4 { readCommand }
+            4 { return }
         } 
     } catch {
         writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
