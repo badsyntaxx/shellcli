@@ -31,6 +31,7 @@ function initializeShellCLI {
         if ($domain) {
             Write-Host "  This computer is joined to the domain '$domain'." -ForegroundColor "Yellow"
             Write-Host "  Much of ShellCLI will not work on domain-joined computers." -ForegroundColor "Yellow"
+            Read-Host "  Press any key to continue..."
             log -msg "Domain-joined computer detected ($domain)" -lvl "WARNING"
         }
 
