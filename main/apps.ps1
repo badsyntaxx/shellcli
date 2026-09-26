@@ -29,60 +29,46 @@ function getApps {
         writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     }
 }
-function getApp {
-    $url = readInput -prompt "URL:"
-    $appName = readInput -prompt "App name:"
-    $params = readInput -prompt "Args:"
-    
-    installApp -url $url -appName $appName -params $params 
-}
-function getBrowserApps {
-    try {
-        $installChoice = readOption -options $([ordered]@{
-                "Vivaldi" = "Install Vivaldi."
-                "Brave"   = "Install Brave."
-                "Firefox" = "Install Firefox."
-                "Chrome"  = "Install Google Chrome."
-                "Exit"    = "Exit this script and go back to main command line."
-            }) -prompt "Select which browser to install:" -lineAfter
-
-        switch ($installChoice) {
-            0 { 
-                $url = (winget show --id Vivaldi.Vivaldi | Select-String "Installer Url:").Line.Split(" ")[-1]
-                if ([string]::IsNullOrWhiteSpace($url) -or $url -notmatch '^https?://') {
-                    throw "Failed to retrieve a valid installer URL. Aborting install."
-                } else {
-                    installApp -url $url -appName "Vivaldi" -params "vivaldi-silent --do-not-launch-chrome --system-level" 
-                }
-            }    
-            1 { 
-                $url = (winget show --id Brave.Brave | Select-String "Installer Url:").Line.Split(" ")[-1]
-                if ([string]::IsNullOrWhiteSpace($url) -or $url -notmatch '^https?://') {
-                    throw "Failed to retrieve a valid installer URL. Aborting install."
-                } else {
-                    installApp -url $url -appName "Brave" -params "--install --silent --system-level"
-                }
-            }
-            2 {
-                $url = (winget show --id Mozilla.Firefox | Select-String "Installer Url:").Line.Split(" ")[-1]
-                if ([string]::IsNullOrWhiteSpace($url) -or $url -notmatch '^https?://') {
-                    throw "Failed to retrieve a valid installer URL. Aborting install."
-                } else {
-                    if (-not (installApp -url $url -appName "Mozilla Firefox" -params "/S")) {
-                        writeText -type "error" -text "Firefox did not install."
-                    }
-                }
-            }    
-            3 { 
-                $url = (winget show --id Google.Chrome | Select-String "Installer Url:").Line.Split(" ")[-1]
-                if ([string]::IsNullOrWhiteSpace($url) -or $url -notmatch '^https?://') {
-                    throw "Failed to retrieve a valid installer URL. Aborting install."
-                } else {
-                    installApp -url $url -appName "Google Chrome" -params "/qn /norestart" 
-                }
-            }
-            4 { return }
+function getBrowserApps {           
+    $browsers = [ordered]@{
+        "Vivaldi" = @{
+            AppName = "Vivaldi"
+            Url     = "https://vivaldi.com/download/Vivaldi.x64.exe"
+            Params  = "--vivaldi-silent --do-not-launch-chrome --system-level"
         }
+        "Brave"   = @{
+            AppName = "Brave"
+            Url     = "https://github.com/brave/brave-browser/releases/latest/download/BraveBrowserStandaloneSetup.exe"
+            Params  = "/silent /install"
+        }
+        "Firefox" = @{
+            AppName = "Mozilla Firefox"
+            Url     = "https://download.mozilla.org/?product=firefox-latest-ssl&os=win64&lang=en-US"
+            Params  = "/S"
+        }
+        "Chrome"  = @{
+            AppName = "Google Chrome"
+            Url     = "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi"
+            Params  = "/qn /norestart"
+        }
+    }
+
+    try {
+        # Build the menu from the browser list, then add Exit as the last option
+        $menu = [ordered]@{}
+        foreach ($name in $browsers.Keys) {
+            $menu[$name] = "Install $($browsers[$name].AppName)."
+        }
+        $menu["Exit"] = "Exit this script and go back to main command line."
+
+        $choice = readOption -options $menu -prompt "Select which browser to install:" -lineAfter
+
+        # Exit is always the last menu item
+        if ($choice -ge $browsers.Count) { return }
+
+        $browser = @($browsers.Values)[$choice]
+
+        installApp -url $browser.Url -appName $browser.AppName -params $browser.Params
     } catch {
         writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     }
@@ -115,10 +101,11 @@ function getDiagnosticApps {
 function getBulkCrapUninstaller {
     try {
         $url = (winget show --id Klocman.BulkCrapUninstaller --accept-source-agreements --disable-interactivity | Select-String "Installer Url:").Line.Split(" ")[-1]
+        $appName = "BulkCrapUninstaller"
         if ([string]::IsNullOrWhiteSpace($url) -or $url -notmatch '^https?://') {
-            Write-Error "Failed to retrieve a valid installer URL. Aborting install."
+            throw "Failed to retrieve a valid installer URL. Aborting install."
         } else {
-            installApp -url $url -appName "BulkCrapUninstaller" -params "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART"
+            installApp -url $url -appName $appName -params "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART"
         }
     } catch {
         writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
@@ -128,6 +115,7 @@ function getRevoUninstaller {
     try {
         $url = "https://revouninstaller.b-cdn.net/ruf270/revosetup.exe"
         $appName = "Revo Uninstaller"
+
         installApp -url $url -appName $appName -params "/VERYSILENT /NORESTART"
     
         # Remove from PUBLIC Desktop (where it actually is)
@@ -242,10 +230,11 @@ function getBGInfo {
 function getHWInfo {
     try {
         $url = "https://www.hwinfo.com/files/hwi64_852.exe"
+        $appName = "HWiNFO"
         if ([string]::IsNullOrWhiteSpace($url) -or $url -notmatch '^https?://') {
-            Write-Error "Failed to retrieve a valid installer URL. Aborting install."
+            throw "Failed to retrieve a valid installer URL. Aborting install."
         } else {
-            installApp -url $url -appName "HWiNFO" -params "--install --silent --system-level"
+            installApp -url $url -appName $appName -params "--install --silent --system-level"
         }
     } catch {
         writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
@@ -255,7 +244,7 @@ function getAIPS {
     try {
         $url = "https://download.advanced-ip-scanner.com/download/files/Advanced_IP_Scanner_2.5.4594.1.exe"
         $appName = "Advanced IP Scanner"
-        installApp -url $url -appName $appName -params "/VERYSILENT /NORESTART" 
+        installApp -url $url -appName $appName -params "/VERYSILENT /NORESTART"
     } catch {
         writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     } 
@@ -284,10 +273,11 @@ function getProductivityApps {
 function getClaude {
     try {
         $url = (winget show --id Anthropic.Claude | Select-String "Installer Url:").Line.Split(" ")[-1]
+        $appName = "Claude"
         if ([string]::IsNullOrWhiteSpace($url) -or $url -notmatch '^https?://') {
-            writeText -type "error" -text "Failed to retrieve a valid installer URL. Aborting install."
+            throw "Failed to retrieve a valid installer URL. Aborting install."
         } else {
-            installApp -url $url -appName "Claude" -params "/S" 
+            installApp -url $url -appName $appName -params "/S"
         }
     } catch {
         writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"

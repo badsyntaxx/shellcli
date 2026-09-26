@@ -27,7 +27,6 @@ $global:commandMap = [ordered]@{
     "wifi"                           = @("main", "network", "getWifiCreds", "Get WiFi credentials.")
     # apps
     "get apps"                       = @("main", "apps", "getApps", "Display a menu of available apps.")
-    "get app"                        = @("main", "apps", "getApp", "Get an app by providing install details.")
     "get browser apps"               = @("main", "apps", "getBrowserApps", "Display a menu of web browsers.")
     "get diagnostic apps"            = @("main", "apps", "getDiagnosticApps", "Display a menu of PC diagnostic software.")
     "get productivity apps"          = @("main", "apps", "getProductivityApps", "Display a menu of productivity apps.")
@@ -1265,16 +1264,15 @@ function installApp {
     $rebootCodes = @(1641, 3010)
 
     $installerPath = $null
-    $success = $false
 
     try {
-        # $null = ... everywhere keeps helper output out of this function's return value
+        # $null = ... everywhere keeps helper output out of this function's output
         $null = writeText -Type "plain" -Text "Installing $appName..." -lineBefore
 
         # Select-Object -Last 1 guards against helpers that write extra output to the pipeline
         if ((appInstalled -appName $appName | Select-Object -Last 1) -eq $true) {
             $null = writeText -Type "plain" -Text "$appName is already installed."
-            return $true
+            return
         }
 
         # Download: use the given name, or let the server's filename decide
@@ -1336,7 +1334,6 @@ function installApp {
 
         $note = if ($exitCode -in $rebootCodes) { " (reboot pending)" } else { "" }
         $null = writeText -type "success" -text "Installation of $appName completed successfully$note." -lineAfter
-        $success = $true
     } catch {
         $null = writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     } finally {
@@ -1357,8 +1354,6 @@ function installApp {
             }
         }
     }
-
-    return $success
 }
 function appInstalled {
     param([string]$appName)
