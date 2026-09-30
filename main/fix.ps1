@@ -124,7 +124,6 @@ function cleanTempFiles {
                 if ($beforeSize -eq 0) { continue }
 
                 writeText -type "plain" -text "$(formatSize $beforeSize) found at $($item.Label)."
-                writeText -type "plain" -text "Cleaning..."
 
                 Get-ChildItem -LiteralPath $item.Path -Force -ErrorAction SilentlyContinue |
                 Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
