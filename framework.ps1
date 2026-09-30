@@ -333,13 +333,13 @@ function getModuleSource {
             $utf8Bom = New-Object System.Text.UTF8Encoding($true)
             [System.IO.File]::WriteAllText($cachePath, $src, $utf8Bom)
         } catch {
-            log -msg "Disk cache write failed for '$key': $($_.Exception.Message)" -lvl "WARNING"
+            log -msg "Disk cache write failed for '$key': $($_.Exception.Message)" --lvl "WARNING"
         }
 
         log -msg "Module '$key' downloaded ($($src.Length) chars)." -lvl "DEBUG"
         return $src
     } catch {
-        log -msg "Download of '$key' failed: $($_.Exception.Message)" -lvl "WARNING"
+        log -msg "Download of '$key' failed: $($_.Exception.Message)" --lvl "WARNING"
     } finally {
         $ProgressPreference = $oldProgress
     }
@@ -607,7 +607,7 @@ function readInput {
         if ($allowBlank -eq $false) {
             if ($userInput -eq "" -or $userInput.Length -eq 0) { 
                 writeText -type "notice" -text "Input was blank, exiting." 
-                readCommand
+                return
             } 
         }
 
@@ -882,11 +882,11 @@ function selectUser {
                         continue
                     }
                     # Handle other Win32 exceptions
-                    log -msg "Win32 error checking group $($group.Name): $($_.Exception.Message)" -lvl "WARNING"
+                    log -msg "Win32 error checking group $($group.Name): $($_.Exception.Message)" --lvl "WARNING"
                     continue
                 } catch {
                     # Handle any other errors
-                    log -msg "Could not enumerate members for group: $($group.Name) - $($_.Exception.Message)" -lvl "WARNING"
+                    log -msg "Could not enumerate members for group: $($group.Name) - $($_.Exception.Message)" --lvl "WARNING"
                     continue
                 }
             }
@@ -907,7 +907,7 @@ function selectUser {
         $choice = readOption -options $accounts -prompt $prompt -returnKey
 
         if ($choice -eq "Cancel") {
-            readCommand
+            return
         }
 
         # Get user data using the selected username
@@ -1150,7 +1150,7 @@ function getDownload {
             }
 
             if ($attempt -lt $maxAttempts -and $retryable) {
-                $null = log -msg "$($MyInvocation.MyCommand.Name)-$($errorLine): attempt $attempt failed: $errorMessage" -lvl "WARN"
+                $null = log -msg "$($MyInvocation.MyCommand.Name)-$($errorLine): attempt $attempt failed: $errorMessage" -lvl "WARNING"
                 $null = writeText -type "plain" -text "Retrying..."
                 Start-Sleep -Seconds 1
                 continue
@@ -1570,7 +1570,7 @@ function registerWingetForCurrentUser {
             -ErrorAction Stop
     } catch {
         # Expected under SYSTEM, where there is no meaningful user context.
-        log -msg "registerWingetForCurrentUser: $($_.Exception.Message)" -lvl "WARN"
+        log -msg "registerWingetForCurrentUser: $($_.Exception.Message)" --lvl "WARNING"
     }
 }
 function installWingetForAllUsers {
@@ -1698,7 +1698,7 @@ function installWingetForAllUsers {
             log -msg "installWingetForAllUsers: provisioned $($release.tag_name)." -lvl "INFO"
         } else {
             writeText -type "notice" -text "Provisioning succeeded but winget is not resolvable in this session. It will be available to users at next sign-in."
-            log -msg "installWingetForAllUsers: provisioned but not resolvable in current session." -lvl "WARN"
+            log -msg "installWingetForAllUsers: provisioned but not resolvable in current session." -lvl "WARNING"
         }
 
         # --- 10. Clean up ----------------------------------------------------------

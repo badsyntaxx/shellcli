@@ -113,7 +113,7 @@ function cleanTempFiles {
             }
         } catch {
             writeText -type "warning" -text "Could not enumerate recycle bins; skipping."
-            log -msg "cleanTempFiles:recycleBin:$($_.Exception.Message)" -lvl "WARN"
+            log -msg "cleanTempFiles:recycleBin:$($_.Exception.Message)" -lvl "WARNING"
         }
 
         # ---- Clean each target independently ----
@@ -135,7 +135,7 @@ function cleanTempFiles {
                 writeText -type "plain" -text "$(formatSize $freed) removed. Current size: $(formatSize $afterSize)" -lineAfter
             } catch {
                 writeText -type "warning" -text "Could not fully clean $($item.Label)."
-                log -msg "cleanTempFiles:$($item.Label):$($_.Exception.Message)" -lvl "WARN"
+                log -msg "cleanTempFiles:$($item.Label):$($_.Exception.Message)" -lvl "WARNING"
             }
         }
 
@@ -145,7 +145,7 @@ function cleanTempFiles {
             writeText -type "plain" -text "Delivery Optimization cache cleared." -lineAfter
         } catch {
             writeText -type "warning" -text "Delivery Optimization cache not cleared."
-            log -msg "cleanTempFiles:doCache:$($_.Exception.Message)" -lvl "WARN"
+            log -msg "cleanTempFiles:doCache:$($_.Exception.Message)" -lvl "WARNING"
         }
 
         # ---- Windows Update cache (service-dependent) ----
@@ -194,7 +194,7 @@ function cleanTempFiles {
             }
         } catch {
             writeText -type "warning" -text "Update cache cleanup incomplete."
-            log -msg "cleanTempFiles:updateCache:$($_.Exception.Message)" -lvl "WARN"
+            log -msg "cleanTempFiles:updateCache:$($_.Exception.Message)" -lvl "WARNING"
         } finally {
             foreach ($svc in $serviceStates.Keys) {
                 if ($serviceStates[$svc] -eq 'Running') {
