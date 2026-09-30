@@ -295,6 +295,17 @@ function getModuleSource {
 
     $key = if ($directory) { "$directory/$file" } else { $file }
 
+    if ($global:shellcliDevRoot) {
+        $rel = if ($directory) { "$directory\$file.ps1" } else { "$file.ps1" }
+        $path = Join-Path $global:shellcliDevRoot $rel
+        if (-not (Test-Path -LiteralPath $path)) {
+            writeText -type "error" -text "DEV: $rel not found at $path"
+            return $null
+        }
+        # No memory or disk cache in dev, so edits take effect on the next command.
+        return [System.IO.File]::ReadAllText($path)
+    }
+
     if ($global:moduleCache.ContainsKey($key)) {
         log -msg "Module '$key' served from memory." -lvl "DEBUG"
         return $global:moduleCache[$key]
