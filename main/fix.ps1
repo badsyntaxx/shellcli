@@ -46,7 +46,6 @@ function repairSystem {
     }
 }
 function cleanTempFiles {
-
     try {
         $paths = @()
 
@@ -105,6 +104,7 @@ function cleanTempFiles {
             Select-Object -ExpandProperty DeviceID
             foreach ($drive in $fixedDrives) {
                 $binRoot = Join-Path $drive '$Recycle.Bin'
+                writeText -type "plain" -text "Emptying recycle bing at $binRoot"
                 if (-not (Test-Path -LiteralPath $binRoot)) { continue }
                 $sidFolders = Get-ChildItem -LiteralPath $binRoot -Directory -Force -ErrorAction SilentlyContinue
                 foreach ($sid in $sidFolders) {
