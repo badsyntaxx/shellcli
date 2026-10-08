@@ -1,6 +1,5 @@
 function initializeShellCLI {
     $shellCliRoot = Join-Path -Path $env:ProgramData -ChildPath 'shellcli'
-    $mainScript = Join-Path -Path $shellCliRoot -ChildPath 'SHELLCLI.ps1'
 
     try {
         # Elevation
@@ -13,7 +12,7 @@ function initializeShellCLI {
                     -WorkingDirectory $env:SystemRoot -ArgumentList @(
                     '-NoProfile'
                     '-ExecutionPolicy', 'Bypass'
-                    '-Command', 'irm shellcli.com | iex'
+                    '-Command', 'irm https://raw.githubusercontent.com/badsyntaxx/shellcli/main/init.ps1 | iex'
                 )
             } catch {
                 # Thrown when the user cancels the UAC prompt (error 1223) or
@@ -32,7 +31,7 @@ function initializeShellCLI {
             Write-Host "  This computer is joined to the domain '$domain'." -ForegroundColor "Yellow"
             Write-Host "  Much of ShellCLI will not work on domain-joined computers." -ForegroundColor "Yellow"
             Read-Host "  Press any key to continue..."
-            log -msg "Domain-joined computer detected ($domain)" --lvl "WARNING"
+            log -msg "Domain-joined computer detected ($domain)" -lvl "WARNING"
         }
 
         # Working directory
@@ -42,46 +41,53 @@ function initializeShellCLI {
 
         protectShellCLIDirectory -path $shellCliRoot
 
-        # Build the main script
+        # Build the main script in memory. Nothing is written to disk and then
+        # executed, so execution policy never applies and there is no window in
+        # which a file could be swapped between being written and being run.
         log -msg "Building main script"
 
-        # Set-Content creates or truncates, and stamps the file with a UTF-8 BOM
-        # so Windows PowerShell 5.1 reads it back correctly.
-        Set-Content -LiteralPath $mainScript -Value '' -Encoding UTF8 -Force -ErrorAction Stop
-
-        if (-not (appendToMainScript -file 'framework')) {
+        $framework = getRemoteScript -file 'framework'
+        if ($null -eq $framework) {
             throw "Could not download framework.ps1"
         }
-        if (-not (appendToMainScript -directory 'main' -file 'core')) {
+
+        $core = getRemoteScript -directory 'main' -file 'core'
+        if ($null -eq $core) {
             throw "Could not download main/core.ps1"
         }
 
+        # core is already defined by the build below. Seed the module cache so
+        # the first core command (help) does not download it a second time.
+        # framework.ps1 keeps an existing cache instead of resetting it.
+        $global:moduleCache = @{ 'main/core' = $core }
+
         # Bootstrap line that hands control to the CLI
-        Add-Content -LiteralPath $mainScript -Encoding UTF8 -ErrorAction Stop `
-            -Value 'invokeScript -script "startShell" -initialize $true'
+        $mainScript = $framework + "`n" + $core + "`n" + 'invokeScript -script "startShell" -initialize $true'
 
         # Cheap sanity check: a successful build is never this small
-        $builtSize = (Get-Item -LiteralPath $mainScript).Length
-        if ($builtSize -lt 256) {
-            throw "Main script built but looks truncated ($builtSize bytes)"
+        if ($mainScript.Length -lt 256) {
+            throw "Main script built but looks truncated ($($mainScript.Length) chars)"
         }
 
         log -msg "Running main script"
-        . $mainScript
+        . ([scriptblock]::Create($mainScript))
     } catch {
         Write-Host "  $($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber): $($_.Exception.Message)" -ForegroundColor "Red"
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
     }
 }
 
-function appendToMainScript {
-    [OutputType([bool])]
+function getRemoteScript {
+    <#
+        Downloads one script from the repo and returns its source text.
+        Reports the error and returns $null if it cannot be obtained.
+    #>
+    [OutputType([string])]
     param (
         [Parameter(Mandatory = $false)][string]$directory,
         [Parameter(Mandatory)][string]$file
     )
 
-    $mainScript = Join-Path -Path $env:ProgramData -ChildPath 'shellcli\SHELLCLI.ps1'
     $oldProgress = $ProgressPreference
     $ProgressPreference = 'SilentlyContinue'
 
@@ -93,19 +99,21 @@ function appendToMainScript {
         [Net.ServicePointManager]::SecurityProtocol = `
             [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 
-        $src = (Invoke-WebRequest -Uri $url -UseBasicParsing -ErrorAction Stop).Content
+        # Windows PowerShell 5.1 does not ask for compression by itself. With
+        # the header GitHub sends gzip (~75% smaller) and .Content is decoded.
+        $src = (Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 20 -ErrorAction Stop `
+                -Headers @{ 'Accept-Encoding' = 'gzip' }).Content
 
         if ([string]::IsNullOrWhiteSpace($src)) {
             throw "Downloaded an empty response from $url"
         }
 
-        Add-Content -LiteralPath $mainScript -Value $src -Encoding UTF8 -ErrorAction Stop
-        log -msg "Appended $file.ps1 ($($src.Length) chars)" -lvl "DEBUG"
-        return $true
+        log -msg "Downloaded $file.ps1 ($($src.Length) chars)" -lvl "DEBUG"
+        return $src
     } catch {
         Write-Host "  $($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber): $($_.Exception.Message)" -ForegroundColor "Red"
         log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)" -lvl "ERROR"
-        return $false
+        return $null
     } finally {
         $ProgressPreference = $oldProgress
     }
@@ -116,9 +124,9 @@ function protectShellCLIDirectory {
         Restricts %ProgramData%\shellcli to SYSTEM and Administrators.
 
         Subfolders under ProgramData inherit ACEs that let standard users create
-        files there. Since SHELLCLI.ps1 is written and then dot-sourced with
-        admin rights, an unprivileged user could otherwise swap its contents
-        between those two steps.
+        files there. Installers and cached modules are written here and then
+        run (or read back and evaluated) with admin rights, so an unprivileged
+        user could otherwise swap their contents in between.
     #>
     param (
         [Parameter(Mandatory)][string]$path
@@ -144,7 +152,7 @@ function protectShellCLIDirectory {
         log -msg "Secured $path" -lvl "DEBUG"
     } catch {
         # Non-fatal: log it and continue rather than blocking startup.
-        log -msg "Could not harden ${path}: $($_.Exception.Message)" --lvl "WARNING"
+        log -msg "Could not harden ${path}: $($_.Exception.Message)" -lvl "WARNING"
     }
 }
 
@@ -200,7 +208,7 @@ function getJoinedDomain {
         if ($cs.PartOfDomain) { return $cs.Domain }
         return $null
     } catch {
-        log -msg "Could not determine domain membership: $($_.Exception.Message)" --lvl "WARNING"
+        log -msg "Could not determine domain membership: $($_.Exception.Message)" -lvl "WARNING"
         return $null
     }
 }

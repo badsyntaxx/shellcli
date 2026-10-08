@@ -11,17 +11,15 @@ by providing short, intuitive commands and/or menus.
 NOTE There are some anti-virus softwares that block Shell CLI. Some do and some don't. If you encounter an av software that does there are some
 [steps you can take](https://github.com/badsyntaxx/shellcli?tab=readme-ov-file#bypass-anti-virus).
 
-You may also need to enable running powershell scripts on your system.
-
 ## Getting started
 
 Open powershell as an administrator, paste in the command below and hit Enter. That's it!
 
 Getting started\
-`irm shellcli.com | iex`
+`irm https://raw.githubusercontent.com/badsyntaxx/shellcli/main/init.ps1 | iex`
 
 The above command is shorthand Powershell. It is the same as\
-`Invoke-RestMethod shellcli.com | Invoke-Expression`
+`Invoke-RestMethod https://raw.githubusercontent.com/badsyntaxx/shellcli/main/init.ps1 | Invoke-Expression`
 
 ## Using the menu
 
@@ -97,13 +95,6 @@ View WiFi SSID and passwords for the currently enabled NIC's.\
 Run common Windows repair commands like system file checks and cleanup & restore.\
 `repair windows`
 
-## Enable running powershell
-
-Its fairly common that running powershell scripts is disabled by default. You can enable running powershell scripts by opening powershell as an
-administrator and entering this command.
-
-Set the execution policy to unrestricted. `Set-ExecutionPolicy Unrestricted`
-
 ## Bypass anti-virus
 
 Some antivirus programs may block the use of ShellCLI. Typically when they do, it's the initial connection command triggers the warning or the block.
@@ -113,4 +104,4 @@ can be used to send and retrieve information over the internet. In this case you
 You should be able to bypass most anti-virus programs by pasting the ShellCLI initializer into an admin powershell or terminal directly. The link to
 the initializer is below.
 
-[Shell CLI Initializer](https://raw.githubusercontent.com/badsyntaxx/shellcli/refs/heads/main/core/Init.ps1)
+[Shell CLI Initializer](https://raw.githubusercontent.com/badsyntaxx/shellcli/main/init.ps1)

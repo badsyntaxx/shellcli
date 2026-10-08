@@ -1,4 +1,4 @@
-$global:moduleCache = @{}
+if ($null -eq $global:moduleCache) { $global:moduleCache = @{} }
 $global:commandMap = [ordered]@{
     # core
     "?"                              = @("main", "core", "writeHelp", "List some help info.")
@@ -47,7 +47,7 @@ $global:commandMap = [ordered]@{
     "restart service"                = @("main", "services", "restartService", "Restart a service.")
     "service status"                 = @("main", "services", "getServiceStatus", "Check the status of a service.")
     "service menu"                   = @("main", "services", "serviceMenu", "Display the service controller menu.")
-    "schedule task"                  = @("main", "task", "scheduleTask", "Schedule a task.(BETA)")
+    "schedule task"                  = @("main", "tasks", "scheduleTask", "Schedule a task.(BETA)")
     "update windows"                 = @("main", "fix", "updateWindows", "Update Windows.")
     "install host gpu drivers on vm" = @("main", "gpu", "installHostGPUDriversOnVM", "Install host GPU drivers on VM.")
     "partition gpu"                  = @("main", "gpu", "partitionGPU", "Partition the GPU.")
@@ -322,7 +322,11 @@ function getModuleSource {
         [Net.ServicePointManager]::SecurityProtocol = `
             [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 
-        $resp = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 20 -ErrorAction Stop
+        # Windows PowerShell 5.1 does not ask for compression by itself. With
+        # the header GitHub sends gzip (~75% smaller) and the body still comes
+        # back decoded, so RawContentStream below is plain UTF-8 text.
+        $resp = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 20 -ErrorAction Stop `
+            -Headers @{ 'Accept-Encoding' = 'gzip' }
 
         # Decode UTF-8 explicitly rather than trusting the response header.
         $src = [System.Text.Encoding]::UTF8.GetString($resp.RawContentStream.ToArray())
@@ -344,13 +348,13 @@ function getModuleSource {
             $utf8Bom = New-Object System.Text.UTF8Encoding($true)
             [System.IO.File]::WriteAllText($cachePath, $src, $utf8Bom)
         } catch {
-            log -msg "Disk cache write failed for '$key': $($_.Exception.Message)" --lvl "WARNING"
+            log -msg "Disk cache write failed for '$key': $($_.Exception.Message)" -lvl "WARNING"
         }
 
         log -msg "Module '$key' downloaded ($($src.Length) chars)." -lvl "DEBUG"
         return $src
     } catch {
-        log -msg "Download of '$key' failed: $($_.Exception.Message)" --lvl "WARNING"
+        log -msg "Download of '$key' failed: $($_.Exception.Message)" -lvl "WARNING"
     } finally {
         $ProgressPreference = $oldProgress
     }
@@ -358,7 +362,15 @@ function getModuleSource {
     if (Test-Path -LiteralPath $cachePath) {
         try {
             $src = [System.IO.File]::ReadAllText($cachePath)
-            if (-not [string]::IsNullOrWhiteSpace($src)) {
+
+            # A half-written or damaged cache file must not reach Invoke-Expression.
+            $parseErrors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseInput(
+                $src, [ref]$null, [ref]$parseErrors)
+
+            if ($parseErrors -and $parseErrors.Count -gt 0) {
+                log -msg "Disk cache for '$key' is damaged and was ignored: $($parseErrors[0].Message)" -lvl "WARNING"
+            } elseif (-not [string]::IsNullOrWhiteSpace($src)) {
                 $global:moduleCache[$key] = $src
                 $age = (Get-Date) - (Get-Item -LiteralPath $cachePath).LastWriteTime
                 writeText -type "notice" -text "Offline - using cached '$key' from $([int]$age.TotalDays) day(s) ago."
@@ -893,11 +905,11 @@ function selectUser {
                         continue
                     }
                     # Handle other Win32 exceptions
-                    log -msg "Win32 error checking group $($group.Name): $($_.Exception.Message)" --lvl "WARNING"
+                    log -msg "Win32 error checking group $($group.Name): $($_.Exception.Message)" -lvl "WARNING"
                     continue
                 } catch {
                     # Handle any other errors
-                    log -msg "Could not enumerate members for group: $($group.Name) - $($_.Exception.Message)" --lvl "WARNING"
+                    log -msg "Could not enumerate members for group: $($group.Name) - $($_.Exception.Message)" -lvl "WARNING"
                     continue
                 }
             }
@@ -1581,7 +1593,7 @@ function registerWingetForCurrentUser {
             -ErrorAction Stop
     } catch {
         # Expected under SYSTEM, where there is no meaningful user context.
-        log -msg "registerWingetForCurrentUser: $($_.Exception.Message)" --lvl "WARNING"
+        log -msg "registerWingetForCurrentUser: $($_.Exception.Message)" -lvl "WARNING"
     }
 }
 function installWingetForAllUsers {
