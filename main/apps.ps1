@@ -132,7 +132,9 @@ function getWinDirStat {
         $url = "https://github.com/windirstat/windirstat/releases/latest/download/WinDirStat.zip"
 
         # Define paths
-        $tempDir = "C:\Temp"
+        # Its own subfolder: the extract step below deletes x64/x86/Arm64 folders
+        # from this directory, which must never be a shared folder.
+        $tempDir = Join-Path -Path (getConfigPath -name download) -ChildPath "WinDirStat"
         $zipPath = Join-Path -Path $tempDir -ChildPath "WinDirStat.zip"  # FULL path with filename
         $exePath = Join-Path -Path $tempDir -ChildPath "WinDirStat.exe"
 
@@ -184,20 +186,23 @@ function getBGInfo {
     try {
         $url = "https://drive.google.com/uc?export=download&id=1gBFuz6WqrgPvIqYjrcRCYZeC_x9XsUbC"
 
-        $download = getDownload -url $url -target "$env:ProgramData\shellcli\BGInfo.zip"
+        # Its own subfolder: everything in it is deleted again below, and the
+        # download folder may be shared.
+        $workDir = Join-Path -Path (getConfigPath -name download) -ChildPath "BGInfo-work"
+        $download = getDownload -url $url -target "$workDir\BGInfo.zip"
 
-        if ($download -eq $true) { 
-            Expand-Archive -LiteralPath "$env:ProgramData\shellcli\BGInfo.zip" -DestinationPath "$env:ProgramData\shellcli\"
+        if ($download -eq $true) {
+            Expand-Archive -LiteralPath "$workDir\BGInfo.zip" -DestinationPath "$workDir\"
 
             # Test if the extracted folder exists
-            if (Test-Path "$env:ProgramData\shellcli\BGInfo") {
+            if (Test-Path "$workDir\BGInfo") {
                 writeText -type "plain" -text "BGInfo unpacked."
             } else {
                 writeText -type "error" -text "Failed to unpack BGInfo."
             }
 
-            ROBOCOPY "$env:ProgramData\shellcli\BGInfo" "C:\Program Files\BGInfo" /E /NFL /NDL /NJH /NJS /nc /ns | Out-Null
-            ROBOCOPY "$env:ProgramData\shellcli\BGInfo" "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup" "Start BGInfo.bat" /NFL /NDL /NJH /NJS /nc /ns | Out-Null
+            ROBOCOPY "$workDir\BGInfo" "C:\Program Files\BGInfo" /E /NFL /NDL /NJH /NJS /nc /ns | Out-Null
+            ROBOCOPY "$workDir\BGInfo" "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup" "Start BGInfo.bat" /NFL /NDL /NJH /NJS /nc /ns | Out-Null
 
             if (Test-Path "C:\Program Files\BGInfo") {
                 writeText -type "plain" -text "BGInfo installed."
@@ -205,16 +210,9 @@ function getBGInfo {
                 writeText -type "error" -text "Failed to install BGInfo."
             }
 
-            Remove-Item -Path "$env:ProgramData\shellcli\BGInfo.zip" -Recurse
-            Remove-Item -Path "$env:ProgramData\shellcli\BGInfo" -Recurse 
+            Remove-Item -LiteralPath $workDir -Recurse -Force -ErrorAction SilentlyContinue
 
-            $filesDeleted = $true
-            if (Test-Path "$env:ProgramData\shellcli\BGInfo.zip") { 
-                $filesDeleted = $false 
-            }
-            if (Test-Path "$env:ProgramData\shellcli\BGInfo") { 
-                $filesDeleted = $false 
-            } 
+            $filesDeleted = -not (Test-Path -LiteralPath $workDir)
             if (!$filesDeleted) {
                 writeText -type "error" -text "Some temp files were not deleted. This is harmless."
             }

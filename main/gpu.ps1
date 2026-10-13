@@ -9,17 +9,16 @@ function shareGPUWithVM {
             }) -prompt "Select a ShellCLI function:" -returnKey
 
         if ($choice -eq "Cancel") {
-            readCommand
+            return
         }
 
-        Write-Host
-        Write-Host ": "  -ForegroundColor "Cyan" -NoNewline
-        # Write-Host "Running command:" -NoNewline -ForegroundColor "Cyan"
-        Write-Host " $choice" -ForegroundColor "Gray"
-
-        readCommand -command $choice
+        switch ($choice) {
+            "copy host gpu drivers to vm" { copyHostGPUDriversToVM }
+            "install host gpu drivers on vm" { installHostGPUDriversOnVM }
+            "partition gpu" { partitionGPU }
+        }
     } catch {
-        writeText -type "error" -text "readMenu-$($_.InvocationInfo.ScriptLineNumber) | $($_.Exception.Message)"
+        writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     }
 }
 

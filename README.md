@@ -95,6 +95,43 @@ View WiFi SSID and passwords for the currently enabled NIC's.\
 Run common Windows repair commands like system file checks and cleanup & restore.\
 `repair windows`
 
+## Configuration
+
+ShellCLI reads `config.json` from the root of the repo each time it starts. It sets the folders ShellCLI uses and the list of commands. If the
+file cannot be downloaded, or a setting in it is wrong, ShellCLI starts anyway with the default for that setting and says so on the first screen. If
+the whole file is unusable, only the built-in commands (`help`, `?`, `menu`, `commands`, `logs`) are available.
+
+### Folders
+
+- `rootDirectory` is ShellCLI's own folder. The module cache is kept in a `cache` folder inside it. ShellCLI restricts this folder to SYSTEM and
+  Administrators, so use a folder that only ShellCLI uses. A folder that already exists and holds other files is left alone and ShellCLI warns.
+- `logDirectory` is where the daily log files are written. The logs record the commands that were run, so keep them somewhere administrators control.
+- `downloadDirectory` is where downloads go when no folder is given: `get apps` and its installers, `download` when the folder is left blank, and
+  anything that calls `getDownload` without a target. Treat it as scratch space: installers are downloaded into a temporary folder inside it and
+  deleted again, and WinDirStat and BGInfo are unpacked into folders of their own.
+
+Use full paths. `%rootDirectory%` stands for the root folder, so by default the logs and downloads live inside it and changing only the root moves
+everything. Other environment variables such as `%ProgramData%` work too. In JSON, write backslashes doubled (`D:\\ShellCLI`) or use forward slashes
+(`D:/ShellCLI`). Square brackets in a folder name, a missing drive, a folder that cannot be written to, and drive roots are refused. The root is
+also refused if it is inside a Windows, Program Files or Users folder, or is one of them or one of their parents. Network shares are refused for the
+root. A setting that is refused falls back to its default.
+
+Installers from `get apps` are run from the download folder with administrator rights. Keep it inside the root folder, as the default is, or
+somewhere else only administrators can write to. Files from older versions stay where they were, in `ProgramData\shellcli`.
+
+### Commands
+
+The `commands` section lists every command, one per line:
+
+    "add user": { "directory": "main", "file": "user", "function": "addUser", "description": "Add a new user." }
+
+Typing `add user` downloads `main/user.ps1` from the repo, loads it and runs its `addUser` function. To add a command, put its function in a file in
+the repo and add a line for it. A command with the same name as a built-in one replaces it. Names are not case sensitive. `directory` and `file` may
+only contain letters, digits, `-` and `_`, and `function` must be a plain function name. An entry that breaks these rules is skipped with a warning
+and the rest still load.
+
+`dev.ps1` reads the local `config.json`, so changes to the folders or the commands can be tried before they are pushed.
+
 ## Bypass anti-virus
 
 Some antivirus programs may block the use of ShellCLI. Typically when they do, it's the initial connection command triggers the warning or the block.
