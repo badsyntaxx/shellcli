@@ -259,7 +259,7 @@ function download {
     }
 
     if ([string]::IsNullOrWhiteSpace($downloadDir)) {
-        $downloadDir = "C:\Temp\"
+        $downloadDir = "$(getConfigPath -name download)\"
         writeText -type "notice" -text "Download directory was left blank. Download will be in $downloadDir"
     }
 

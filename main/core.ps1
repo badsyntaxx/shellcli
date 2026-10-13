@@ -62,17 +62,18 @@ function readLog {
     )
 
     try {
-        $logDirectory = "$env:ProgramData\shellcli"
+        $logDirectory = getConfigPath -name log
         
         if ($date) {
             $logFileName = "${date}.log"
             $logFilePath = Join-Path -Path $logDirectory -ChildPath $logFileName
-            if (-not (Test-Path -Path $logFilePath)) {
+            if (-not (Test-Path -LiteralPath $logFilePath)) {
                 writeText -type "plain" -text "No log file found for date: $date"
                 readCommand
             }
         } else {
-            $logFiles = Get-ChildItem -Path $logDirectory -Filter "*.log" | 
+            # Only ShellCLI's own daily logs: the log folder may be shared with other tools.
+            $logFiles = Get-ChildItem -LiteralPath $logDirectory -Filter "????-??-??.log" |
             Sort-Object -Property LastWriteTime -Descending
             if ($logFiles.Count -eq 0) {
                 writeText -type "plain" -text "No log files found in $logDirectory"
@@ -83,12 +84,12 @@ function readLog {
         }
         
         # Read last N lines (most useful for logs)
-        Get-Content -Path $logFilePath -Tail $lines
+        Get-Content -LiteralPath $logFilePath -Tail $lines
         
         # If tail switch is used, follow the log
         if ($tail) {
             writeText -type "plain" -text "`nFollowing log (Ctrl+C to stop)..."
-            Get-Content -Path $logFilePath -Wait
+            Get-Content -LiteralPath $logFilePath -Wait
         }
     } catch {
         writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
