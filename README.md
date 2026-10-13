@@ -114,9 +114,12 @@ Every setting below must be present. There is nothing to leave out.
 One address cannot come from `config.json`: the one `config.json` itself is downloaded from. It is the line `$global:shellcliBootstrapBase` at the top of
 `init.ps1`, for example `https://raw.githubusercontent.com/owner/repo/main` (no trailing slash). ShellCLI downloads `init.ps1`, `framework.ps1`,
 `main/core.ps1` and `config.json` from there, and the command modules only from the `repository` in `config.json`. A tag in `branch` therefore pins
-the modules but not the framework; to pin everything, put the same tag in the bootstrap line. If `repository` names a different repository than the
-bootstrap line, ShellCLI starts but warns, so a fork that updates only one of the two gets told. It also warns if the bootstrap address is not https,
-because that address is not otherwise checked.
+the modules but not the framework; to pin everything, put the same tag in the bootstrap line.
+
+`repository` and the bootstrap line must name the same repository (the branch may differ). If they do not, ShellCLI refuses to start, before it
+writes anything to disk, so a fork that changes only one of the two cannot run another repository's modules as administrator. `.\test-config.ps1`
+makes the same comparison, so you hear about it before you push. The bootstrap address must be https too, because everything downloaded from it runs
+as administrator; ShellCLI refuses to start otherwise.
 
 To fork ShellCLI, change these:
 

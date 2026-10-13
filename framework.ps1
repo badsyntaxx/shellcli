@@ -631,6 +631,23 @@ function getRepositoryIdentity {
 
     return $address
 }
+function getRepositoryMismatch {
+    <#
+        Returns a message when the repository config.json takes the command
+        modules from is not the repository ShellCLI itself is downloaded from
+        (the bootstrap address in init.ps1), otherwise $null. Only the
+        repository counts: another branch or tag of the same repository is
+        fine, because that is how modules are pinned.
+    #>
+    param (
+        [Parameter(Mandatory)][string]$configuredBase,
+        [Parameter(Mandatory)][string]$bootstrapBase
+    )
+
+    if ((getRepositoryIdentity -url $configuredBase) -eq (getRepositoryIdentity -url $bootstrapBase)) { return $null }
+
+    return "config.json takes the command modules from $configuredBase, but init.ps1 downloads ShellCLI itself from $bootstrapBase. They must be the same repository: change 'repository' in config.json or `$global:shellcliBootstrapBase in init.ps1."
+}
 function getModuleBase {
     <#
         The address module files are downloaded from: the repository in

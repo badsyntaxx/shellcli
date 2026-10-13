@@ -7,6 +7,13 @@ $global:shellcliBootstrapBase = 'https://raw.githubusercontent.com/badsyntaxx/sh
 
 function initializeShellCLI {
     try {
+        # Everything downloaded from this address runs as administrator, so it
+        # must be https. (config.json's repository has to be https as well, and
+        # has to name the same repository, so nothing else could ever start.)
+        if ($global:shellcliBootstrapBase -notmatch '^https://') {
+            throw "`$global:shellcliBootstrapBase in init.ps1 must be an https address, but it is '$($global:shellcliBootstrapBase)'."
+        }
+
         # Elevation
         $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
         $principal = [Security.Principal.WindowsPrincipal]$identity
@@ -70,21 +77,19 @@ function initializeShellCLI {
         # Throws, listing every problem, if config.json is not usable.
         loadShellcliConfig -json $configText
 
-        # What runs here is downloaded and run as administrator: say so when the
-        # address it came from is not https (this address is not otherwise checked).
-        if ($global:shellcliBootstrapBase -notmatch '^https://') {
-            addConfigWarning "ShellCLI was downloaded from $($global:shellcliBootstrapBase), which is not an https address."
-        }
-
-        # A fork that changes this script but forgets the repository in
-        # config.json would download its modules from the original repository.
-        # (The Get-Command guard keeps an init.ps1 and framework.ps1 from
-        # different versions, which can happen for a few minutes after a push,
-        # from stopping startup.)
-        $configuredBase = $global:shellcliConfig['repositoryBase']
-        if ($configuredBase -and (Get-Command getRepositoryIdentity -ErrorAction SilentlyContinue) -and
-            (getRepositoryIdentity -url $configuredBase) -ne (getRepositoryIdentity -url $global:shellcliBootstrapBase)) {
-            addConfigWarning "config.json downloads modules from $configuredBase, but ShellCLI itself was downloaded from $($global:shellcliBootstrapBase). If this is a fork, make init.ps1 and config.json name the same repository."
+        # config.json and this script must name the same repository. A fork that
+        # changes only one of them would otherwise run another repository's
+        # modules as administrator. This stops startup before anything is
+        # written to disk. (The Get-Command guard only matters in the few
+        # minutes after a push when this script and framework.ps1 are from
+        # different versions.)
+        if (Get-Command getRepositoryMismatch -ErrorAction SilentlyContinue) {
+            $mismatch = getRepositoryMismatch -configuredBase $global:shellcliConfig['repositoryBase'] -bootstrapBase $global:shellcliBootstrapBase
+            if ($mismatch) {
+                # Forget the config, so the error handler has no log folder to create.
+                $global:shellcliConfig = $null
+                throw $mismatch
+            }
         }
 
         # The root folder comes first: create it and lock it down before

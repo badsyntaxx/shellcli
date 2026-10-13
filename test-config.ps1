@@ -79,9 +79,21 @@ foreach ($name in $(if ($loaded) { @($global:commandMap.PSBase.Keys) } else { @(
     }
 }
 
+# The repository in config.json must be the one ShellCLI itself is downloaded from:
+# the bootstrap line at the top of init.ps1. ShellCLI refuses to start otherwise.
+if ($loaded) {
+    $initText = [System.IO.File]::ReadAllText((Join-Path $root 'init.ps1'))
+    if ($initText -match '(?m)^\s*\$global:shellcliBootstrapBase\s*=\s*''([^'']+)''') {
+        $mismatch = getRepositoryMismatch -configuredBase $global:shellcliConfig['repositoryBase'] -bootstrapBase $Matches[1].TrimEnd('/')
+        if ($mismatch) { $problems.Add($mismatch) }
+    } else {
+        $problems.Add("init.ps1 has no `$global:shellcliBootstrapBase = '...' line, so the repository in config.json cannot be compared with it.")
+    }
+}
+
 Write-Host
 if ($problems.Count -eq 0) {
-    Write-Host "config.json is fine: $($global:commandMap.Count) commands, modules from $(getModuleBase)." -ForegroundColor Green
+    Write-Host "config.json is fine: $($global:commandMap.Count) commands, modules from $(getModuleBase), the same repository as init.ps1." -ForegroundColor Green
     exit 0
 }
 
