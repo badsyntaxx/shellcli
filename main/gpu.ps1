@@ -125,8 +125,6 @@ function copyHostGPUDriversToVM {
     }
 
     writeText -type "success" -text "Files copied to the VM at $tempVMPath. Now run the 'install host gpu drivers on vm' command on the VM."
-
-    readCommand
 }
 
 function installHostGPUDriversOnVM {
