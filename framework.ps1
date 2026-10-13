@@ -72,7 +72,7 @@ function startShell {
 
             if ([string]::IsNullOrWhiteSpace($command)) { continue }
 
-            $command = $command.ToLower().Trim()
+            $command = normalizeCommandName -text $command
 
             if ($command -in @('exit', 'quit')) {
                 log -msg "Session ended by user." -lvl "INFO"
@@ -154,7 +154,20 @@ function readCommand {
 
     if ([string]::IsNullOrWhiteSpace($command)) { return }
 
-    runCommand -command $command.ToLower().Trim()
+    runCommand -command (normalizeCommandName -text $command)
+}
+function normalizeCommandName {
+    <#
+        The form commands are looked up by: lower case in the invariant
+        culture (so a Turkish language setting cannot turn I into a dotless
+        i), runs of whitespace collapsed to one space, and trimmed. Typed
+        input and the names in config.json both go through this.
+    #>
+    param (
+        [Parameter(Mandatory = $false)][string]$text
+    )
+
+    return (($text -replace '\s+', ' ').Trim().ToLowerInvariant())
 }
 function filterCommands {
     param (
@@ -162,7 +175,7 @@ function filterCommands {
     )
 
     try {
-        $normalized = $command.ToLower().Trim()
+        $normalized = normalizeCommandName -text $command
 
         if ([string]::IsNullOrWhiteSpace($normalized)) { return $null }
 
@@ -294,6 +307,10 @@ function testConfigPath {
         if ($segment -and $segment -notin '.', '..' -and $segment -match '[ .]$') {
             return "has a folder name ending in a space or dot"
         }
+        # CON, NUL, COM1 ... are devices, not folders (also with an extension: NUL.txt)
+        if ($segment -match '^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\..*)?$') {
+            return "has a folder name that Windows reserves for a device ($segment)"
+        }
     }
 
     try {
@@ -341,7 +358,7 @@ function testConfigPath {
         }
         foreach ($location in $trees) {
             if ($full.StartsWith($location.TrimEnd('\') + '\', [System.StringComparison]::OrdinalIgnoreCase)) {
-                return "is inside the system folder '$location'"
+                return "is inside the system folder '$location' (use a folder such as %ProgramData%\YourName or C:\YourName instead)"
             }
         }
     }
@@ -365,32 +382,44 @@ function getConfiguredCommands {
     $map = getBuiltInCommands
     if (-not $section) { return $map }
 
+    # Names that would shadow the dictionary's own properties (a command called
+    # "keys" would break the `commands` listing).
+    $reserved = 'keys', 'values', 'count', 'item', 'isreadonly', 'isfixedsize', 'issynchronized', 'syncroot'
+
+    # Plain, short text for use in a warning, whatever the file contained.
+    $show = { param($text) $t = ([string]$text) -replace '[^\x20-\x7e]', '?'; if ($t.Length -gt 40) { $t.Substring(0, 40) + '...' } else { $t } }
+
     $skipped = 0
     foreach ($entry in $section.PSObject.Properties) {
-        $name = ([string]$entry.Name).Trim().ToLower()
+        $name = normalizeCommandName -text ([string]$entry.Name)
         $item = $entry.Value
         $problem = $null
 
-        if (-not $name -or $name -match '[\x00-\x1f]') {
-            $problem = "has no usable name"
+        # -cmatch with \A and \z: -match is case-insensitive (the Kelvin sign
+        # would pass [a-z]) and '$' also matches before a trailing newline.
+        if ($name.Length -eq 0 -or $name.Length -gt 60 -or $name -cnotmatch '\A[\x20-\x7e]+\z') {
+            $problem = "has no usable name (1 to 60 plain ASCII characters)"
+        } elseif ($name -in $reserved) {
+            $problem = "uses a reserved name"
         } elseif ($item -isnot [System.Management.Automation.PSCustomObject]) {
             $problem = "must be an object with directory, file, function and description"
         } else {
             $directory = [string]$item.directory
             $file = [string]$item.file
             $functionName = [string]$item.function
-            $description = [string]$item.description
+            $description = ([string]$item.description) -replace '[\x00-\x1f]', ' '
+            if ($description.Length -gt 200) { $description = $description.Substring(0, 200) }
 
-            if ($functionName -notmatch '^[A-Za-z_][A-Za-z0-9_-]*$') {
-                $problem = "has an invalid function name '$functionName'"
-            } elseif (($directory -or $file) -and ($directory -notmatch '^[A-Za-z0-9_-]+$' -or $file -notmatch '^[A-Za-z0-9_-]+$')) {
-                $problem = "needs a directory and a file made only of letters, digits, - and _"
+            if ($functionName -cnotmatch '\A[A-Za-z_][A-Za-z0-9_-]{0,127}\z') {
+                $problem = "has an invalid function name '$(& $show $functionName)'"
+            } elseif (($directory -or $file) -and ($directory -cnotmatch '\A[A-Za-z0-9_-]{1,64}\z' -or $file -cnotmatch '\A[A-Za-z0-9_-]{1,64}\z')) {
+                $problem = "needs a directory and a file made only of letters, digits, - and _ (up to 64 characters)"
             }
         }
 
         if ($problem) {
             $skipped++
-            if ($skipped -le 5) { $warnings.Add("config.json: command '$name' $problem. It was skipped.") }
+            if ($skipped -le 5) { $warnings.Add("config.json: command '$(& $show $name)' $problem. It was skipped.") }
             continue
         }
 
@@ -402,8 +431,9 @@ function getConfiguredCommands {
 }
 function loadShellcliConfig {
     <#
-        Builds $global:shellcliConfig (full paths) and $global:commandMap from
-        the text of config.json. A setting that is missing or unusable falls
+        Builds $global:shellcliConfig (full paths and the module download
+        address) and $global:commandMap from the text of config.json. A
+        setting that is missing or unusable falls
         back to its built-in default. Never throws and never logs; problems
         are left in $global:shellcliConfigWarnings, which startShell shows
         once and the caller can log. Does not touch the disk: see
@@ -426,13 +456,14 @@ function loadShellcliConfig {
                 $warnings.Add("config.json is not valid JSON ($($_.Exception.Message)). Using the default folders and only the built-in commands.")
             }
 
-            if ($null -ne $parsed -and $parsed -isnot [System.Management.Automation.PSCustomObject]) {
+            if ($warnings.Count -eq 0 -and ($null -eq $parsed -or $parsed -isnot [System.Management.Automation.PSCustomObject])) {
+                # Covers [..], "text", numbers and a bare null.
                 $warnings.Add("config.json must contain a JSON object. Using the default folders and only the built-in commands.")
                 $parsed = $null
             }
         }
 
-        $known = @($defaults.Keys) + 'commands'
+        $known = @($defaults.Keys) + 'repository' + 'branch' + 'commands'
         if ($parsed) {
             foreach ($name in $parsed.PSObject.Properties.Name) {
                 if ($name -notin $known) { $warnings.Add("config.json has an unknown setting '$name'. It was ignored.") }
@@ -468,6 +499,39 @@ function loadShellcliConfig {
         # The module cache always lives under the root folder.
         $resolved['cacheDirectory'] = "$root\cache"
 
+        # Repository: where the modules are downloaded from. Left unset, the
+        # address ShellCLI was started from is used (see getModuleBase).
+        $resolved['repositoryBase'] = $null
+        $repository = $null
+        $branch = $null
+        if ($parsed) {
+            $property = $parsed.PSObject.Properties['repository']
+            if ($property -and $null -ne $property.Value) { $repository = $property.Value }
+            $property = $parsed.PSObject.Properties['branch']
+            if ($property -and $null -ne $property.Value) { $branch = $property.Value }
+        }
+
+        if ($repository -is [string] -and $repository.Trim()) {
+            if ($null -ne $branch -and $branch -isnot [string]) {
+                $warnings.Add("config.json: branch must be text. Using main.")
+                $branch = $null
+            }
+
+            $result = resolveRepositoryBase -repository $repository -branch ([string]$branch)
+            if ($result.problem) {
+                $warnings.Add("config.json: repository '$repository' $($result.problem). Using the address ShellCLI was started from.")
+            } else {
+                $resolved['repositoryBase'] = $result.base
+                if ($branch -and -not $result.usesBranch) {
+                    $warnings.Add("config.json: branch is ignored because repository is not a GitHub link. Put the branch in the address itself.")
+                }
+            }
+        } elseif ($null -ne $repository -and $repository -isnot [string]) {
+            $warnings.Add("config.json: repository must be text. Using the address ShellCLI was started from.")
+        } elseif ($branch) {
+            $warnings.Add("config.json: branch is ignored because no repository is set.")
+        }
+
         # Commands
         $section = $null
         if ($parsed) {
@@ -488,6 +552,7 @@ function loadShellcliConfig {
             logDirectory      = getDefaultFolder -key logDirectory -root $root
             downloadDirectory = getDefaultFolder -key downloadDirectory -root $root
             cacheDirectory    = "$root\cache"
+            repositoryBase    = $null
         }
         $commands = getBuiltInCommands
         $warnings.Add("config.json could not be applied ($($_.Exception.Message)). Using the default folders and only the built-in commands.")
@@ -532,7 +597,9 @@ function testConfigFolder {
 
         $probe = Join-Path -Path $path -ChildPath ('.write-test-' + [guid]::NewGuid().ToString('N'))
         [System.IO.File]::WriteAllText($probe, 'x')
-        [System.IO.File]::Delete($probe)
+
+        # A folder that lets files be created but not deleted is still usable.
+        try { [System.IO.File]::Delete($probe) } catch { }
         return $null
     } catch {
         return "cannot be used ($($_.Exception.Message))"
@@ -559,15 +626,112 @@ function ensureConfigFolder {
     $global:shellcliConfig[$key] = $default
     if ($key -eq 'rootDirectory') { $global:shellcliConfig['cacheDirectory'] = "$default\cache" }
 
+    # Logging may have been switched off by a write to the folder that just failed.
+    $global:shellcliLogFailed = $false
+
     $problem = testConfigFolder -path $default
     if ($problem) { throw "The default $key '$default' $problem." }
 }
-function getModuleCachePath {
+function resolveRepositoryBase {
+    <#
+        Turns the repository and branch settings of config.json into the
+        address the repo's files are downloaded from. Returns an object with
+        a base (or $null) and a problem (or $null).
+
+        A GitHub link such as https://github.com/owner/repo becomes
+        https://raw.githubusercontent.com/owner/repo/<branch> (the branch
+        defaults to main and may be a tag or a commit). Any other https
+        address is used as it is and the branch is ignored: files are
+        expected at <address>/framework.ps1, <address>/main/user.ps1 and so
+        on. Plain http is refused because what is downloaded runs as
+        administrator.
+    #>
     param (
-        [Parameter(Mandatory)][string]$key
+        [Parameter(Mandatory)][string]$repository,
+        [Parameter(Mandatory = $false)][string]$branch
     )
 
-    $cacheDir = getConfigPath -name cache
+    $repository = $repository.Trim().TrimEnd('/')
+    $branch = $branch.Trim()
+
+    if ($repository -notmatch '^https://[^\s/@?#]+(/[^\s?#]*)?$') {
+        return [pscustomobject]@{ base = $null; problem = "must be an https address such as https://github.com/owner/repo"; usesBranch = $false }
+    }
+
+    if ($repository -match '^https://(www\.)?github\.com/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(\.git)?$') {
+        $owner = $Matches[2]
+        $name = $Matches[3]
+
+        if ($owner -match '^\.+$' -or $name -match '^\.+$') {
+            return [pscustomobject]@{ base = $null; problem = "is not a valid repository link"; usesBranch = $true }
+        }
+        if (-not $branch) { $branch = 'main' }
+        if ($branch -notmatch '^[A-Za-z0-9._][A-Za-z0-9._/-]*$' -or $branch -match '\.\.|//|/$|/\./|\.$') {
+            return [pscustomobject]@{ base = $null; problem = "has a branch ('$branch') that is not a valid branch, tag or commit name"; usesBranch = $true }
+        }
+
+        return [pscustomobject]@{ base = "https://raw.githubusercontent.com/$owner/$name/$branch"; problem = $null; usesBranch = $true }
+    }
+
+    if ($repository -match '^https://(www\.)?github\.com(/|$)') {
+        return [pscustomobject]@{ base = $null; problem = "must be the plain repository link, https://github.com/owner/repo"; usesBranch = $false }
+    }
+
+    # Any other address is used as written, so keep it simple and unambiguous:
+    # no dot segments, percent-encoding or backslashes to disguise another path.
+    if ($repository -match '\.\.|%|\\') {
+        return [pscustomobject]@{ base = $null; problem = "must not contain '..', '%' or '\'"; usesBranch = $false }
+    }
+
+    return [pscustomobject]@{ base = $repository; problem = $null; usesBranch = $false }
+}
+function getRepositoryIdentity {
+    <#
+        A short, comparable name for a repository address, so a GitHub link,
+        the raw address of the same repository and other branches of it all
+        count as the same repository.
+    #>
+    param (
+        [Parameter(Mandatory)][string]$url
+    )
+
+    $address = $url.Trim().TrimEnd('/').ToLowerInvariant()
+    if ($address -match '^https://raw\.githubusercontent\.com/([^/]+)/([^/]+)') {
+        return "github:$($Matches[1])/$($Matches[2])"
+    }
+
+    return $address
+}
+function getModuleBase {
+    <#
+        The address module files are downloaded from: the repository in
+        config.json, otherwise the address ShellCLI was started from.
+        $null when neither is known.
+    #>
+    if (-not $global:shellcliConfig) { loadShellcliConfig }
+
+    if ($global:shellcliConfig['repositoryBase']) { return $global:shellcliConfig['repositoryBase'] }
+    return $global:shellcliBootstrapBase
+}
+function getModuleCachePath {
+    param (
+        [Parameter(Mandatory)][string]$key,
+        [Parameter(Mandatory = $false)][string]$base
+    )
+
+    # Cached modules are kept per repository, so two ShellCLI variants that
+    # share a root folder (say a personal one and a work one) can never hand
+    # each other's code to the offline fallback.
+    if (-not $base) { $base = getModuleBase }
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $bytes = $sha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes("$base".ToLowerInvariant()))
+    } finally {
+        $sha.Dispose()
+    }
+    $repoFolder = -join ($bytes[0..3] | ForEach-Object { $_.ToString('x2') })
+
+    $cacheDir = Join-Path -Path (getConfigPath -name cache) -ChildPath $repoFolder
     if (-not (Test-Path -LiteralPath $cacheDir)) {
         New-Item -Path $cacheDir -ItemType Directory -Force -ErrorAction Stop | Out-Null
     }
@@ -603,9 +767,15 @@ function getModuleSource {
         return $global:moduleCache[$key]
     }
 
-    $base = 'https://raw.githubusercontent.com/badsyntaxx/shellcli/main'
+    $base = getModuleBase
+    if (-not $base) {
+        log -msg "Module '$key' cannot be downloaded: no repository address is known (repository in config.json, or the address ShellCLI was started from)." -lvl "ERROR"
+        writeText -type "error" -text "No repository address is configured, so '$key' cannot be downloaded."
+        return $null
+    }
+
     $url = if ($directory) { "$base/$directory/$file.ps1" } else { "$base/$file.ps1" }
-    $cachePath = getModuleCachePath -key $key
+    $cachePath = getModuleCachePath -key $key -base $base
 
     $oldProgress = $ProgressPreference
     $ProgressPreference = 'SilentlyContinue'
@@ -621,18 +791,12 @@ function getModuleSource {
             -Headers @{ 'Accept-Encoding' = 'gzip' }
 
         # Decode UTF-8 explicitly rather than trusting the response header.
-        $src = [System.Text.Encoding]::UTF8.GetString($resp.RawContentStream.ToArray())
+        $src = [System.Text.Encoding]::UTF8.GetString($resp.RawContentStream.ToArray()).TrimStart([char]0xFEFF)
 
-        if ([string]::IsNullOrWhiteSpace($src)) { throw "Empty response body from $url" }
-
-        # Reject unparseable content before it reaches Invoke-Expression.
-        $parseErrors = $null
-        [void][System.Management.Automation.Language.Parser]::ParseInput(
-            $src, [ref]$null, [ref]$parseErrors)
-
-        if ($parseErrors -and $parseErrors.Count -gt 0) {
-            throw "Module '$key' failed to parse: $($parseErrors[0].Message)"
-        }
+        # Reject anything that is not a module before it reaches Invoke-Expression
+        # or overwrites the last good copy on disk.
+        $problem = testModuleSource -src $src
+        if ($problem) { throw "Module '$key' $problem" }
 
         $global:moduleCache[$key] = $src
 
@@ -646,23 +810,31 @@ function getModuleSource {
         log -msg "Module '$key' downloaded ($($src.Length) chars)." -lvl "DEBUG"
         return $src
     } catch {
+        $status = $null
+        try { $status = [int]$_.Exception.Response.StatusCode } catch { }
+
         log -msg "Download of '$key' failed: $($_.Exception.Message)" -lvl "WARNING"
+
+        if ($status -eq 404) {
+            # The server answered, so the module is simply not there: cached code
+            # from an earlier version must not stand in for it.
+            log -msg "Module '$key' was not found (404) at $url." -lvl "ERROR"
+            writeText -type "error" -text "'$key' was not found at $url. Check directory, file and repository in config.json."
+            return $null
+        }
     } finally {
         $ProgressPreference = $oldProgress
     }
 
     if (Test-Path -LiteralPath $cachePath) {
         try {
-            $src = [System.IO.File]::ReadAllText($cachePath)
+            $src = [System.IO.File]::ReadAllText($cachePath).TrimStart([char]0xFEFF)
 
             # A half-written or damaged cache file must not reach Invoke-Expression.
-            $parseErrors = $null
-            [void][System.Management.Automation.Language.Parser]::ParseInput(
-                $src, [ref]$null, [ref]$parseErrors)
-
-            if ($parseErrors -and $parseErrors.Count -gt 0) {
-                log -msg "Disk cache for '$key' is damaged and was ignored: $($parseErrors[0].Message)" -lvl "WARNING"
-            } elseif (-not [string]::IsNullOrWhiteSpace($src)) {
+            $problem = testModuleSource -src $src
+            if ($problem) {
+                log -msg "Disk cache for '$key' was ignored: it $problem" -lvl "WARNING"
+            } else {
                 $global:moduleCache[$key] = $src
                 $age = (Get-Date) - (Get-Item -LiteralPath $cachePath).LastWriteTime
                 writeText -type "notice" -text "Offline - using cached '$key' from $([int]$age.TotalDays) day(s) ago."
@@ -674,6 +846,28 @@ function getModuleSource {
     }
 
     log -msg "Module '$key' unavailable from network and cache." -lvl "ERROR"
+    writeText -type "error" -text "Could not download '$key'. Check your connection."
+    return $null
+}
+function testModuleSource {
+    <#
+        Returns $null when $src looks like a ShellCLI module, otherwise a short
+        reason it does not. A module must parse and define at least one
+        function: an HTML or plain-text error page can parse as a script.
+    #>
+    param (
+        [Parameter(Mandatory = $false)][string]$src
+    )
+
+    if ([string]::IsNullOrWhiteSpace($src)) { return "is empty" }
+
+    $parseErrors = $null
+    $ast = [System.Management.Automation.Language.Parser]::ParseInput($src, [ref]$null, [ref]$parseErrors)
+    if ($parseErrors -and $parseErrors.Count -gt 0) { return "does not parse ($($parseErrors[0].Message))" }
+
+    $functions = @($ast.FindAll({ $args[0] -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false))
+    if ($functions.Count -eq 0) { return "defines no functions (an error page?)" }
+
     return $null
 }
 function dispatchCommand {
@@ -687,6 +881,7 @@ function dispatchCommand {
 
     # Framework-resident command (empty directory/file): already defined.
     if ([string]::IsNullOrEmpty($commandFile)) {
+        if (-not (testCommandFunction -name $commandFunction -where "the framework")) { return }
         invokeScript -script $commandFunction
         return
     }
@@ -695,7 +890,7 @@ function dispatchCommand {
     $src = getModuleSource -directory $commandDirectory -file $commandFile
 
     if ($null -eq $src) {
-        writeText -type "error" -text "Could not load '$commandDirectory/$commandFile'. Check your connection."
+        writeText -type "error" -text "Could not load '$commandDirectory/$commandFile'."
         return
     }
 
@@ -703,7 +898,28 @@ function dispatchCommand {
     # from here, so its scope chain reaches them.
     Invoke-Expression $src
 
+    if (-not (testCommandFunction -name $commandFunction -where "$commandDirectory/$commandFile")) { return }
+
     invokeScript -script $commandFunction
+}
+function testCommandFunction {
+    <#
+        True when $name is a function that is defined right now. Commands may
+        only run functions: a config.json entry naming a cmdlet, alias or
+        program would otherwise be handed to Invoke-Expression, and a typo or a
+        deleted function gets a clear message instead of a PowerShell error.
+    #>
+    [OutputType([bool])]
+    param (
+        [Parameter(Mandatory)][string]$name,
+        [Parameter(Mandatory)][string]$where
+    )
+
+    if (Get-Command -Name $name -CommandType Function -ErrorAction SilentlyContinue) { return $true }
+
+    writeText -type "error" -text "There is no function '$name' in $where. Check this command's entry in config.json."
+    log -msg "Command function '$name' is not defined in $where." -lvl "ERROR"
+    return $false
 }
 function log {
     param(
@@ -742,8 +958,14 @@ function log {
         $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
         $logEntry = "[$timestamp] [$lvl] $msg"
 
-        # Write to log file
-        Add-Content -LiteralPath $logFilePath -Value $logEntry -ErrorAction Stop
+        # Write to log file. Once more after a moment if that fails: a virus
+        # scan or a reader can hold the file for a split second.
+        try {
+            Add-Content -LiteralPath $logFilePath -Value $logEntry -ErrorAction Stop
+        } catch {
+            Start-Sleep -Milliseconds 150
+            Add-Content -LiteralPath $logFilePath -Value $logEntry -ErrorAction Stop
+        }
     } catch {
         $global:shellcliLogFailed = $true
         Write-Error "Failed to write log entry (logging is off for this session): $_"

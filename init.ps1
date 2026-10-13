@@ -1,3 +1,9 @@
+# The one address ShellCLI cannot take from config.json, because config.json is
+# itself downloaded from here. The elevated relaunch fetches this script from
+# here too, and it is the fallback for module downloads when config.json names
+# no repository. A fork changes this line (and the repository in config.json).
+$global:shellcliBootstrapBase = 'https://raw.githubusercontent.com/badsyntaxx/shellcli/main'.TrimEnd('/')
+
 function initializeShellCLI {
     try {
         # Elevation
@@ -10,7 +16,7 @@ function initializeShellCLI {
                     -WorkingDirectory $env:SystemRoot -ArgumentList @(
                     '-NoProfile'
                     '-ExecutionPolicy', 'Bypass'
-                    '-Command', 'irm https://raw.githubusercontent.com/badsyntaxx/shellcli/main/init.ps1 | iex'
+                    '-Command', "irm '$($global:shellcliBootstrapBase)/init.ps1' | iex"
                 )
             } catch {
                 # Thrown when the user cancels the UAC prompt (error 1223) or
@@ -61,6 +67,23 @@ function initializeShellCLI {
             addConfigWarning "Could not download config.json. Using the default folders and only the built-in commands."
         }
 
+        # What runs here is downloaded and run as administrator: say so when the
+        # address it came from is not https (this address is not otherwise checked).
+        if ($global:shellcliBootstrapBase -notmatch '^https://') {
+            addConfigWarning "ShellCLI was downloaded from $($global:shellcliBootstrapBase), which is not an https address."
+        }
+
+        # A fork that changes this script but forgets the repository in
+        # config.json would download its modules from the original repository.
+        # (The Get-Command guard keeps an init.ps1 and framework.ps1 from
+        # different versions, which can happen for a few minutes after a push,
+        # from stopping startup.)
+        $configuredBase = $global:shellcliConfig['repositoryBase']
+        if ($configuredBase -and (Get-Command getRepositoryIdentity -ErrorAction SilentlyContinue) -and
+            (getRepositoryIdentity -url $configuredBase) -ne (getRepositoryIdentity -url $global:shellcliBootstrapBase)) {
+            addConfigWarning "config.json downloads modules from $configuredBase, but ShellCLI itself was downloaded from $($global:shellcliBootstrapBase). If this is a fork, make init.ps1 and config.json name the same repository."
+        }
+
         # The root folder comes first: create it and lock it down before
         # anything else is put in it. A configured folder that cannot be used
         # falls back to its default, with a warning, instead of stopping startup.
@@ -85,6 +108,9 @@ function initializeShellCLI {
         log -msg "Downloaded framework.ps1 ($($framework.Length) chars), core.ps1 ($($core.Length) chars), config.json ($("$configText".Length) chars)" -lvl "DEBUG"
         log -msg "Folders: root=$shellCliRoot log=$(getConfigPath -name log) download=$(getConfigPath -name download)" -lvl "DEBUG"
         log -msg "Commands: $($global:commandMap.Count)" -lvl "DEBUG"
+        if (Get-Command getModuleBase -ErrorAction SilentlyContinue) {
+            log -msg "Modules are downloaded from $(getModuleBase)" -lvl "DEBUG"
+        }
 
         # Domain check
         $domain = getJoinedDomain
@@ -120,7 +146,7 @@ function getRemoteFile {
     $ProgressPreference = 'SilentlyContinue'
 
     try {
-        $base = 'https://raw.githubusercontent.com/badsyntaxx/shellcli/main'
+        $base = $global:shellcliBootstrapBase
         $url = if ($directory) { "$base/$directory/$file" } else { "$base/$file" }
 
         # Older hosts may still default to TLS 1.0, which GitHub rejects.
@@ -170,7 +196,7 @@ function protectShellCLIDirectory {
     )
 
     try {
-        $acl = Get-Acl -LiteralPath $path
+        $acl = Get-Acl -LiteralPath $path -ErrorAction Stop
         $acl.SetAccessRuleProtection($true, $false)   # disable inheritance, drop inherited ACEs
 
         foreach ($sid in @('S-1-5-18', 'S-1-5-32-544')) {
@@ -209,7 +235,9 @@ function testShellcliRootIsOurs {
     if ($path -ieq (getDefaultFolder -key rootDirectory)) { return $true }
 
     foreach ($item in @(Get-ChildItem -LiteralPath $path -Force -ErrorAction SilentlyContinue)) {
-        if ($item.Name -notmatch '^(cache|downloads|logs|\.write-test-.*)$' -and $item.Name -notmatch '\.log$') {
+        # Only names ShellCLI itself creates: the cache and downloads folders,
+        # its daily logs (2026-01-31.log) and a leftover write-test file.
+        if ($item.Name -notmatch '^(cache|downloads|\d{4}-\d{2}-\d{2}\.log|\.write-test-[0-9a-f]+)$') {
             return $false
         }
     }

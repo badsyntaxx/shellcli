@@ -1,4 +1,6 @@
 {
+  "repository": "https://github.com/badsyntaxx/shellcli",
+  "branch": "main",
   "rootDirectory": "%ProgramData%\\shellcli",
   "logDirectory": "%rootDirectory%",
   "downloadDirectory": "%rootDirectory%\\downloads",

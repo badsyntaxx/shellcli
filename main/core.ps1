@@ -47,8 +47,14 @@ function writeHelp {
 }
 function listAllCommands {
     try {
-        writeText -type "List" -List $global:commandMap -ListValue 3
-        
+        # Name and description only: a command's entry also holds where it is loaded from.
+        $descriptions = [ordered]@{}
+        foreach ($name in $global:commandMap.PSBase.Keys) {
+            $descriptions[$name] = $global:commandMap[$name][3]
+        }
+
+        writeText -type "List" -List $descriptions
+
     } catch {
         writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     }
@@ -69,15 +75,15 @@ function readLog {
             $logFilePath = Join-Path -Path $logDirectory -ChildPath $logFileName
             if (-not (Test-Path -LiteralPath $logFilePath)) {
                 writeText -type "plain" -text "No log file found for date: $date"
-                readCommand
+                return
             }
         } else {
             # Only ShellCLI's own daily logs: the log folder may be shared with other tools.
-            $logFiles = Get-ChildItem -LiteralPath $logDirectory -Filter "????-??-??.log" |
-            Sort-Object -Property LastWriteTime -Descending
+            $logFiles = @(Get-ChildItem -LiteralPath $logDirectory -Filter "????-??-??.log" -ErrorAction Stop |
+                Sort-Object -Property LastWriteTime -Descending)
             if ($logFiles.Count -eq 0) {
                 writeText -type "plain" -text "No log files found in $logDirectory"
-                readCommand
+                return
             }
             $logFilePath = $logFiles[0].FullName
             writeText -type "header" -text "Reading Log: $($logFiles[0].Name)"

@@ -183,12 +183,16 @@ function getWinDirStat {
     }
 }
 function getBGInfo {
+    # Its own subfolder: everything in it is deleted again, and the download
+    # folder may be shared.
+    $workDir = Join-Path -Path (getConfigPath -name download) -ChildPath "BGInfo-work"
+
     try {
         $url = "https://drive.google.com/uc?export=download&id=1gBFuz6WqrgPvIqYjrcRCYZeC_x9XsUbC"
 
-        # Its own subfolder: everything in it is deleted again below, and the
-        # download folder may be shared.
-        $workDir = Join-Path -Path (getConfigPath -name download) -ChildPath "BGInfo-work"
+        # Start from nothing: leftovers of an earlier failed run must not be mixed into this one.
+        Remove-Item -LiteralPath $workDir -Recurse -Force -ErrorAction SilentlyContinue
+
         $download = getDownload -url $url -target "$workDir\BGInfo.zip"
 
         if ($download -eq $true) {
@@ -223,6 +227,9 @@ function getBGInfo {
         }
     } catch {
         writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
+    } finally {
+        # Also when the download or the unpacking failed halfway
+        Remove-Item -LiteralPath $workDir -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 function getHWInfo {
