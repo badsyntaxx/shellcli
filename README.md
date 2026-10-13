@@ -129,8 +129,9 @@ Keep the folder layout (`main`, `plugins`, `framework.ps1`, `init.ps1`, `config.
 
 ### Folders
 
-- `rootDirectory` is ShellCLI's own folder. The module cache is kept in a `cache` folder inside it. ShellCLI restricts this folder to SYSTEM and
-  Administrators, so use a folder that only ShellCLI uses. A folder that already exists and holds other files is left alone and ShellCLI warns.
+- `rootDirectory` is ShellCLI's own folder, and nobody else's. The module cache is kept in a `cache` folder inside it. Every time ShellCLI starts it
+  removes the folder's inherited permissions and leaves only SYSTEM and Administrators, which everything inside inherits. ShellCLI does not check
+  what is already in the folder, so never point this at a folder that holds anything else.
 - `logDirectory` is where the daily log files are written. The logs record the commands that were run, so keep them somewhere administrators control.
 - `downloadDirectory` is where downloads go when no folder is given: `get apps` and its installers, `download` when the folder is left blank, and
   anything that calls `getDownload` without a target. Treat it as scratch space: installers are downloaded into a temporary folder inside it and

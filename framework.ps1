@@ -1,5 +1,4 @@
 $global:moduleCache = @{}
-# Filled from config.json by loadShellcliConfig. There are no built-in commands.
 $global:commandMap = [ordered]@{}
 
 function invokeScript {
