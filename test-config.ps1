@@ -3,9 +3,10 @@
 
         .\test-config.ps1
 
-    Every endpoint downloads config.json each time ShellCLI starts, so one bad
-    edit reaches all of them. This loads the file the same way ShellCLI does
-    and reports every warning ShellCLI would show, then checks that each
+    Every endpoint downloads config.json each time ShellCLI starts, and
+    ShellCLI refuses to start when it is wrong, so one bad edit stops all of
+    them. This loads the file the same way ShellCLI does and reports every
+    problem ShellCLI would stop for, then checks that each
     command's function really exists in its module file (with the same upper
     and lower case, because GitHub file names are case sensitive).
 
@@ -32,13 +33,22 @@ foreach ($match in [regex]::Matches($json, '(?m)^\s*"([^"\\]+)"\s*:\s*\{\s*"dire
     $seen[$name] = $true
 }
 
-# Everything ShellCLI itself would warn about
-loadShellcliConfig -json $json
-foreach ($warning in $global:shellcliConfigWarnings) { $problems.Add($warning) }
+# Everything ShellCLI itself would refuse. It throws one error that lists every problem.
+$loaded = $true
+try {
+    loadShellcliConfig -json $json
+} catch {
+    $loaded = $false
+    foreach ($line in ($_.Exception.Message -split "`r?`n")) {
+        $line = $line.Trim().TrimStart('-').Trim()
+        if ($line -and $line -ne 'config.json cannot be used:') { $problems.Add($line) }
+    }
+}
 
 # Each command's function must exist in the module it names
+# (only possible when the file could be loaded at all)
 $functionsByFile = @{}
-foreach ($name in $global:commandMap.PSBase.Keys) {
+foreach ($name in $(if ($loaded) { @($global:commandMap.PSBase.Keys) } else { @() })) {
     $entry = $global:commandMap[$name]
     $directory = $entry[0]
     $file = $entry[1]

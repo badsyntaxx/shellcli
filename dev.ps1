@@ -7,6 +7,7 @@ function initializeShellCLI {
             return
         }
 
+        $global:shellcliConfig = $null
         $global:shellcliDevRoot = $PSScriptRoot
         $global:moduleCache = @{}
 
@@ -15,18 +16,16 @@ function initializeShellCLI {
         }
 
         # The local config.json, so folder and command changes can be tried
-        # without pushing.
+        # without pushing. It is required, as it is everywhere else.
         $configPath = Join-Path $PSScriptRoot 'config.json'
-        $configText = $null
-        if (Test-Path -LiteralPath $configPath) { $configText = [System.IO.File]::ReadAllText($configPath) }
-
-        loadShellcliConfig -json $configText
-        if ($null -eq $configText) {
-            addConfigWarning "DEV: no config.json in $PSScriptRoot. Using the default folders and only the built-in commands."
+        if (-not (Test-Path -LiteralPath $configPath)) {
+            throw "There is no config.json in $PSScriptRoot."
         }
 
-        # Same folder checks as init.ps1 (without locking the root down), so a
-        # bad folder in the local config falls back instead of breaking logging.
+        # Throws, listing every problem, if config.json is not usable.
+        loadShellcliConfig -json ([System.IO.File]::ReadAllText($configPath))
+
+        # Same folder checks as init.ps1 (without locking the root down).
         foreach ($key in 'rootDirectory', 'logDirectory', 'downloadDirectory') {
             ensureConfigFolder -key $key
         }
@@ -34,8 +33,16 @@ function initializeShellCLI {
         writeText -type "notice" -text "DEV MODE - loading modules from $PSScriptRoot"
         invokeScript -script "startShell" -initialize $true
     } catch {
-        Write-Host "  $($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber)" -ForegroundColor "Red"
-        log -msg "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber):$($_.Exception.Message)"
+        $detail = "$($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber): $($_.Exception.Message)"
+
+        Write-Host
+        Write-Host "  ShellCLI could not start:" -ForegroundColor "Red"
+        foreach ($line in ($_.Exception.Message -split "`r?`n")) {
+            Write-Host "  $line" -ForegroundColor "Red"
+        }
+
+        # Only written if config.json was loaded, and never allowed to add noise of its own.
+        log -msg $detail -lvl "ERROR" 2>$null
     }
 }
 function log {
@@ -48,9 +55,10 @@ function log {
     )
 
     try {      
-        # Define log directory: the configured one once the config is loaded,
-        # the default before that (this copy runs before the framework exists)
-        $logDirectory = if ($global:shellcliConfig) { $global:shellcliConfig.logDirectory } else { Join-Path -Path $env:ProgramData -ChildPath 'shellcli' }
+        # The log folder comes from config.json. Until that is loaded there is no
+        # log folder, and none is invented. (This copy runs before the framework exists.)
+        if (-not $global:shellcliConfig) { return }
+        $logDirectory = $global:shellcliConfig.logDirectory
 
         # Create log directory if it doesn't exist
         if (-not (Test-Path -LiteralPath $logDirectory)) {

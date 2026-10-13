@@ -98,27 +98,30 @@ Run common Windows repair commands like system file checks and cleanup & restore
 ## Configuration
 
 ShellCLI reads `config.json` from the root of the repo each time it starts. It sets the repository ShellCLI downloads from, the folders it uses and
-the list of commands. If the file cannot be downloaded, or a setting in it is wrong, ShellCLI starts anyway with the default for that setting and
-says so on the first screen. If the whole file is unusable, only the built-in commands (`help`, `?`, `menu`, `commands`, `logs`) are available.
+the list of commands. The file is required, and ShellCLI has no built-in defaults and no built-in commands. If it cannot be downloaded, is not valid
+JSON, lacks a setting or has a wrong one, ShellCLI stops with an error that lists every problem it found. When ShellCLI opens its own administrator
+window (the UAC prompt), that window waits for Enter after an error, so the message can be read.
+
+Every setting below must be present. There is nothing to leave out.
 
 ### Repository
 
 - `repository` is the link to the GitHub repository, for example `https://github.com/badsyntaxx/shellcli`. Command modules are downloaded from it.
   Any other https address works too, as long as the files are served at `<address>/main/user.ps1` and so on. Plain http is refused.
-- `branch` is the branch, tag or commit to download modules from. It defaults to `main` and is ignored (with a warning) for addresses that are not
-  GitHub links; put the branch in the address itself there.
+- `branch` is the branch, tag or commit to download modules from. It is required for a GitHub link, and not allowed for any other address (put the
+  branch in that address instead).
 
 One address cannot come from `config.json`: the one `config.json` itself is downloaded from. It is the line `$global:shellcliBootstrapBase` at the top of
 `init.ps1`, for example `https://raw.githubusercontent.com/owner/repo/main` (no trailing slash). ShellCLI downloads `init.ps1`, `framework.ps1`,
-`main/core.ps1` and `config.json` from there, so `branch` and `repository` only decide where the command modules come from. A tag in `branch`
-therefore pins the modules but not the framework; to pin everything, put the same tag in the bootstrap line. If `repository` is missing or unusable,
-modules come from the bootstrap address too. If `repository` names a different repository, ShellCLI warns, so a fork that updates only one of the two
-gets told. ShellCLI also warns if the bootstrap address is not https, because that address is not otherwise checked.
+`main/core.ps1` and `config.json` from there, and the command modules only from the `repository` in `config.json`. A tag in `branch` therefore pins
+the modules but not the framework; to pin everything, put the same tag in the bootstrap line. If `repository` names a different repository than the
+bootstrap line, ShellCLI starts but warns, so a fork that updates only one of the two gets told. It also warns if the bootstrap address is not https,
+because that address is not otherwise checked.
 
 To fork ShellCLI, change these:
 
 1. `$global:shellcliBootstrapBase` in `init.ps1`.
-2. `repository` (and `branch`, if you do not use `main`) in `config.json`. The `config.json` that ships here points at the original repository.
+2. `repository` and `branch` in `config.json`. The `config.json` that ships here points at the original repository.
 3. The command at the top of this README, and the initializer link at the bottom.
 4. The documentation link in `writeHelp` in `main/core.ps1`, and the one in `plugins/core.ps1`.
 
@@ -133,13 +136,13 @@ Keep the folder layout (`main`, `plugins`, `framework.ps1`, `init.ps1`, `config.
   anything that calls `getDownload` without a target. Treat it as scratch space: installers are downloaded into a temporary folder inside it and
   deleted again, and WinDirStat and BGInfo are unpacked into folders of their own.
 
-Use full paths. `%rootDirectory%` stands for the root folder, so by default the logs and downloads live inside it and changing only the root moves
-everything. Other environment variables such as `%ProgramData%` work too. In JSON, write backslashes doubled (`D:\\ShellCLI`) or use forward slashes
-(`D:/ShellCLI`). Square brackets in a folder name, a missing drive, a folder that cannot be written to, and drive roots are refused. The root is
-also refused if it is inside a Windows, Program Files or Users folder, or is one of them or one of their parents. Network shares are refused for the
-root. A setting that is refused falls back to its default.
+Use full paths. `%rootDirectory%` stands for the root folder, so the shipped `config.json` puts the logs and downloads inside it and changing only the
+root moves everything. Other environment variables such as `%ProgramData%` work too. In JSON, write backslashes doubled (`D:\\ShellCLI`) or use
+forward slashes (`D:/ShellCLI`). These are refused, and ShellCLI stops: square brackets in a folder name, a drive that does not exist, a folder that
+cannot be created or written to, and drive roots. The root is also refused if it is inside a Windows, Program Files or Users folder, or is one of
+them or one of their parents, and network shares are refused for the root.
 
-Installers from `get apps` are run from the download folder with administrator rights. Keep it inside the root folder, as the default is, or
+Installers from `get apps` are run from the download folder with administrator rights. Keep it inside the root folder, as the shipped config does, or
 somewhere else only administrators can write to. Files from older versions stay where they were, in `ProgramData\shellcli`.
 
 ### Commands
@@ -150,18 +153,20 @@ The `commands` section lists every command, one per line:
 
 Typing `add user` downloads `main/user.ps1` from the repo, loads it and runs its `addUser` function. To add a command, put its function in a file in
 the repo and add a line for it. A module file must define at least one function, and a command can only run a function (not a cmdlet or a
-program). A command with the same name as a built-in one replaces it. Names are not case sensitive, are at most 60 plain characters, and cannot be
-`keys`, `values`, `count` or `item`. `directory` and `file` may only contain letters, digits, `-` and `_` (up to 64 characters), and `function` must
-be a plain function name. An entry that breaks these rules is skipped with a warning and the rest still load.
+program). There are no built-in commands: `help`, `?`, `menu`, `commands` and `logs` are entries like any other, and `help` is what runs when
+ShellCLI starts. Names are not case sensitive, must be unique, are at most 60 plain characters, and cannot be `keys`, `values`, `count` or `item`.
+`directory` and `file` may only contain letters, digits, `-` and `_` (up to 64 characters), and `function` must be a plain function name.
 
-Some mistakes make the whole file unusable, and then only the built-in commands are available: invalid JSON (a trailing comma, a comment), two
-names that differ only in upper and lower case, or a command named `psobject`. Run `.\test-config.ps1` before every push. It loads `config.json` the
-way ShellCLI does, reports every warning ShellCLI would show, and checks that every command's function exists in its module file.
+Any entry that breaks these rules stops ShellCLI from starting, and so does invalid JSON (a trailing comment or comma), two names that differ only in
+upper and lower case, or a command named `psobject`. Because one bad push stops every endpoint, run `.\test-config.ps1` before every push. It loads
+`config.json` the way ShellCLI does, reports every problem ShellCLI would stop for, and checks that every command's function exists in its module file.
 
 `dev.ps1` reads the local `config.json`, so changes to the folders, the repository or the commands can be tried before they are pushed.
 
-When the framework and `config.json` change together, push `config.json` first, then `framework.ps1`, then `init.ps1`. Each file is downloaded on
-its own, and a few minutes of old and new versions mixed together is harmless in that order.
+When the framework, `init.ps1` and `config.json` change together, push `config.json` first, then `init.ps1`, then `framework.ps1`. Each file is
+downloaded on its own, so for a few minutes after a push old and new versions meet. In that order they still work together. In any other order a
+new `framework.ps1` can meet an old `init.ps1` (which calls a function the new one no longer has) or an old `config.json` (one without `repository`
+and `branch`), and ShellCLI refuses to start.
 
 ## Bypass anti-virus
 

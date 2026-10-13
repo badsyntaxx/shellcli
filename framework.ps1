@@ -1,19 +1,6 @@
 $global:moduleCache = @{}
-function getBuiltInCommands {
-    <#
-        The commands that are always available, even when config.json could not
-        be loaded. The "commands" section of config.json adds to these and can
-        override them.
-    #>
-    return [ordered]@{
-        "?"         = @("main", "core", "writeHelp", "List some help info.")
-        "help"      = @("main", "core", "writeHelp", "List some help info.")
-        "menu"      = @("main", "core", "readMenu", "Display the main menu.")
-        "commands"  = @("main", "core", "listAllCommands", "List all available commands.")
-        "logs"      = @("main", "core", "readLog", "Output the last 50 lines of the log file.")
-    }
-}
-$global:commandMap = getBuiltInCommands
+# Filled from config.json by loadShellcliConfig. There are no built-in commands.
+$global:commandMap = [ordered]@{}
 
 function invokeScript {
     param (
@@ -236,19 +223,6 @@ function tryInvokePassthrough {
 
     return $true
 }
-function getConfigDefaults {
-    <#
-        Built-in folder settings. Used for any key config.json leaves out or
-        gets wrong, and for everything when config.json could not be loaded.
-        %rootDirectory% stands for the root folder. Keep these in step with
-        config.json in the repo root.
-    #>
-    return [ordered]@{
-        rootDirectory     = '%ProgramData%\shellcli'
-        logDirectory      = '%rootDirectory%'
-        downloadDirectory = '%rootDirectory%\downloads'
-    }
-}
 function expandConfigPath {
     <#
         Turns a configured folder into a plain path: %rootDirectory% (any
@@ -268,19 +242,6 @@ function expandConfigPath {
     }
 
     return [Environment]::ExpandEnvironmentVariables($value.Trim()).Replace('/', '\')
-}
-function getDefaultFolder {
-    <#
-        One built-in default as a full path. $root is the root folder that
-        %rootDirectory% stands for (not needed for the root itself).
-    #>
-    param (
-        [Parameter(Mandatory)][string]$key,
-        [Parameter(Mandatory = $false)][string]$root
-    )
-
-    $defaults = getConfigDefaults
-    return (expandConfigPath -value $defaults[$key] -root $root).TrimEnd('\')
 }
 function addConfigWarning {
     param (
@@ -367,29 +328,29 @@ function testConfigPath {
 }
 function getConfiguredCommands {
     <#
-        The built-in commands plus the valid entries of the "commands" section
-        of config.json ($section, as parsed). An entry looks like
+        The commands of the "commands" section of config.json ($section, as
+        parsed), as an ordered map of name -> directory, file, function and
+        description. An entry looks like
         "add user": { "directory": "main", "file": "user", "function": "addUser", "description": "..." }
-        A bad entry is skipped with a warning. Everything is checked because
-        the function name ends up in Invoke-Expression and the directory and
-        file names end up in a download URL.
+        Every entry is checked, because the function name ends up in
+        Invoke-Expression and the directory and file names end up in a
+        download URL. Each problem is added to $problems.
     #>
     param (
-        [Parameter(Mandatory = $false)]$section,
-        [Parameter(Mandatory)][AllowEmptyCollection()][System.Collections.Generic.List[string]]$warnings
+        [Parameter(Mandatory)]$section,
+        [Parameter(Mandatory)][AllowEmptyCollection()][System.Collections.Generic.List[string]]$problems
     )
 
-    $map = getBuiltInCommands
-    if (-not $section) { return $map }
+    $map = [ordered]@{}
 
     # Names that would shadow the dictionary's own properties (a command called
     # "keys" would break the `commands` listing).
     $reserved = 'keys', 'values', 'count', 'item', 'isreadonly', 'isfixedsize', 'issynchronized', 'syncroot'
 
-    # Plain, short text for use in a warning, whatever the file contained.
+    # Plain, short text for use in a message, whatever the file contained.
     $show = { param($text) $t = ([string]$text) -replace '[^\x20-\x7e]', '?'; if ($t.Length -gt 40) { $t.Substring(0, 40) + '...' } else { $t } }
 
-    $skipped = 0
+    $reported = 0
     foreach ($entry in $section.PSObject.Properties) {
         $name = normalizeCommandName -text ([string]$entry.Name)
         $item = $entry.Value
@@ -401,6 +362,8 @@ function getConfiguredCommands {
             $problem = "has no usable name (1 to 60 plain ASCII characters)"
         } elseif ($name -in $reserved) {
             $problem = "uses a reserved name"
+        } elseif ($map.Contains($name)) {
+            $problem = "is listed twice"
         } elseif ($item -isnot [System.Management.Automation.PSCustomObject]) {
             $problem = "must be an object with directory, file, function and description"
         } else {
@@ -418,163 +381,137 @@ function getConfiguredCommands {
         }
 
         if ($problem) {
-            $skipped++
-            if ($skipped -le 5) { $warnings.Add("config.json: command '$(& $show $name)' $problem. It was skipped.") }
+            $reported++
+            if ($reported -le 10) { $problems.Add("command '$(& $show $name)' $problem") }
             continue
         }
 
         $map[$name] = @($directory, $file, $functionName, $description)
     }
 
-    if ($skipped -gt 5) { $warnings.Add("config.json: $($skipped - 5) more commands were skipped.") }
+    if ($reported -gt 10) { $problems.Add("$($reported - 10) more commands have problems") }
     return $map
 }
 function loadShellcliConfig {
     <#
         Builds $global:shellcliConfig (full paths and the module download
-        address) and $global:commandMap from the text of config.json. A
-        setting that is missing or unusable falls
-        back to its built-in default. Never throws and never logs; problems
-        are left in $global:shellcliConfigWarnings, which startShell shows
-        once and the caller can log. Does not touch the disk: see
-        ensureConfigFolder for that.
+        address) and $global:commandMap from the text of config.json.
+
+        There are no defaults and no fallbacks. A config.json that is empty,
+        could not be downloaded, is not valid JSON, lacks a setting or has a
+        wrong one makes this throw one error that lists every problem found.
+        Does not touch the disk: see ensureConfigFolder for that.
     #>
     param (
         [Parameter(Mandatory = $false)][string]$json
     )
 
-    $defaults = getConfigDefaults
-    $warnings = [System.Collections.Generic.List[string]]::new()
-    $parsed = $null
+    $global:shellcliConfig = $null
+
+    if ([string]::IsNullOrWhiteSpace($json)) {
+        throw "config.json is empty or could not be read."
+    }
 
     try {
-        if (-not [string]::IsNullOrWhiteSpace($json)) {
-            try {
-                # A BOM (Notepad adds one) would make ConvertFrom-Json fail.
-                $parsed = $json.TrimStart([char]0xFEFF) | ConvertFrom-Json -ErrorAction Stop
-            } catch {
-                $warnings.Add("config.json is not valid JSON ($($_.Exception.Message)). Using the default folders and only the built-in commands.")
-            }
-
-            if ($warnings.Count -eq 0 -and ($null -eq $parsed -or $parsed -isnot [System.Management.Automation.PSCustomObject])) {
-                # Covers [..], "text", numbers and a bare null.
-                $warnings.Add("config.json must contain a JSON object. Using the default folders and only the built-in commands.")
-                $parsed = $null
-            }
-        }
-
-        $known = @($defaults.Keys) + 'repository' + 'branch' + 'commands'
-        if ($parsed) {
-            foreach ($name in $parsed.PSObject.Properties.Name) {
-                if ($name -notin $known) { $warnings.Add("config.json has an unknown setting '$name'. It was ignored.") }
-            }
-        }
-
-        # Folders. The root comes first because the others may refer to it.
-        $resolved = [ordered]@{}
-        $root = $null
-        foreach ($key in $defaults.Keys) {
-            $path = $null
-            $property = if ($parsed) { $parsed.PSObject.Properties[$key] } else { $null }
-            $value = if ($property) { $property.Value } else { $null }
-
-            if ($null -ne $value -and $value -isnot [string]) {
-                $warnings.Add("config.json: $key must be text. Using the default.")
-            } elseif (-not [string]::IsNullOrWhiteSpace($value)) {
-                $candidate = expandConfigPath -value $value -root $root
-                $problem = testConfigPath -key $key -path $candidate
-
-                if ($problem) {
-                    $warnings.Add("config.json: $key '$value' $problem. Using the default.")
-                } else {
-                    $path = $candidate.TrimEnd('\')
-                }
-            }
-
-            if (-not $path) { $path = getDefaultFolder -key $key -root $root }
-            $resolved[$key] = $path
-            if ($key -eq 'rootDirectory') { $root = $path }
-        }
-
-        # The module cache always lives under the root folder.
-        $resolved['cacheDirectory'] = "$root\cache"
-
-        # Repository: where the modules are downloaded from. Left unset, the
-        # address ShellCLI was started from is used (see getModuleBase).
-        $resolved['repositoryBase'] = $null
-        $repository = $null
-        $branch = $null
-        if ($parsed) {
-            $property = $parsed.PSObject.Properties['repository']
-            if ($property -and $null -ne $property.Value) { $repository = $property.Value }
-            $property = $parsed.PSObject.Properties['branch']
-            if ($property -and $null -ne $property.Value) { $branch = $property.Value }
-        }
-
-        if ($repository -is [string] -and $repository.Trim()) {
-            if ($null -ne $branch -and $branch -isnot [string]) {
-                $warnings.Add("config.json: branch must be text. Using main.")
-                $branch = $null
-            }
-
-            $result = resolveRepositoryBase -repository $repository -branch ([string]$branch)
-            if ($result.problem) {
-                $warnings.Add("config.json: repository '$repository' $($result.problem). Using the address ShellCLI was started from.")
-            } else {
-                $resolved['repositoryBase'] = $result.base
-                if ($branch -and -not $result.usesBranch) {
-                    $warnings.Add("config.json: branch is ignored because repository is not a GitHub link. Put the branch in the address itself.")
-                }
-            }
-        } elseif ($null -ne $repository -and $repository -isnot [string]) {
-            $warnings.Add("config.json: repository must be text. Using the address ShellCLI was started from.")
-        } elseif ($branch) {
-            $warnings.Add("config.json: branch is ignored because no repository is set.")
-        }
-
-        # Commands
-        $section = $null
-        if ($parsed) {
-            $property = $parsed.PSObject.Properties['commands']
-            if ($property -and $property.Value -is [System.Management.Automation.PSCustomObject]) {
-                $section = $property.Value
-            } elseif ($property -and $null -ne $property.Value) {
-                $warnings.Add("config.json: commands must be an object. Only the built-in commands are available.")
-            } else {
-                $warnings.Add("config.json has no commands. Only the built-in commands are available.")
-            }
-        }
-        $commands = getConfiguredCommands -section $section -warnings $warnings
+        # A BOM (Notepad adds one) would make ConvertFrom-Json fail.
+        $parsed = $json.TrimStart([char]0xFEFF) | ConvertFrom-Json -ErrorAction Stop
     } catch {
-        $root = getDefaultFolder -key rootDirectory
-        $resolved = [ordered]@{
-            rootDirectory     = $root
-            logDirectory      = getDefaultFolder -key logDirectory -root $root
-            downloadDirectory = getDefaultFolder -key downloadDirectory -root $root
-            cacheDirectory    = "$root\cache"
-            repositoryBase    = $null
+        throw "config.json is not valid JSON ($($_.Exception.Message))."
+    }
+
+    if ($null -eq $parsed -or $parsed -isnot [System.Management.Automation.PSCustomObject]) {
+        throw "config.json must contain a JSON object."
+    }
+
+    $problems = [System.Collections.Generic.List[string]]::new()
+    $resolved = [ordered]@{}
+
+    $known = 'repository', 'branch', 'rootDirectory', 'logDirectory', 'downloadDirectory', 'commands'
+    foreach ($name in $parsed.PSObject.Properties.Name) {
+        if ($name -notin $known) { $problems.Add("unknown setting '$name'") }
+    }
+
+    # Folders. The root comes first because the others may refer to it.
+    $root = $null
+    foreach ($key in 'rootDirectory', 'logDirectory', 'downloadDirectory') {
+        $property = $parsed.PSObject.Properties[$key]
+        $value = if ($property) { $property.Value } else { $null }
+
+        if ($null -eq $value -or ($value -is [string] -and [string]::IsNullOrWhiteSpace($value))) {
+            $problems.Add("$key is missing")
+        } elseif ($value -isnot [string]) {
+            $problems.Add("$key must be text")
+        } elseif ($key -ne 'rootDirectory' -and -not $root -and $value -match '(?i)%rootDirectory%') {
+            # Refers to a root folder that is itself unusable, which is already reported.
+        } else {
+            $candidate = expandConfigPath -value $value -root $root
+            $problem = testConfigPath -key $key -path $candidate
+            if ($problem) {
+                $problems.Add("$key '$value' $problem")
+            } else {
+                $resolved[$key] = $candidate.TrimEnd('\')
+                if ($key -eq 'rootDirectory') { $root = $resolved[$key] }
+            }
         }
-        $commands = getBuiltInCommands
-        $warnings.Add("config.json could not be applied ($($_.Exception.Message)). Using the default folders and only the built-in commands.")
+    }
+
+    # The module cache always lives under the root folder.
+    if ($root) { $resolved['cacheDirectory'] = "$root\cache" }
+
+    # Repository: where the modules are downloaded from
+    $property = $parsed.PSObject.Properties['repository']
+    $repository = if ($property) { $property.Value } else { $null }
+    $property = $parsed.PSObject.Properties['branch']
+    $branch = if ($property) { $property.Value } else { $null }
+
+    if ($null -eq $repository -or ($repository -is [string] -and [string]::IsNullOrWhiteSpace($repository))) {
+        $problems.Add("repository is missing")
+    } elseif ($repository -isnot [string]) {
+        $problems.Add("repository must be text")
+    } elseif ($null -ne $branch -and $branch -isnot [string]) {
+        $problems.Add("branch must be text")
+    } else {
+        $result = resolveRepositoryBase -repository $repository -branch ([string]$branch)
+        if ($result.problem) {
+            $problems.Add("repository '$repository' $($result.problem)")
+        } else {
+            $resolved['repositoryBase'] = $result.base
+        }
+    }
+
+    # Commands
+    $commands = $null
+    $property = $parsed.PSObject.Properties['commands']
+    if (-not $property -or $null -eq $property.Value) {
+        $problems.Add("commands is missing")
+    } elseif ($property.Value -isnot [System.Management.Automation.PSCustomObject]) {
+        $problems.Add("commands must be an object with one entry per command")
+    } elseif (@($property.Value.PSObject.Properties).Count -eq 0) {
+        $problems.Add("commands is empty")
+    } else {
+        $commands = getConfiguredCommands -section $property.Value -problems $problems
+    }
+
+    if ($problems.Count -gt 0) {
+        throw ("config.json cannot be used:`n" + (($problems | ForEach-Object { "  - $_" }) -join "`n"))
     }
 
     $global:shellcliConfig = $resolved
-    $global:shellcliConfigWarnings = @($warnings)
+    $global:shellcliConfigWarnings = @()
     $global:commandMap = $commands
     $global:shellcliLogFailed = $false
 }
 function getConfigPath {
     <#
         Returns one of the configured folders as a full path:
-        root, log, cache or download.
+        root, log, cache or download. Throws when config.json has not been
+        loaded: there is no default.
     #>
     param (
         [Parameter(Mandatory)][ValidateSet('root', 'log', 'cache', 'download')][string]$name
     )
 
-    # Nothing loaded (standalone use, or a log line before init has run):
-    # fall back to the built-in defaults.
-    if (-not $global:shellcliConfig) { loadShellcliConfig }
+    if (-not $global:shellcliConfig) { throw "ShellCLI's config.json has not been loaded." }
 
     return $global:shellcliConfig["${name}Directory"]
 }
@@ -607,30 +544,18 @@ function testConfigFolder {
 }
 function ensureConfigFolder {
     <#
-        Makes sure a configured folder exists and can be written to. If it
-        can't, queues a warning and switches that setting to its default.
-        Throws only when the default folder is unusable too.
+        Makes sure a configured folder exists and can be written to. Throws
+        when it cannot: the setting is not replaced by anything else.
     #>
     param (
         [Parameter(Mandatory)][ValidateSet('rootDirectory', 'logDirectory', 'downloadDirectory')][string]$key
     )
 
-    if (-not $global:shellcliConfig) { loadShellcliConfig }
+    if (-not $global:shellcliConfig) { throw "ShellCLI's config.json has not been loaded." }
 
     $path = $global:shellcliConfig[$key]
     $problem = testConfigFolder -path $path
-    if (-not $problem) { return }
-
-    $default = getDefaultFolder -key $key -root $global:shellcliConfig['rootDirectory']
-    addConfigWarning "config.json: $key '$path' $problem. Using '$default'."
-    $global:shellcliConfig[$key] = $default
-    if ($key -eq 'rootDirectory') { $global:shellcliConfig['cacheDirectory'] = "$default\cache" }
-
-    # Logging may have been switched off by a write to the folder that just failed.
-    $global:shellcliLogFailed = $false
-
-    $problem = testConfigFolder -path $default
-    if ($problem) { throw "The default $key '$default' $problem." }
+    if ($problem) { throw "config.json: $key '$path' $problem." }
 }
 function resolveRepositoryBase {
     <#
@@ -638,10 +563,10 @@ function resolveRepositoryBase {
         address the repo's files are downloaded from. Returns an object with
         a base (or $null) and a problem (or $null).
 
-        A GitHub link such as https://github.com/owner/repo becomes
-        https://raw.githubusercontent.com/owner/repo/<branch> (the branch
-        defaults to main and may be a tag or a commit). Any other https
-        address is used as it is and the branch is ignored: files are
+        A GitHub link such as https://github.com/owner/repo needs a branch
+        (a branch, tag or commit) and becomes
+        https://raw.githubusercontent.com/owner/repo/<branch>. Any other https
+        address is used as it is and must not come with a branch: files are
         expected at <address>/framework.ps1, <address>/main/user.ps1 and so
         on. Plain http is refused because what is downloaded runs as
         administrator.
@@ -655,7 +580,7 @@ function resolveRepositoryBase {
     $branch = $branch.Trim()
 
     if ($repository -notmatch '^https://[^\s/@?#]+(/[^\s?#]*)?$') {
-        return [pscustomobject]@{ base = $null; problem = "must be an https address such as https://github.com/owner/repo"; usesBranch = $false }
+        return [pscustomobject]@{ base = $null; problem = "must be an https address such as https://github.com/owner/repo" }
     }
 
     if ($repository -match '^https://(www\.)?github\.com/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(\.git)?$') {
@@ -663,27 +588,32 @@ function resolveRepositoryBase {
         $name = $Matches[3]
 
         if ($owner -match '^\.+$' -or $name -match '^\.+$') {
-            return [pscustomobject]@{ base = $null; problem = "is not a valid repository link"; usesBranch = $true }
+            return [pscustomobject]@{ base = $null; problem = "is not a valid repository link" }
         }
-        if (-not $branch) { $branch = 'main' }
+        if (-not $branch) {
+            return [pscustomobject]@{ base = $null; problem = "needs a branch, tag or commit: add a branch setting such as ""branch"": ""main""" }
+        }
         if ($branch -notmatch '^[A-Za-z0-9._][A-Za-z0-9._/-]*$' -or $branch -match '\.\.|//|/$|/\./|\.$') {
-            return [pscustomobject]@{ base = $null; problem = "has a branch ('$branch') that is not a valid branch, tag or commit name"; usesBranch = $true }
+            return [pscustomobject]@{ base = $null; problem = "has a branch ('$branch') that is not a valid branch, tag or commit name" }
         }
 
-        return [pscustomobject]@{ base = "https://raw.githubusercontent.com/$owner/$name/$branch"; problem = $null; usesBranch = $true }
+        return [pscustomobject]@{ base = "https://raw.githubusercontent.com/$owner/$name/$branch"; problem = $null }
     }
 
     if ($repository -match '^https://(www\.)?github\.com(/|$)') {
-        return [pscustomobject]@{ base = $null; problem = "must be the plain repository link, https://github.com/owner/repo"; usesBranch = $false }
+        return [pscustomobject]@{ base = $null; problem = "must be the plain repository link, https://github.com/owner/repo" }
     }
 
     # Any other address is used as written, so keep it simple and unambiguous:
     # no dot segments, percent-encoding or backslashes to disguise another path.
     if ($repository -match '\.\.|%|\\') {
-        return [pscustomobject]@{ base = $null; problem = "must not contain '..', '%' or '\'"; usesBranch = $false }
+        return [pscustomobject]@{ base = $null; problem = "must not contain '..', '%' or '\'" }
+    }
+    if ($branch) {
+        return [pscustomobject]@{ base = $null; problem = "comes with a branch, but a branch only applies to GitHub links: put it in the address instead" }
     }
 
-    return [pscustomobject]@{ base = $repository; problem = $null; usesBranch = $false }
+    return [pscustomobject]@{ base = $repository; problem = $null }
 }
 function getRepositoryIdentity {
     <#
@@ -705,13 +635,11 @@ function getRepositoryIdentity {
 function getModuleBase {
     <#
         The address module files are downloaded from: the repository in
-        config.json, otherwise the address ShellCLI was started from.
-        $null when neither is known.
+        config.json. $null when config.json has not been loaded.
     #>
-    if (-not $global:shellcliConfig) { loadShellcliConfig }
+    if (-not $global:shellcliConfig) { return $null }
 
-    if ($global:shellcliConfig['repositoryBase']) { return $global:shellcliConfig['repositoryBase'] }
-    return $global:shellcliBootstrapBase
+    return $global:shellcliConfig['repositoryBase']
 }
 function getModuleCachePath {
     param (
@@ -769,8 +697,8 @@ function getModuleSource {
 
     $base = getModuleBase
     if (-not $base) {
-        log -msg "Module '$key' cannot be downloaded: no repository address is known (repository in config.json, or the address ShellCLI was started from)." -lvl "ERROR"
-        writeText -type "error" -text "No repository address is configured, so '$key' cannot be downloaded."
+        log -msg "Module '$key' cannot be downloaded: config.json has not been loaded, so there is no repository address." -lvl "ERROR"
+        writeText -type "error" -text "config.json has not been loaded, so '$key' cannot be downloaded."
         return $null
     }
 
@@ -934,6 +862,9 @@ function log {
         # One failure switches logging off for the rest of the session, so an
         # unusable log folder gives one error instead of one per line of output.
         if ($global:shellcliLogFailed) { return }
+
+        # Before config.json is loaded there is no log folder, and none is invented.
+        if (-not $global:shellcliConfig) { return }
 
         # Define log directory
         $logDirectory = getConfigPath -name log
