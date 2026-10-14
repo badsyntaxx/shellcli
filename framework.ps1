@@ -425,14 +425,14 @@ function loadShellcliConfig {
     $problems = [System.Collections.Generic.List[string]]::new()
     $resolved = [ordered]@{}
 
-    $known = 'repository', 'branch', 'rootDirectory', 'logDirectory', 'downloadDirectory', 'commands'
+    $known = 'repository', 'branch', 'rootDirectory', 'logDirectory', 'downloadDirectory', 'cacheDirectory', 'commands'
     foreach ($name in $parsed.PSObject.Properties.Name) {
         if ($name -notin $known) { $problems.Add("unknown setting '$name'") }
     }
 
     # Folders. The root comes first because the others may refer to it.
     $root = $null
-    foreach ($key in 'rootDirectory', 'logDirectory', 'downloadDirectory') {
+    foreach ($key in 'rootDirectory', 'logDirectory', 'downloadDirectory', 'cacheDirectory') {
         $property = $parsed.PSObject.Properties[$key]
         $value = if ($property) { $property.Value } else { $null }
 
@@ -453,9 +453,6 @@ function loadShellcliConfig {
             }
         }
     }
-
-    # The module cache always lives under the root folder.
-    if ($root) { $resolved['cacheDirectory'] = "$root\cache" }
 
     # Repository: where the modules are downloaded from
     $property = $parsed.PSObject.Properties['repository']
@@ -514,47 +511,25 @@ function getConfigPath {
 
     return $global:shellcliConfig["${name}Directory"]
 }
-function testConfigFolder {
-    <#
-        Creates the folder if needed and proves it can be written to.
-        Returns $null when it is usable, otherwise a short reason.
-    #>
-    param (
-        [Parameter(Mandatory)][string]$path
-    )
-
-    try {
-        if (-not (Test-Path -LiteralPath $path -PathType Container)) {
-            $null = New-Item -Path $path -ItemType Directory -Force -ErrorAction Stop
-        }
-
-        # New-Item reports success without creating anything when a parent is a file.
-        if (-not (Test-Path -LiteralPath $path -PathType Container)) { return "could not be created" }
-
-        $probe = Join-Path -Path $path -ChildPath ('.write-test-' + [guid]::NewGuid().ToString('N'))
-        [System.IO.File]::WriteAllText($probe, 'x')
-
-        # A folder that lets files be created but not deleted is still usable.
-        try { [System.IO.File]::Delete($probe) } catch { }
-        return $null
-    } catch {
-        return "cannot be used ($($_.Exception.Message))"
-    }
-}
 function ensureConfigFolder {
     <#
-        Makes sure a configured folder exists and can be written to. Throws
-        when it cannot: the setting is not replaced by anything else.
+        Creates a configured folder, exactly as config.json has it, if it is
+        not there yet. Nothing else is checked or written: no test file and no
+        permissions. Throws, naming the setting, if it cannot be created.
     #>
     param (
-        [Parameter(Mandatory)][ValidateSet('rootDirectory', 'logDirectory', 'downloadDirectory')][string]$key
+        [Parameter(Mandatory)][ValidateSet('rootDirectory', 'logDirectory', 'downloadDirectory', 'cacheDirectory')][string]$key
     )
 
     if (-not $global:shellcliConfig) { throw "ShellCLI's config.json has not been loaded." }
 
     $path = $global:shellcliConfig[$key]
-    $problem = testConfigFolder -path $path
-    if ($problem) { throw "config.json: $key '$path' $problem." }
+    try {
+        # Unlike New-Item, this fails when a parent is a file instead of quietly doing nothing.
+        [void][System.IO.Directory]::CreateDirectory($path)
+    } catch {
+        throw "config.json: $key '$path' could not be created ($($_.Exception.Message))."
+    }
 }
 function resolveRepositoryBase {
     <#

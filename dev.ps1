@@ -26,7 +26,7 @@ function initializeShellCLI {
         loadShellcliConfig -json ([System.IO.File]::ReadAllText($configPath))
 
         # Same folder checks as init.ps1 (without locking the root down).
-        foreach ($key in 'rootDirectory', 'logDirectory', 'downloadDirectory') {
+        foreach ($key in 'rootDirectory', 'logDirectory', 'downloadDirectory', 'cacheDirectory') {
             ensureConfigFolder -key $key
         }
 

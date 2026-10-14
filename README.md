@@ -132,22 +132,29 @@ Keep the folder layout (`main`, `plugins`, `framework.ps1`, `init.ps1`, `config.
 
 ### Folders
 
-- `rootDirectory` is ShellCLI's own folder, and nobody else's. The module cache is kept in a `cache` folder inside it. Every time ShellCLI starts it
-  removes the folder's inherited permissions and leaves only SYSTEM and Administrators, which everything inside inherits. ShellCLI does not check
-  what is already in the folder, so never point this at a folder that holds anything else.
+- `rootDirectory` is ShellCLI's own folder, and nobody else's. Every time ShellCLI starts it removes the folder's inherited permissions and leaves
+  only SYSTEM and Administrators, which everything inside inherits. ShellCLI does not check what is already in the folder, so never point this at a
+  folder that holds anything else.
 - `logDirectory` is where the daily log files are written. The logs record the commands that were run, so keep them somewhere administrators control.
+- `cacheDirectory` is where downloaded command modules are kept, for when a later download fails. A cached module is run as administrator.
 - `downloadDirectory` is where downloads go when no folder is given: `get apps` and its installers, `download` when the folder is left blank, and
   anything that calls `getDownload` without a target. Treat it as scratch space: installers are downloaded into a temporary folder inside it and
   deleted again, and WinDirStat and BGInfo are unpacked into folders of their own.
 
-Use full paths. `%rootDirectory%` stands for the root folder, so the shipped `config.json` puts the logs and downloads inside it and changing only the
+ShellCLI creates the root first and locks it down, and only then creates the other three. A folder inside the root therefore inherits the locked-down
+permissions from the moment it exists, which a folder created earlier would not. The cache and download folders hold code that runs as administrator,
+so keep them inside the root, as the shipped config does. A folder anywhere else is created exactly as written and ShellCLI does nothing to protect
+it. Folders are only created: ShellCLI does not test that they can be written to, so a folder you cannot write to fails the first time it is used.
+
+Use full paths. `%rootDirectory%` stands for the root folder, so the shipped `config.json` puts the other three inside it and changing only the
 root moves everything. Other environment variables such as `%ProgramData%` work too. In JSON, write backslashes doubled (`D:\\ShellCLI`) or use
 forward slashes (`D:/ShellCLI`). These are refused, and ShellCLI stops: square brackets in a folder name, a drive that does not exist, a folder that
-cannot be created or written to, and drive roots. The root is also refused if it is inside a Windows, Program Files or Users folder, or is one of
+cannot be created, and drive roots. The root is also refused if it is inside a Windows, Program Files or Users folder, or is one of
 them or one of their parents, and network shares are refused for the root.
 
-Installers from `get apps` are run from the download folder with administrator rights. Keep it inside the root folder, as the shipped config does, or
-somewhere else only administrators can write to. Files from older versions stay where they were, in `ProgramData\shellcli`.
+Installers from `get apps` are run from the download folder with administrator rights. Files from older versions stay where they were, in
+`ProgramData\shellcli`; the shipped config now keeps the cache in `Cache`, the logs in `Logs` and downloads in `Temp` inside it, so older files in the
+top of that folder are no longer used.
 
 ### Commands
 
