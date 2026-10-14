@@ -5,6 +5,7 @@
     "logDirectory": "%rootDirectory%\\Logs",
     "tempDirectory": "%rootDirectory%\\Temp",
     "cacheDirectory": "%rootDirectory%\\Cache",
+    "starterCommand": "help",
     "commands": {
         "?": { "directory": "main", "file": "core", "function": "writeHelp", "description": "List some help info." },
         "help": { "directory": "main", "file": "core", "function": "writeHelp", "description": "List some help info." },

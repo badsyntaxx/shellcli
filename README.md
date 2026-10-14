@@ -97,8 +97,8 @@ Run common Windows repair commands like system file checks and cleanup & restore
 
 ## Configuration
 
-ShellCLI reads `config.json` from the root of the repo each time it starts. It sets the repository ShellCLI downloads from, the folders it uses and
-the list of commands. The file is required, and ShellCLI has no built-in defaults and no built-in commands. If it cannot be downloaded, is not valid
+ShellCLI reads `config.json` from the root of the repo each time it starts. It sets the repository ShellCLI downloads from, the folders it uses, the
+list of commands and which of them runs at startup. The file is required, and ShellCLI has no built-in defaults and no built-in commands. If it cannot be downloaded, is not valid
 JSON, lacks a setting or has a wrong one, ShellCLI stops with an error that lists every problem it found. When ShellCLI opens its own administrator
 window (the UAC prompt), that window waits for Enter after an error, so the message can be read.
 
@@ -148,15 +148,18 @@ uses, so they must be present. `.\test-config.ps1` also checks that every `getCo
 folder that is renamed or removed while something still asks for it is caught before you push. Asking for a folder that is not in the config is an
 error that says which setting to add.
 
-ShellCLI creates the root first and locks it down, and only then creates the others, in the order they are listed. A folder inside the root
+However they refer to each other, ShellCLI creates the root first and locks it down, and only then creates the others, in the order they are listed.
+(A folder the root is built on, such as `C:\Nuvia` above, is created along with the root as its parent, before the lock-down.) A folder inside the root
 therefore inherits the locked-down permissions from the moment it exists, which a folder created earlier would not. The cache and temp folders hold
 code that runs as administrator, so keep them inside the root, as the shipped config does. A folder anywhere else is created exactly as written and
 ShellCLI does nothing to protect it. Folders are only created: ShellCLI does not test that they can be written to, so a folder you cannot write to
 fails the first time it is used.
 
-Use full paths. A folder can refer to the root and to any folder listed above it by name between percent signs: `%rootDirectory%`, `%logDirectory%`.
-The root is always handled first, wherever it is in the file. The shipped `config.json` puts everything inside the root, so changing only the root
-moves everything. Other environment variables such as `%ProgramData%` work too. In JSON, write backslashes doubled (`D:\\ShellCLI`) or use forward
+Use full paths. A folder can refer to any other folder by name between percent signs: `%rootDirectory%`, `%logDirectory%`, `%nuviaDirectory%`. They
+may be listed in any order, the root included, so the root can itself be built from another folder (`"rootDirectory": "%baseDirectory%\\Tools\\ShellCLI"`).
+ShellCLI works each one out after the folders it refers to. A folder that refers to itself, or folders that refer to each other in a circle, are
+errors. The shipped `config.json` puts everything inside the root, so changing only the root moves everything. Other environment variables such as
+`%ProgramData%` work too. In JSON, write backslashes doubled (`D:\\ShellCLI`) or use forward
 slashes (`D:/ShellCLI`). These are refused, and ShellCLI stops: square brackets in a folder name, a drive that does not exist, a folder that cannot be
 created, and drive roots. The root is also refused if it is inside a Windows, Program Files or Users folder, or is one of them or one of their
 parents, and network shares are refused for the root.
@@ -173,9 +176,12 @@ The `commands` section lists every command, one per line:
 
 Typing `add user` downloads `main/user.ps1` from the repo, loads it and runs its `addUser` function. To add a command, put its function in a file in
 the repo and add a line for it. A module file must define at least one function, and a command can only run a function (not a cmdlet or a program).
-There are no built-in commands: `help`, `?`, `menu`, `commands` and `logs` are entries like any other, and `help` is what runs when ShellCLI starts.
-Names are not case sensitive, must be unique, are at most 60 plain characters, and cannot be `keys`, `values`, `count` or `item`. `directory` and
+There are no built-in commands: `help`, `?`, `menu`, `commands` and `logs` are entries like any other. Names are not case sensitive, must be unique, are at most 60 plain characters, and cannot be `keys`, `values`, `count` or `item`. `directory` and
 `file` may only contain letters, digits, `-` and `_` (up to 64 characters), and `function` must be a plain function name.
+
+`starterCommand` is the command ShellCLI runs when it starts, before the first prompt, for example `"starterCommand": "help"`. It is required and must
+name one of the commands in the `commands` section (in any case), otherwise ShellCLI refuses to start. Set it to `menu`, or to any other command, to
+start somewhere else.
 
 Any entry that breaks these rules stops ShellCLI from starting, and so does invalid JSON (a trailing comment or comma), two names that differ only in
 upper and lower case, or a command named `psobject`. Because one bad push stops every endpoint, run `.\test-config.ps1` before every push. It loads

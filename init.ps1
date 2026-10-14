@@ -70,8 +70,8 @@ function initializeShellCLI {
         . ([scriptblock]::Create($framework + "`n" + $core))
 
         # The framework just reset the module cache. core is already defined,
-        # so seed the cache with it and the first core command (help) does not
-        # download it a second time.
+        # so seed the cache with it and the first core command (help, usually)
+        # does not download it a second time.
         $global:moduleCache = @{ 'main/core' = $core }
 
         # Throws, listing every problem, if config.json is not usable.

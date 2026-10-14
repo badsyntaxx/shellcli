@@ -39,8 +39,13 @@ function startShell {
         StackOverflowException.
     #>
     param (
-        [Parameter(Mandatory = $false)][string]$firstCommand = "help"
+        # What to run first. Left out, it is the starterCommand of config.json;
+        # an empty string starts at the prompt without running anything.
+        [Parameter(Mandatory = $false)][string]$firstCommand
     )
+
+    if (-not $global:shellcliConfig) { throw "ShellCLI's config.json has not been loaded." }
+    if (-not $PSBoundParameters.ContainsKey('firstCommand')) { $firstCommand = $global:shellcliConfig['starterCommand'] }
 
     $pending = $firstCommand
 
@@ -374,6 +379,9 @@ function getConfiguredCommands {
             $problem = "is listed twice"
         } elseif ($item -isnot [System.Management.Automation.PSCustomObject]) {
             $problem = "must be an object with directory, file, function and description"
+        } elseif ($badField = @('directory', 'file', 'function', 'description') | Where-Object { $null -ne $item.$_ -and $item.$_ -isnot [string] } | Select-Object -First 1) {
+            # Text only: [string]@("main") would otherwise pass for "main".
+            $problem = "has a $badField that is not text"
         } else {
             $directory = [string]$item.directory
             $file = [string]$item.file
@@ -442,7 +450,7 @@ function loadShellcliConfig {
     $requiredFolders = 'rootDirectory', 'logDirectory', 'cacheDirectory', 'tempDirectory'
     $folderKeys = @($parsed.PSObject.Properties.Name | Where-Object { $_ -cmatch '\A[a-z][A-Za-z0-9]{0,40}Directory\z' })
 
-    $otherSettings = 'repository', 'branch', 'commands'
+    $otherSettings = 'repository', 'branch', 'starterCommand', 'commands'
     foreach ($name in $parsed.PSObject.Properties.Name) {
         if ($name -notin $otherSettings -and $name -cnotin $folderKeys) {
             $problems.Add("unknown setting '$name' (a folder setting is named like logDirectory: lower case first, ending in Directory)")
@@ -452,53 +460,151 @@ function loadShellcliConfig {
         if ($key -cnotin $folderKeys) { $problems.Add("$key is missing") }
     }
 
-    # The root comes first because the others may refer to it; the rest keep the
-    # order of the file, and may refer to any folder listed above them.
-    $order = @($folderKeys | Where-Object { $_ -ceq 'rootDirectory' }) + @($folderKeys | Where-Object { $_ -cne 'rootDirectory' })
-    $failed = @()
-    foreach ($key in $order) {
+    # Folders may refer to each other (%logDirectory%), in any order, and the
+    # root is no different from the rest. They are worked out dependency first:
+    # a folder is resolved only after every folder it refers to. A folder that
+    # refers to itself, or folders that refer to each other in a circle, are
+    # errors. A folder that cannot be used is reported once, not again for every
+    # folder that depends on it.
+    $texts = @{}
+    $needs = @{}
+    $failed = [System.Collections.Generic.List[string]]::new()
+    foreach ($key in $folderKeys) {
         $value = $parsed.PSObject.Properties[$key].Value
 
         if ($null -eq $value -or ($value -is [string] -and [string]::IsNullOrWhiteSpace($value))) {
             $problems.Add("$key is missing")
-            $failed += $key
+            $failed.Add($key)
             continue
         }
         if ($value -isnot [string]) {
             $problems.Add("$key must be text")
-            $failed += $key
+            $failed.Add($key)
             continue
         }
 
-        # A reference to another folder (%logDirectory%) has to point at one that
-        # was resolved above. One that failed is already reported.
-        $skip = $false
+        $texts[$key] = $value
+        $needs[$key] = @()
         foreach ($match in [regex]::Matches($value, '%([A-Za-z][A-Za-z0-9]*Directory)%')) {
-            $ref = $match.Groups[1].Value
-            if ($ref -in $failed) {
-                $skip = $true
-            } elseif ($ref -notin @($resolved.Keys)) {
-                $problems.Add("$key refers to %$ref%, which is not defined above it")
-                $skip = $true
+            $name = $match.Groups[1].Value
+            $target = @($folderKeys | Where-Object { $_ -ieq $name }) | Select-Object -First 1
+            if ($target) {
+                $needs[$key] += $target
+            } elseif ($key -notin $failed) {
+                $problems.Add("$key refers to %$name%, which is not a folder in config.json")
+                $failed.Add($key)
             }
         }
-        if ($skip) { $failed += $key; continue }
+    }
 
-        $candidate = expandConfigPath -value $value -known $resolved
-        $problem = testConfigPath -key $key -path $candidate
-        if ($problem) {
-            $problems.Add("$key '$value' $problem")
-            $failed += $key
-        } else {
-            $resolved[$key] = $candidate.TrimEnd('\')
+    $values = @{}
+    $pending = [System.Collections.Generic.List[string]]::new()
+    foreach ($key in $folderKeys) {
+        if ($texts.ContainsKey($key) -and $key -notin $failed) { $pending.Add($key) }
+    }
+
+    $progress = $true
+    while ($pending.Count -gt 0 -and $progress) {
+        $progress = $false
+        foreach ($key in @($pending)) {
+            $deps = @($needs[$key])
+
+            # Depends on a folder that cannot be used, which is already reported.
+            if (@($deps | Where-Object { $_ -in $failed }).Count -gt 0) {
+                $failed.Add($key)
+                [void]$pending.Remove($key)
+                $progress = $true
+                continue
+            }
+
+            # Still waiting for a folder it refers to.
+            if (@($deps | Where-Object { -not $values.ContainsKey($_) }).Count -gt 0) { continue }
+
+            $candidate = expandConfigPath -value $texts[$key] -known $values
+            $problem = testConfigPath -key $key -path $candidate
+            if ($problem) {
+                $problems.Add("$key '$($texts[$key])' $problem")
+                $failed.Add($key)
+            } else {
+                $values[$key] = $candidate.TrimEnd('\')
+            }
+            [void]$pending.Remove($key)
+            $progress = $true
         }
+    }
+
+    # What is left waits on itself. Take away the folders that only wait for
+    # others (nothing else refers to them) so that just the circle is named.
+    if ($pending.Count -gt 0) {
+        $circle = @($pending)
+        $changed = $true
+        while ($changed -and $circle.Count -gt 0) {
+            $changed = $false
+            foreach ($member in @($circle)) {
+                $referredTo = $false
+                foreach ($other in $circle) {
+                    if (@($needs[$other]) -contains $member) { $referredTo = $true; break }
+                }
+                if (-not $referredTo) {
+                    $circle = @($circle | Where-Object { $_ -ne $member })
+                    $changed = $true
+                }
+            }
+        }
+
+        if ($circle.Count -eq 0) {
+            $problems.Add("the folders $($pending -join ', ') could not be worked out")
+        }
+
+        # One message per circle: group the folders that are connected to each other.
+        $left = [System.Collections.Generic.List[string]]::new()
+        foreach ($member in $circle) { $left.Add($member) }
+        while ($left.Count -gt 0) {
+            $group = @($left[0])
+            $left.RemoveAt(0)
+
+            $grew = $true
+            while ($grew) {
+                $grew = $false
+                foreach ($member in @($left)) {
+                    $linked = $false
+                    foreach ($inGroup in $group) {
+                        if ((@($needs[$inGroup]) -contains $member) -or (@($needs[$member]) -contains $inGroup)) { $linked = $true; break }
+                    }
+                    if ($linked) {
+                        $group += $member
+                        [void]$left.Remove($member)
+                        $grew = $true
+                    }
+                }
+            }
+
+            $group = @($group | Sort-Object { [array]::IndexOf($folderKeys, $_) })
+            if ($group.Count -eq 1) {
+                $problems.Add("$($group[0]) refers to itself")
+            } else {
+                $problems.Add("$($group -join ', ') refer to each other in a circle, so none of them can be worked out")
+            }
+        }
+    }
+
+    # Creation order, which is not the order they were resolved in: the root
+    # first (init.ps1 locks it down before anything else exists), then the
+    # others as they are listed.
+    $creationOrder = @($folderKeys | Where-Object { $_ -ceq 'rootDirectory' }) + @($folderKeys | Where-Object { $_ -cne 'rootDirectory' })
+    foreach ($key in $creationOrder) {
+        if ($values.ContainsKey($key)) { $resolved[$key] = $values[$key] }
     }
 
     # Repository: where the modules are downloaded from
     $property = $parsed.PSObject.Properties['repository']
-    $repository = if ($property) { $property.Value } else { $null }
+    # (Assigned directly: the result of an if expression would turn a one-element
+    # JSON array into its single element, and ["x"] would pass for "x".)
+    $repository = $null
+    if ($property) { $repository = $property.Value }
     $property = $parsed.PSObject.Properties['branch']
-    $branch = if ($property) { $property.Value } else { $null }
+    $branch = $null
+    if ($property) { $branch = $property.Value }
 
     if ($null -eq $repository -or ($repository -is [string] -and [string]::IsNullOrWhiteSpace($repository))) {
         $problems.Add("repository is missing")
@@ -526,6 +632,26 @@ function loadShellcliConfig {
         $problems.Add("commands is empty")
     } else {
         $commands = getConfiguredCommands -section $property.Value -problems $problems
+    }
+
+    # The starter command: what runs when ShellCLI starts. It must be one of the commands.
+    $property = $parsed.PSObject.Properties['starterCommand']
+    $starter = $null
+    if ($property) { $starter = $property.Value }
+
+    if ($null -eq $starter -or ($starter -is [string] -and [string]::IsNullOrWhiteSpace($starter))) {
+        $problems.Add("starterCommand is missing")
+    } elseif ($starter -isnot [string]) {
+        $problems.Add("starterCommand must be text")
+    } else {
+        $starterName = normalizeCommandName -text $starter
+        if ($commands -and -not $commands.Contains($starterName)) {
+            $shown = $starterName -replace '[^\x20-\x7e]', '?'
+            if ($shown.Length -gt 40) { $shown = $shown.Substring(0, 40) + '...' }
+            $problems.Add("starterCommand '$shown' is not one of the commands in config.json")
+        } else {
+            $resolved['starterCommand'] = $starterName
+        }
     }
 
     if ($problems.Count -gt 0) {
