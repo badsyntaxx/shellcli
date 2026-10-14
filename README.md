@@ -106,20 +106,20 @@ Every setting below must be present. There is nothing to leave out.
 
 ### Repository
 
-- `repository` is the link to the GitHub repository, for example `https://github.com/badsyntaxx/shellcli`. Command modules are downloaded from it.
-  Any other https address works too, as long as the files are served at `<address>/main/user.ps1` and so on. Plain http is refused.
+- `repository` is the link to the GitHub repository, for example `https://github.com/badsyntaxx/shellcli`. Command modules are downloaded from it. Any
+  other https address works too, as long as the files are served at `<address>/main/user.ps1` and so on. Plain http is refused.
 - `branch` is the branch, tag or commit to download modules from. It is required for a GitHub link, and not allowed for any other address (put the
   branch in that address instead).
 
-One address cannot come from `config.json`: the one `config.json` itself is downloaded from. It is the line `$global:shellcliBootstrapBase` at the top of
-`init.ps1`, for example `https://raw.githubusercontent.com/owner/repo/main` (no trailing slash). ShellCLI downloads `init.ps1`, `framework.ps1`,
+One address cannot come from `config.json`: the one `config.json` itself is downloaded from. It is the line `$global:shellcliBootstrapBase` at the top
+of `init.ps1`, for example `https://raw.githubusercontent.com/owner/repo/main` (no trailing slash). ShellCLI downloads `init.ps1`, `framework.ps1`,
 `main/core.ps1` and `config.json` from there, and the command modules only from the `repository` in `config.json`. A tag in `branch` therefore pins
 the modules but not the framework; to pin everything, put the same tag in the bootstrap line.
 
-`repository` and the bootstrap line must name the same repository (the branch may differ). If they do not, ShellCLI refuses to start, before it
-writes anything to disk, so a fork that changes only one of the two cannot run another repository's modules as administrator. `.\test-config.ps1`
-makes the same comparison, so you hear about it before you push. The bootstrap address must be https too, because everything downloaded from it runs
-as administrator; ShellCLI refuses to start otherwise.
+`repository` and the bootstrap line must name the same repository (the branch may differ). If they do not, ShellCLI refuses to start, before it writes
+anything to disk, so a fork that changes only one of the two cannot run another repository's modules as administrator. `.\test-config.ps1` makes the
+same comparison, so you hear about it before you push. The bootstrap address must be https too, because everything downloaded from it runs as
+administrator; ShellCLI refuses to start otherwise.
 
 To fork ShellCLI, change these:
 
@@ -137,24 +137,33 @@ Keep the folder layout (`main`, `plugins`, `framework.ps1`, `init.ps1`, `config.
   folder that holds anything else.
 - `logDirectory` is where the daily log files are written. The logs record the commands that were run, so keep them somewhere administrators control.
 - `cacheDirectory` is where downloaded command modules are kept, for when a later download fails. A cached module is run as administrator.
-- `downloadDirectory` is where downloads go when no folder is given: `get apps` and its installers, `download` when the folder is left blank, and
-  anything that calls `getDownload` without a target. Treat it as scratch space: installers are downloaded into a temporary folder inside it and
-  deleted again, and WinDirStat and BGInfo are unpacked into folders of their own.
+- `tempDirectory` is where downloads go when no folder is given: `get apps` and its installers, `download` when the folder is left blank, and anything
+  that calls `getDownload` without a target. Treat it as scratch space: installers are downloaded into a temporary folder inside it and deleted again,
+  and WinDirStat and BGInfo are unpacked into folders of their own.
 
-ShellCLI creates the root first and locks it down, and only then creates the other three. A folder inside the root therefore inherits the locked-down
-permissions from the moment it exists, which a folder created earlier would not. The cache and download folders hold code that runs as administrator,
-so keep them inside the root, as the shipped config does. A folder anywhere else is created exactly as written and ShellCLI does nothing to protect
-it. Folders are only created: ShellCLI does not test that they can be written to, so a folder you cannot write to fails the first time it is used.
+**Adding a folder.** Any setting named like `logDirectory` (starts with a lower case letter, ends in `Directory`) is a folder. Add as many as you like,
+for example `"backupDirectory": "%rootDirectory%\\Backups"`. ShellCLI checks the path, creates the folder at startup and makes it available to code
+as `getConfigPath -name backup` (the setting name without `Directory`). No other file needs to change. The four above are the ones ShellCLI itself
+uses, so they must be present. `.\test-config.ps1` also checks that every `getConfigPath -name ...` in the code has a setting in `config.json`, so a
+folder that is renamed or removed while something still asks for it is caught before you push. Asking for a folder that is not in the config is an
+error that says which setting to add.
 
-Use full paths. `%rootDirectory%` stands for the root folder, so the shipped `config.json` puts the other three inside it and changing only the
-root moves everything. Other environment variables such as `%ProgramData%` work too. In JSON, write backslashes doubled (`D:\\ShellCLI`) or use
-forward slashes (`D:/ShellCLI`). These are refused, and ShellCLI stops: square brackets in a folder name, a drive that does not exist, a folder that
-cannot be created, and drive roots. The root is also refused if it is inside a Windows, Program Files or Users folder, or is one of
-them or one of their parents, and network shares are refused for the root.
+ShellCLI creates the root first and locks it down, and only then creates the others, in the order they are listed. A folder inside the root
+therefore inherits the locked-down permissions from the moment it exists, which a folder created earlier would not. The cache and temp folders hold
+code that runs as administrator, so keep them inside the root, as the shipped config does. A folder anywhere else is created exactly as written and
+ShellCLI does nothing to protect it. Folders are only created: ShellCLI does not test that they can be written to, so a folder you cannot write to
+fails the first time it is used.
 
-Installers from `get apps` are run from the download folder with administrator rights. Files from older versions stay where they were, in
-`ProgramData\shellcli`; the shipped config now keeps the cache in `Cache`, the logs in `Logs` and downloads in `Temp` inside it, so older files in the
-top of that folder are no longer used.
+Use full paths. A folder can refer to the root and to any folder listed above it by name between percent signs: `%rootDirectory%`, `%logDirectory%`.
+The root is always handled first, wherever it is in the file. The shipped `config.json` puts everything inside the root, so changing only the root
+moves everything. Other environment variables such as `%ProgramData%` work too. In JSON, write backslashes doubled (`D:\\ShellCLI`) or use forward
+slashes (`D:/ShellCLI`). These are refused, and ShellCLI stops: square brackets in a folder name, a drive that does not exist, a folder that cannot be
+created, and drive roots. The root is also refused if it is inside a Windows, Program Files or Users folder, or is one of them or one of their
+parents, and network shares are refused for the root.
+
+Installers from `get apps` are run from the temp folder with administrator rights. Files from older versions stay where they were, in
+`ProgramData\shellcli`; the shipped config keeps the cache in `Cache`, the logs in `Logs` and downloads in `Temp` inside the root, so older files in
+the top of that folder are no longer used.
 
 ### Commands
 
@@ -163,21 +172,22 @@ The `commands` section lists every command, one per line:
     "add user": { "directory": "main", "file": "user", "function": "addUser", "description": "Add a new user." }
 
 Typing `add user` downloads `main/user.ps1` from the repo, loads it and runs its `addUser` function. To add a command, put its function in a file in
-the repo and add a line for it. A module file must define at least one function, and a command can only run a function (not a cmdlet or a
-program). There are no built-in commands: `help`, `?`, `menu`, `commands` and `logs` are entries like any other, and `help` is what runs when
-ShellCLI starts. Names are not case sensitive, must be unique, are at most 60 plain characters, and cannot be `keys`, `values`, `count` or `item`.
-`directory` and `file` may only contain letters, digits, `-` and `_` (up to 64 characters), and `function` must be a plain function name.
+the repo and add a line for it. A module file must define at least one function, and a command can only run a function (not a cmdlet or a program).
+There are no built-in commands: `help`, `?`, `menu`, `commands` and `logs` are entries like any other, and `help` is what runs when ShellCLI starts.
+Names are not case sensitive, must be unique, are at most 60 plain characters, and cannot be `keys`, `values`, `count` or `item`. `directory` and
+`file` may only contain letters, digits, `-` and `_` (up to 64 characters), and `function` must be a plain function name.
 
 Any entry that breaks these rules stops ShellCLI from starting, and so does invalid JSON (a trailing comment or comma), two names that differ only in
 upper and lower case, or a command named `psobject`. Because one bad push stops every endpoint, run `.\test-config.ps1` before every push. It loads
-`config.json` the way ShellCLI does, reports every problem ShellCLI would stop for, and checks that every command's function exists in its module file.
+`config.json` the way ShellCLI does, reports every problem ShellCLI would stop for, and checks that every command's function exists in its module
+file.
 
 `dev.ps1` reads the local `config.json`, so changes to the folders, the repository or the commands can be tried before they are pushed.
 
 When the framework, `init.ps1` and `config.json` change together, push `config.json` first, then `init.ps1`, then `framework.ps1`. Each file is
-downloaded on its own, so for a few minutes after a push old and new versions meet. In that order they still work together. In any other order a
-new `framework.ps1` can meet an old `init.ps1` (which calls a function the new one no longer has) or an old `config.json` (one without `repository`
-and `branch`), and ShellCLI refuses to start.
+downloaded on its own, so for a few minutes after a push old and new versions meet. In that order they still work together. In any other order a new
+`framework.ps1` can meet an old `init.ps1` (which calls a function the new one no longer has) or an old `config.json` (one without `repository` and
+`branch`), and ShellCLI refuses to start.
 
 ## Bypass anti-virus
 

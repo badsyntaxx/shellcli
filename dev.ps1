@@ -25,8 +25,8 @@ function initializeShellCLI {
         # Throws, listing every problem, if config.json is not usable.
         loadShellcliConfig -json ([System.IO.File]::ReadAllText($configPath))
 
-        # Same folder checks as init.ps1 (without locking the root down).
-        foreach ($key in 'rootDirectory', 'logDirectory', 'downloadDirectory', 'cacheDirectory') {
+        # Create every folder in config.json, as init.ps1 does (without locking the root down).
+        foreach ($key in @(getConfigDirectoryKeys)) {
             ensureConfigFolder -key $key
         }
 

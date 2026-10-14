@@ -91,6 +91,27 @@ if ($loaded) {
     }
 }
 
+# Every folder the code asks for (getConfigPath -name temp) must be in config.json
+# (tempDirectory). This catches a folder that was renamed or removed in config.json
+# while something still asks for the old name.
+if ($loaded) {
+    $folderKeys = @(getConfigDirectoryKeys)
+    $scriptFiles = @(Get-ChildItem -Path $root -Recurse -Filter '*.ps1' -File | Where-Object { $_.FullName -notmatch '\\\.git\\' -and $_.Name -ne 'test-config.ps1' })
+    foreach ($scriptFile in $scriptFiles) {
+        $lineNumber = 0
+        foreach ($line in [System.IO.File]::ReadAllLines($scriptFile.FullName)) {
+            $lineNumber++
+            foreach ($match in [regex]::Matches($line, 'getConfigPath\s+-name\s+([A-Za-z][A-Za-z0-9]*)')) {
+                $key = "$($match.Groups[1].Value)Directory"
+                if ($key -cnotin $folderKeys) {
+                    $relativePath = $scriptFile.FullName.Substring($root.Length).TrimStart('\')
+                    $problems.Add("${relativePath}:$lineNumber asks for the folder '$($match.Groups[1].Value)', but config.json has no $key setting.")
+                }
+            }
+        }
+    }
+}
+
 Write-Host
 if ($problems.Count -eq 0) {
     Write-Host "config.json is fine: $($global:commandMap.Count) commands, modules from $(getModuleBase), the same repository as init.ps1." -ForegroundColor Green

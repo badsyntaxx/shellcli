@@ -3,7 +3,7 @@
     "branch": "main",
     "rootDirectory": "%ProgramData%\\ShellCLI",
     "logDirectory": "%rootDirectory%\\Logs",
-    "downloadDirectory": "%rootDirectory%\\Temp",
+    "tempDirectory": "%rootDirectory%\\Temp",
     "cacheDirectory": "%rootDirectory%\\Cache",
     "commands": {
         "?": { "directory": "main", "file": "core", "function": "writeHelp", "description": "List some help info." },

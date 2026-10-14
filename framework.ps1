@@ -224,20 +224,29 @@ function tryInvokePassthrough {
 }
 function expandConfigPath {
     <#
-        Turns a configured folder into a plain path: %rootDirectory% (any
-        case) becomes $root, environment variables are expanded, and forward
-        slashes are accepted so nobody has to double every backslash in JSON.
+        Turns a configured folder into a plain path. A name between percent
+        signs that is one of the folders in $known (a dictionary of setting
+        name -> path, such as rootDirectory or logDirectory) becomes that
+        folder's path, in any case. Environment variables are expanded, and
+        forward slashes are accepted so nobody has to double every backslash
+        in JSON.
     #>
     param (
         [Parameter(Mandatory = $false)][string]$value,
-        [Parameter(Mandatory = $false)][string]$root
+        [Parameter(Mandatory = $false)]$known
     )
 
-    $token = '%rootDirectory%'
-    $at = $value.IndexOf($token, [System.StringComparison]::OrdinalIgnoreCase)
-    while ($root -and $at -ge 0) {
-        $value = $value.Substring(0, $at) + $root + $value.Substring($at + $token.Length)
-        $at = $value.IndexOf($token, $at + $root.Length, [System.StringComparison]::OrdinalIgnoreCase)
+    if ($known) {
+        foreach ($key in @($known.Keys)) {
+            $token = "%$key%"
+            $folder = [string]$known[$key]
+
+            $at = $value.IndexOf($token, [System.StringComparison]::OrdinalIgnoreCase)
+            while ($folder -and $at -ge 0) {
+                $value = $value.Substring(0, $at) + $folder + $value.Substring($at + $token.Length)
+                $at = $value.IndexOf($token, $at + $folder.Length, [System.StringComparison]::OrdinalIgnoreCase)
+            }
+        }
     }
 
     return [Environment]::ExpandEnvironmentVariables($value.Trim()).Replace('/', '\')
@@ -425,32 +434,63 @@ function loadShellcliConfig {
     $problems = [System.Collections.Generic.List[string]]::new()
     $resolved = [ordered]@{}
 
-    $known = 'repository', 'branch', 'rootDirectory', 'logDirectory', 'downloadDirectory', 'cacheDirectory', 'commands'
+    # Every setting named <something>Directory is a folder, and any number of
+    # them can be added to config.json without touching the code: each one is
+    # checked, created at startup (see init.ps1) and available as
+    # getConfigPath -name <something>. The ones below are what ShellCLI itself
+    # uses, so they have to be there.
+    $requiredFolders = 'rootDirectory', 'logDirectory', 'cacheDirectory', 'tempDirectory'
+    $folderKeys = @($parsed.PSObject.Properties.Name | Where-Object { $_ -cmatch '\A[a-z][A-Za-z0-9]{0,40}Directory\z' })
+
+    $otherSettings = 'repository', 'branch', 'commands'
     foreach ($name in $parsed.PSObject.Properties.Name) {
-        if ($name -notin $known) { $problems.Add("unknown setting '$name'") }
+        if ($name -notin $otherSettings -and $name -cnotin $folderKeys) {
+            $problems.Add("unknown setting '$name' (a folder setting is named like logDirectory: lower case first, ending in Directory)")
+        }
+    }
+    foreach ($key in $requiredFolders) {
+        if ($key -cnotin $folderKeys) { $problems.Add("$key is missing") }
     }
 
-    # Folders. The root comes first because the others may refer to it.
-    $root = $null
-    foreach ($key in 'rootDirectory', 'logDirectory', 'downloadDirectory', 'cacheDirectory') {
-        $property = $parsed.PSObject.Properties[$key]
-        $value = if ($property) { $property.Value } else { $null }
+    # The root comes first because the others may refer to it; the rest keep the
+    # order of the file, and may refer to any folder listed above them.
+    $order = @($folderKeys | Where-Object { $_ -ceq 'rootDirectory' }) + @($folderKeys | Where-Object { $_ -cne 'rootDirectory' })
+    $failed = @()
+    foreach ($key in $order) {
+        $value = $parsed.PSObject.Properties[$key].Value
 
         if ($null -eq $value -or ($value -is [string] -and [string]::IsNullOrWhiteSpace($value))) {
             $problems.Add("$key is missing")
-        } elseif ($value -isnot [string]) {
+            $failed += $key
+            continue
+        }
+        if ($value -isnot [string]) {
             $problems.Add("$key must be text")
-        } elseif ($key -ne 'rootDirectory' -and -not $root -and $value -match '(?i)%rootDirectory%') {
-            # Refers to a root folder that is itself unusable, which is already reported.
-        } else {
-            $candidate = expandConfigPath -value $value -root $root
-            $problem = testConfigPath -key $key -path $candidate
-            if ($problem) {
-                $problems.Add("$key '$value' $problem")
-            } else {
-                $resolved[$key] = $candidate.TrimEnd('\')
-                if ($key -eq 'rootDirectory') { $root = $resolved[$key] }
+            $failed += $key
+            continue
+        }
+
+        # A reference to another folder (%logDirectory%) has to point at one that
+        # was resolved above. One that failed is already reported.
+        $skip = $false
+        foreach ($match in [regex]::Matches($value, '%([A-Za-z][A-Za-z0-9]*Directory)%')) {
+            $ref = $match.Groups[1].Value
+            if ($ref -in $failed) {
+                $skip = $true
+            } elseif ($ref -notin @($resolved.Keys)) {
+                $problems.Add("$key refers to %$ref%, which is not defined above it")
+                $skip = $true
             }
+        }
+        if ($skip) { $failed += $key; continue }
+
+        $candidate = expandConfigPath -value $value -known $resolved
+        $problem = testConfigPath -key $key -path $candidate
+        if ($problem) {
+            $problems.Add("$key '$value' $problem")
+            $failed += $key
+        } else {
+            $resolved[$key] = $candidate.TrimEnd('\')
         }
     }
 
@@ -499,17 +539,33 @@ function loadShellcliConfig {
 }
 function getConfigPath {
     <#
-        Returns one of the configured folders as a full path:
-        root, log, cache or download. Throws when config.json has not been
-        loaded: there is no default.
+        Returns a configured folder as a full path, by the first part of its
+        setting name: -name log is logDirectory in config.json, -name temp is
+        tempDirectory, -name backup would be backupDirectory. Any folder listed
+        in config.json works. Throws when config.json has not been loaded, or
+        has no such folder: there is no default.
     #>
     param (
-        [Parameter(Mandatory)][ValidateSet('root', 'log', 'cache', 'download')][string]$name
+        [Parameter(Mandatory)][ValidatePattern('\A[a-z][A-Za-z0-9]*\z')][string]$name
     )
 
     if (-not $global:shellcliConfig) { throw "ShellCLI's config.json has not been loaded." }
 
-    return $global:shellcliConfig["${name}Directory"]
+    $key = "${name}Directory"
+    if (-not $global:shellcliConfig.Contains($key)) {
+        throw "config.json has no $key setting. Add one, for example ""$key"": ""%rootDirectory%\\$name""."
+    }
+
+    return $global:shellcliConfig[$key]
+}
+function getConfigDirectoryKeys {
+    <#
+        The setting names of all the folders in config.json, in the order they
+        have to be created: the root first, then the others as they are listed.
+    #>
+    if (-not $global:shellcliConfig) { throw "ShellCLI's config.json has not been loaded." }
+
+    return @($global:shellcliConfig.Keys | Where-Object { $_ -like '*Directory' })
 }
 function ensureConfigFolder {
     <#
@@ -518,10 +574,11 @@ function ensureConfigFolder {
         permissions. Throws, naming the setting, if it cannot be created.
     #>
     param (
-        [Parameter(Mandatory)][ValidateSet('rootDirectory', 'logDirectory', 'downloadDirectory', 'cacheDirectory')][string]$key
+        [Parameter(Mandatory)][ValidatePattern('\A[a-z][A-Za-z0-9]*Directory\z')][string]$key
     )
 
     if (-not $global:shellcliConfig) { throw "ShellCLI's config.json has not been loaded." }
+    if (-not $global:shellcliConfig.Contains($key)) { throw "config.json has no $key setting." }
 
     $path = $global:shellcliConfig[$key]
     try {
@@ -1399,7 +1456,7 @@ function getDownload {
         [string]$url,
         # A full file path, or a folder (existing, or ending in '\' or '/') to keep the
         # remote filename. Omit to save into the configured download folder
-        # (downloadDirectory in config.json) with the remote filename.
+        # (tempDirectory in config.json) with the remote filename.
         [parameter(Mandatory = $false)]
         [string]$target = "",
         # Return the saved file's full path on success instead of $true
@@ -1481,7 +1538,7 @@ function getDownload {
     }
     Process {
         # No target given: the configured download folder, remote filename kept
-        if ($target -eq "") { $target = "$(getConfigPath -name download)\" }
+        if ($target -eq "") { $target = "$(getConfigPath -name temp)\" }
 
         # $null = ... keeps helper output from polluting the function's return value
         $null = log -msg "Downloading file from $url to $target"
@@ -1723,11 +1780,11 @@ function installApp {
         [parameter(Mandatory = $true)][string]$appName,
         [parameter(Mandatory = $false)][string]$fileName,
         [parameter(Mandatory = $false)][string]$params = "",
-        # Where the installer is downloaded; defaults to downloadDirectory in config.json
+        # Where the installer is downloaded; defaults to tempDirectory in config.json
         [parameter(Mandatory = $false)][string]$outputPath = ""
     )
 
-    if ([string]::IsNullOrWhiteSpace($outputPath)) { $outputPath = getConfigPath -name download }
+    if ([string]::IsNullOrWhiteSpace($outputPath)) { $outputPath = getConfigPath -name temp }
 
     # Every run downloads into a folder of its own and deletes only that folder
     # afterwards. The installer's name comes from the server, so downloading
@@ -2070,7 +2127,7 @@ function installWingetForAllUsers {
         }
 
         # Scratch space -------------------------------------------------
-        $work = Join-Path (getConfigPath -name download) "wingetProvision"
+        $work = Join-Path (getConfigPath -name temp) "wingetProvision"
         if (Test-Path $work) { Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue }
         New-Item -ItemType Directory -Path $work -Force | Out-Null
 

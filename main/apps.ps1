@@ -134,7 +134,7 @@ function getWinDirStat {
         # Define paths
         # Its own subfolder: the extract step below deletes x64/x86/Arm64 folders
         # from this directory, which must never be a shared folder.
-        $tempDir = Join-Path -Path (getConfigPath -name download) -ChildPath "WinDirStat"
+        $tempDir = Join-Path -Path (getConfigPath -name temp) -ChildPath "WinDirStat"
         $zipPath = Join-Path -Path $tempDir -ChildPath "WinDirStat.zip"  # FULL path with filename
         $exePath = Join-Path -Path $tempDir -ChildPath "WinDirStat.exe"
 
@@ -185,7 +185,7 @@ function getWinDirStat {
 function getBGInfo {
     # Its own subfolder: everything in it is deleted again, and the download
     # folder may be shared.
-    $workDir = Join-Path -Path (getConfigPath -name download) -ChildPath "BGInfo-work"
+    $workDir = Join-Path -Path (getConfigPath -name temp) -ChildPath "BGInfo-work"
 
     try {
         $url = "https://drive.google.com/uc?export=download&id=1gBFuz6WqrgPvIqYjrcRCYZeC_x9XsUbC"
