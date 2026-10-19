@@ -198,9 +198,23 @@ function editUserPassword {
         if ($user["Source"] -eq "Local") { 
             $password = readInput -prompt "Password:" -isSecure:$true -allowBlank:$true
 
-            Get-LocalUser -Name $user["Name"] | Set-LocalUser -Password $password -PasswordNeverExpires $true
+            # Set-LocalUser reports failures as non-terminating errors, so without
+            # -ErrorAction Stop the catch below never runs and "changed" is printed anyway.
+            try {
+                Get-LocalUser -Name $user["Name"] -ErrorAction Stop | Set-LocalUser -Password $password -PasswordNeverExpires $true -ErrorAction Stop
+            } catch {
+                if ($_.Exception.GetType().Name -ne 'InvalidPasswordException') { throw }
 
-            if ($password.Length -eq 0) { 
+                # Windows gives no reason with this exception, so say what the policy asks for.
+                writeText -type "error" -text "Windows rejected the password for $($user['Name']). It does not meet this computer's password policy."
+                foreach ($requirement in (getPasswordPolicyRequirements)) {
+                    writeText -type "plain" -text "  - $requirement"
+                }
+                $password = $null
+                return
+            }
+
+            if ($password.Length -eq 0) {
                 $message = "Password for user $($user['Name']) was removed." 
             } else { 
                 $message = "Password for user $($user['Name']) changed." 
@@ -215,6 +229,41 @@ function editUserPassword {
     } catch {
         writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     }
+}
+function getPasswordPolicyRequirements {
+    <#
+        Returns the local password rules as sentences. The exception for a
+        rejected password carries no reason, so the policy is read from the
+        security database (secedit) to tell the user what to change.
+    #>
+    $file = Join-Path (getConfigPath -name temp) "secpol-$([guid]::NewGuid().ToString('N')).inf"
+    $policy = @{}
+
+    try {
+        & secedit.exe /export /cfg $file /areas SECURITYPOLICY | Out-Null
+        foreach ($line in (Get-Content -LiteralPath $file -ErrorAction Stop)) {
+            if ($line -match '^\s*(MinimumPasswordLength|PasswordComplexity|PasswordHistorySize)\s*=\s*(\d+)\s*$') {
+                $policy[$Matches[1]] = [int]$Matches[2]
+            }
+        }
+    } catch {
+        log -msg "Could not read the password policy: $($_.Exception.Message)" -lvl "WARNING"
+    } finally {
+        Remove-Item -LiteralPath $file -Force -ErrorAction SilentlyContinue
+    }
+
+    $requirements = @()
+    if ($policy['MinimumPasswordLength'] -gt 0) { $requirements += "At least $($policy['MinimumPasswordLength']) characters long." }
+    if ($policy['PasswordComplexity'] -eq 1) { $requirements += "Must meet complexity rules: 3 of upper case, lower case, digits and symbols, and no part of the user name." }
+    if ($policy['PasswordHistorySize'] -gt 0) { $requirements += "Cannot repeat any of the last $($policy['PasswordHistorySize']) passwords." }
+
+    if ($policy.Count -eq 0) {
+        $requirements += "The policy could not be read. Check minimum length, complexity and password history in Local Security Policy."
+    } elseif ($requirements.Count -eq 0) {
+        $requirements += "The policy has no length, complexity or history rule, so a blank password may be blocked by another setting (try a longer one)."
+    }
+
+    return $requirements
 }
 function editUserGroup {
     param (
