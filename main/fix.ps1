@@ -220,7 +220,6 @@ function repairNetwork {
             }) -prompt "Select a repair tool."
 
         switch ($choice) {
-            
             1 { & "C:\Windows\System32\cmd.exe" /c netsh winsock reset }  
             2 { & "C:\Windows\System32\cmd.exe" /c netsh int ip reset } 
             3 { & "C:\Windows\System32\cmd.exe" /c "ipconfig /release && ipconfig /renew" } 
@@ -233,7 +232,7 @@ function repairNetwork {
             }
         }
 
-        repairWindows
+        return
     } catch {
         writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     }

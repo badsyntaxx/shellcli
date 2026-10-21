@@ -36,7 +36,7 @@ Add a new local user to the system.\
 `add local user`
 
 Edit the network adapters on target PC.\
-`edit net adapter`
+`edit network`
 
 ## Commands
 
@@ -54,7 +54,7 @@ Add a new local user to the target system. Skips prompt to choose local or domai
 `add local user`
 
 Add a new domain user to the target system. Skips prompt to choose local or domain.\
-`add domain user`
+`add ad user`
 
 ### REMOVE USER ACCOUNTS
 
@@ -83,12 +83,12 @@ Edit the hostname and description of the target computer.\
 ### EDIT NETWORK ADAPTERS
 
 Edit network adapter settings on the target computer.\
-`edit net adapter`
+`edit network`
 
 ### GET WIFI CREDENTIALS
 
 View WiFi SSID and passwords for the currently enabled NIC's.\
-`get wifi creds`
+`wifi`
 
 ### REPAIR WINDOWS
 

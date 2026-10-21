@@ -1488,9 +1488,10 @@ function selectUser {
         # Define a list of accounts to exclude from selection
         $excludedAccounts = @("DefaultAccount", "WDAGUtilityAccount", "Guest", "defaultuser0")
 
-        # Check if the "Administrator" account is disabled and add it to excluded list if so
-        $adminEnabled = Get-LocalUser -Name "Administrator" | Select-Object -ExpandProperty Enabled
-        if (!$adminEnabled) { $excludedAccounts += "Administrator" }
+        # Exclude the built-in Administrator account while it is disabled. It is the account
+        # whose SID ends in -500, found that way because it may have been renamed.
+        $builtInAdmin = $localUsers | Where-Object { $_.SID.Value -match '-500$' } | Select-Object -First 1
+        if ($builtInAdmin -and -not $builtInAdmin.Enabled) { $excludedAccounts += $builtInAdmin.Name }
 
         # Filter local users to exclude predefined accounts
         foreach ($user in $localUsers) {

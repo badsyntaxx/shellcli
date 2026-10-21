@@ -11,23 +11,24 @@ function readMenu {
                 "Update windows"       = "(BETA) Install Windows updates silently."
                 "Clear temp files"     = "Removes Windows temporary and cache files."
                 "Get software"         = "Get a list of installed software that can be installed."
-                "Schedule task "       = "(ALPHA) Schedule a new task."
+                "Schedule task"        = "(ALPHA) Schedule a new task."
                 "Cancel"               = "Select nothing and exit this menu."
             }) -prompt "Select a function." -returnKey -lineAfter
 
-        if ($choice -eq "Cancel") {
-            readCommand
+        # Cancel, or a menu that returned nothing, ends here.
+        if (-not $choice -or $choice -eq "Cancel") {
+            return
         }
-        
+
         switch ($choice) {
             "User menu" { $choice = "user menu" }
             "Edit hostname" { $choice = "edit hostname" }
-            "Edit net adapter" { $choice = "edit net adapter" }
+            "Edit net adapter" { $choice = "edit network" }
             "Get wifi credentials" { $choice = "wifi" }
             "Toggle context menu" { $choice = "toggle context menu" }
             "Repair windows" { $choice = "repair windows" }
             "Update windows" { $choice = "update windows" }
-            "Clear temp files" { $choice = "clear temp files" }
+            "Clear temp files" { $choice = "clean temp files" }
             "Get software" { $choice = "get apps" }
             "Schedule task" { $choice = "schedule task" }
         }
