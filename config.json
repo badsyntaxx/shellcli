@@ -12,9 +12,24 @@
         "menu": { "directory": "main", "file": "core", "function": "readMenu", "description": "Display the main menu." },
         "commands": { "directory": "main", "file": "core", "function": "listAllCommands", "description": "List all available commands." },
         "logs": { "directory": "main", "file": "core", "function": "readLog", "description": "Output the last 50 lines of the log file." },
-        "toggle admin": { "directory": "main", "file": "user", "function": "toggleAdmin", "description": "Toggle the built-in Administrator account." },
-        "enable admin": { "directory": "main", "file": "user", "function": "enableAdmin", "description": "Enable the built-in Administrator account." },
-        "disable admin": { "directory": "main", "file": "user", "function": "disableAdmin", "description": "Disable the built-in Administrator account." },
+        "toggle admin": {
+            "directory": "main",
+            "file": "user",
+            "function": "toggleAdmin",
+            "description": "Toggle the built-in Administrator account."
+        },
+        "enable admin": {
+            "directory": "main",
+            "file": "user",
+            "function": "enableAdmin",
+            "description": "Enable the built-in Administrator account."
+        },
+        "disable admin": {
+            "directory": "main",
+            "file": "user",
+            "function": "disableAdmin",
+            "description": "Disable the built-in Administrator account."
+        },
         "users": { "directory": "main", "file": "user", "function": "listUsers", "description": "List all users." },
         "user menu": { "directory": "main", "file": "user", "function": "userMenu", "description": "Display the user menu." },
         "add user": { "directory": "main", "file": "user", "function": "addUser", "description": "Add a new user." },
@@ -61,7 +76,7 @@
         "edit description": { "directory": "main", "file": "common", "function": "editDescription", "description": "Edit the host description." },
         "techmode 1": { "directory": "main", "file": "common", "function": "techMode", "description": "Enable tech mode." },
         "techmode 0": { "directory": "main", "file": "common", "function": "userMode", "description": "Enable user mode." },
-        "fix icons": { "directory": "main", "file": "fix", "function": "fixIcons", "description": "Fix desktop icons." },
+        "fix icons": { "directory": "main", "file": "diag", "function": "fixIcons", "description": "Fix desktop icons." },
         "disable hibernate file": {
             "directory": "main",
             "file": "common",
@@ -72,6 +87,7 @@
         "stop service": { "directory": "main", "file": "services", "function": "stopService", "description": "Stop a service." },
         "start service": { "directory": "main", "file": "services", "function": "startService", "description": "Start a service." },
         "restart service": { "directory": "main", "file": "services", "function": "restartService", "description": "Restart a service." },
+        "delete service": { "directory": "main", "file": "services", "function": "deleteService", "description": "Delete a service." },
         "service status": {
             "directory": "main",
             "file": "services",
@@ -80,7 +96,7 @@
         },
         "service menu": { "directory": "main", "file": "services", "function": "serviceMenu", "description": "Display the service controller menu." },
         "schedule task": { "directory": "main", "file": "tasks", "function": "scheduleTask", "description": "Schedule a task.(BETA)" },
-        "update windows": { "directory": "main", "file": "fix", "function": "updateWindows", "description": "Update Windows." },
+        "update windows": { "directory": "main", "file": "diag", "function": "updateWindows", "description": "Update Windows." },
         "generate encrypted password": {
             "directory": "main",
             "file": "common",
@@ -92,8 +108,8 @@
         "storage": { "directory": "main", "file": "common", "function": "getStorage", "description": "Display storage information." },
         "download": { "directory": "main", "file": "common", "function": "download", "description": "Download stuff." },
         "share gpu": { "directory": "main", "file": "gpu", "function": "shareGPUWithVM", "description": "Share GPU with VM." },
-        "clean temp files": { "directory": "main", "file": "fix", "function": "cleanTempFiles", "description": "Clear temporary files." },
-        "repair windows": { "directory": "main", "file": "fix", "function": "repairWindows", "description": "Repair Windows." },
+        "clean temp files": { "directory": "main", "file": "diag", "function": "cleanTempFiles", "description": "Clear temporary files." },
+        "diag": { "directory": "main", "file": "diag", "function": "repairWindows", "description": "Repair Windows." },
         "plugins": { "directory": "plugins", "file": "core", "function": "plugins", "description": "List available plugins." },
         "plugins menu": { "directory": "plugins", "file": "core", "function": "readMenu", "description": "Display the plugin menu." },
         "plugins help": { "directory": "plugins", "file": "core", "function": "writeHelp", "description": "Display help information for plugins." },
