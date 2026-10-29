@@ -44,6 +44,7 @@
         "network": { "directory": "main", "file": "network", "function": "network", "description": "Get net adapter info." },
         "edit network": { "directory": "main", "file": "network", "function": "editNetAdapter", "description": "Edit the network adapter. ()ETA" },
         "wifi": { "directory": "main", "file": "network", "function": "getWifiCreds", "description": "Get WiFi credentials." },
+        "connect wifi": { "directory": "main", "file": "network", "function": "connectWifi", "description": "Connect to a WiFi network." },
         "get apps": { "directory": "main", "file": "apps", "function": "getApps", "description": "Display a menu of available apps." },
         "get browser apps": { "directory": "main", "file": "apps", "function": "getBrowserApps", "description": "Display a menu of web browsers." },
         "get diagnostic apps": {

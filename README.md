@@ -90,6 +90,13 @@ Edit network adapter settings on the target computer.\
 View WiFi SSID and passwords for the currently enabled NIC's.\
 `wifi`
 
+### CONNECT TO WIFI
+
+Connect the target computer to a Wi-Fi network. It asks for the network name (SSID) and the password, saves the network and connects. It tries WPA2 and
+then WPA3. Leave the password blank for an open network. It asks before it replaces a saved network or disconnects you from the current one, and it
+will not replace a saved network that signs in with a work account (802.1X).\
+`connect wifi`
+
 ### REPAIR WINDOWS
 
 Run common Windows repair commands like system file checks and cleanup & restore.\
