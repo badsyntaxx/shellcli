@@ -401,29 +401,61 @@ function getWifiCreds {
     }
 }
 function getWifiAdapters {
-    <# The physical Wi-Fi (802.11) adapters, enabled or not. #>
-    return @(Get-NetAdapter -Physical -ErrorAction SilentlyContinue | Where-Object { "$($_.PhysicalMediaType)" -match '802\.11' })
+    <# The physical Wi-Fi adapters, enabled or not: interface type 71 (IEEE 802.11), or a media type that says so. #>
+    try {
+        $adapters = @(Get-NetAdapter -Physical -ErrorAction Stop)
+    } catch {
+        # Do not turn "could not ask" into "there is no Wi-Fi adapter".
+        throw "Could not list the network adapters: $($_.Exception.Message)"
+    }
+
+    return @($adapters | Where-Object { $_.InterfaceType -eq 71 -or "$($_.PhysicalMediaType)" -match '802\.11|Wireless LAN' })
 }
 function invokeNetshWlan {
     <#
         Runs "netsh wlan ..." directly (not through cmd.exe, so no shell characters in a
         name can do anything). The password is never an argument: it goes in a file.
+        Returns ExitCode, Output and LocationBlocked (Windows 11 24H2 refuses to show Wi-Fi
+        details to command-line tools unless Location services are on).
     #>
     param (
         [Parameter(Mandatory = $true)]
         [string[]]$arguments
     )
 
-    $output = & netsh.exe wlan @arguments 2>&1
-    $exitCode = $LASTEXITCODE
+    # netsh writes in the console's output encoding. Use UTF-8 so a network name with accents
+    # or other non-ASCII characters comes back as it was typed, not through an OEM code page.
+    $previous = $null
+    try {
+        $previous = [Console]::OutputEncoding
+        [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false
+    } catch {
+        $previous = $null
+    }
 
-    return [pscustomobject]@{ ExitCode = $exitCode; Output = (($output | ForEach-Object { "$_" }) -join "`n") }
+    try {
+        $output = & netsh.exe wlan @arguments 2>&1
+        $exitCode = $LASTEXITCODE
+    } finally {
+        if ($null -ne $previous) {
+            try { [Console]::OutputEncoding = $previous } catch { }
+        }
+    }
+
+    $text = (($output | ForEach-Object { "$_" }) -join "`n")
+
+    return [pscustomobject]@{
+        ExitCode        = $exitCode
+        Output          = $text
+        LocationBlocked = ($text -match '(?i)location (permission|services)')
+    }
 }
 function getWifiInterfaceSsid {
     <#
-        The network this adapter is connected to, or $null. Read from "netsh wlan show
-        interfaces" by matching the adapter's GUID and the SSID line: those two labels
-        are not translated on other display languages (State, Name and so on are).
+        What "netsh wlan show interfaces" says about this adapter: Readable (netsh answered and
+        listed the adapter) and Ssid (the network it is connected to, or $null). Matched on the
+        adapter's GUID and the SSID line, labels that are not translated on other display
+        languages (State, Name and so on are).
     #>
     param (
         [Parameter(Mandatory = $true)]
@@ -432,22 +464,29 @@ function getWifiInterfaceSsid {
 
     $result = invokeNetshWlan -arguments @("show", "interfaces")
     $guid = "$($adapter.InterfaceGuid)".Trim("{", "}")
-    $current = $null
+    $listed = $false
+    $ssid = $null
 
-    foreach ($line in ($result.Output -split "`r?`n")) {
-        if ($line -match '^\s*GUID\s*:\s*\{?([0-9a-fA-F-]{36})\}?\s*$') {
-            $current = $Matches[1]
-            continue
-        }
-        if ($current -and $current -ieq $guid -and $line -match '^\s*SSID\s*:\s?(.*)$') {
-            return $Matches[1]
+    if ($result.ExitCode -eq 0) {
+        $current = $null
+
+        foreach ($line in ($result.Output -split "`r?`n")) {
+            if ($line -match '^\s*GUID\s*:\s*\{?([0-9a-fA-F-]{36})\}?\s*$') {
+                $current = $Matches[1]
+                if ($current -ieq $guid) { $listed = $true }
+                continue
+            }
+            if ($current -and $current -ieq $guid -and $line -match '^\s*SSID\s*:\s?(.*)$') {
+                if ($Matches[1].Length -gt 0) { $ssid = $Matches[1] }
+                break
+            }
         }
     }
 
-    return $null
+    return [pscustomobject]@{ Readable = $listed; Ssid = $ssid; Blocked = [bool]$result.LocationBlocked }
 }
 function getVisibleWifiNetworks {
-    <# Names of the networks this adapter can see ("SSID 1 : name" lines). #>
+    <# The networks this adapter can see ("SSID 1 : name" lines): Readable (netsh answered) and Names. #>
     param (
         [Parameter(Mandatory = $true)]
         [string]$interfaceName
@@ -456,32 +495,121 @@ function getVisibleWifiNetworks {
     $result = invokeNetshWlan -arguments @("show", "networks", "interface=$interfaceName")
     $names = @()
 
-    foreach ($line in ($result.Output -split "`r?`n")) {
-        if ($line -match '^\s*SSID\s+\d+\s*:\s?(.*)$') { $names += $Matches[1] }
+    if ($result.ExitCode -eq 0) {
+        foreach ($line in ($result.Output -split "`r?`n")) {
+            if ($line -match '^\s*SSID\s+\d+\s*:\s?(.*)$') { $names += $Matches[1] }
+        }
     }
 
-    return $names
+    return [pscustomobject]@{ Readable = ($result.ExitCode -eq 0); Names = $names }
+}
+function getWifiConnection {
+    <#
+        The network this adapter is on, as Known / Ssid / Source. netsh answers first. If
+        Windows will not let it (no Location services), the name of the adapter's Windows
+        network profile is used instead. That name is only a hint: it is the SSID, with a
+        number added when the name was already taken, but it is the domain name on a domain
+        network, "Unidentified network" on one without an address, and it can appear late.
+        Known is false when neither can say.
+    #>
+    param (
+        [Parameter(Mandatory = $true)]
+        $adapter
+    )
+
+    $netsh = getWifiInterfaceSsid -adapter $adapter
+    if ($netsh.Readable) {
+        return [pscustomobject]@{ Known = $true; Ssid = $netsh.Ssid; Source = "netsh"; Blocked = $false }
+    }
+
+    $profile = Get-NetConnectionProfile -InterfaceIndex $adapter.InterfaceIndex -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($profile) {
+        return [pscustomobject]@{ Known = $true; Ssid = "$($profile.Name)"; Source = "windows"; Blocked = $netsh.Blocked }
+    }
+
+    # No network profile: not connected, or still being set up. (Status can be a combination
+    # such as "Disconnected + LowPower", so it is matched on its start.)
+    $status = "$((Get-NetAdapter -InterfaceIndex $adapter.InterfaceIndex -ErrorAction SilentlyContinue).Status)"
+    if ($status -match '^(Disconnected|Not Present)') {
+        return [pscustomobject]@{ Known = $true; Ssid = $null; Source = "windows"; Blocked = $netsh.Blocked }
+    }
+
+    return [pscustomobject]@{ Known = $false; Ssid = $null; Source = "none"; Blocked = $netsh.Blocked }
+}
+function testWifiConnectionIs {
+    <#
+        Is the connection reported by getWifiConnection to this exact network? Windows names
+        its network profile after the SSID and adds a number when the name is taken, so for a
+        name that came from Windows (not netsh) "Home 2" also counts as "Home", unless
+        -exactOnly is given: that is for a yes that must not be a guess.
+    #>
+    param (
+        [Parameter(Mandatory = $true)]
+        $connection,
+        [Parameter(Mandatory = $true)]
+        [string]$ssid,
+        [Parameter(Mandatory = $false)]
+        [switch]$exactOnly
+    )
+
+    if (-not $connection.Known -or $null -eq $connection.Ssid) { return $false }
+    if ($connection.Ssid -ceq $ssid) { return $true }
+
+    if (-not $exactOnly -and $connection.Source -eq "windows" -and $connection.Ssid -cmatch ('^' + [regex]::Escape($ssid) + ' \d+$')) { return $true }
+
+    return $false
+}
+function getWifiHiddenCharacters {
+    <#
+        A regular expression class for characters that cannot be shown safely: control characters
+        (they move the cursor), and bidirectional, zero-width and line-separator characters (they
+        can make text read differently from what it is). Built from character codes so that this
+        file stays plain ASCII, which Windows PowerShell 5.1 needs.
+    #>
+    return "[\x00-\x1F\x7F-\x9F$([char]0x200B)-$([char]0x200F)$([char]0x2028)-$([char]0x202E)$([char]0x2066)-$([char]0x2069)]"
+}
+function getWifiInvalidXmlCharacters {
+    <# A regular expression for characters that cannot be written in an XML profile: U+FFFE, U+FFFF and a surrogate on its own. #>
+    $high = "$([char]0xD800)-$([char]0xDBFF)"
+    $low = "$([char]0xDC00)-$([char]0xDFFF)"
+
+    return "[$([char]0xFFFE)$([char]0xFFFF)]|[$high](?![$low])|(?<![$high])[$low]"
+}
+function showWifiName {
+    <#
+        A network name that came from Windows, safe to print: control characters would move the
+        cursor, and bidirectional and line-separator characters can make text read differently
+        from what it is.
+    #>
+    param (
+        [Parameter(Mandatory = $false)]
+        [string]$name
+    )
+
+    return ($name -replace (getWifiHiddenCharacters), '?')
 }
 function getWifiProfileSecurity {
     <#
         $null if no saved profile has this name. Otherwise how it signs in: Authentication
         (open, WPA2PSK, WPA3SAE, WPA2 for enterprise ...) and UseOneX. Read from an export
-        made without the key, in a private folder that is removed again.
+        made without the key, in a private folder that is removed again. Throws if that folder
+        cannot be made (a different problem from not being able to read the profile).
     #>
     param (
         [Parameter(Mandatory = $true)]
-        [string]$name
+        [string]$name,
+        [Parameter(Mandatory = $true)]
+        [string]$interfaceName
     )
 
-    $found = invokeNetshWlan -arguments @("show", "profile", "name=$name")
+    $found = invokeNetshWlan -arguments @("show", "profile", "name=$name", "interface=$interfaceName")
     if ($found.ExitCode -ne 0) { return $null }
 
-    $folder = Join-Path (getConfigPath -name temp) "wifi-$([guid]::NewGuid().ToString('N'))"
     $unknown = [pscustomobject]@{ Authentication = "Unknown"; UseOneX = $true }
+    $folder = newPrivateWifiFolder -parent (getConfigPath -name temp)
 
     try {
-        [void][System.IO.Directory]::CreateDirectory($folder)
-        $export = invokeNetshWlan -arguments @("export", "profile", "name=$name", "folder=$folder")
+        $export = invokeNetshWlan -arguments @("export", "profile", "name=$name", "folder=$folder", "interface=$interfaceName")
         $file = @(Get-ChildItem -LiteralPath $folder -Filter "*.xml" -ErrorAction SilentlyContinue | Select-Object -First 1)
         if ($export.ExitCode -ne 0 -or $file.Count -eq 0) { return $unknown }
 
@@ -509,10 +637,16 @@ function testWifiSsid {
 
     if ($ssid.Trim().Length -eq 0) { return "The network name cannot be blank." }
     if ([System.Text.Encoding]::UTF8.GetByteCount($ssid) -gt 32) { return "A network name can be at most 32 bytes long." }
-    if ($ssid -match '[\x00-\x1F\x7F]') { return "The network name contains a control character." }
+    if ($ssid -match (getWifiHiddenCharacters)) { return "The network name contains a control or invisible formatting character." }
+    # Characters that cannot be written in the XML profile (a lone surrogate, U+FFFE, U+FFFF).
+    if ($ssid -match (getWifiInvalidXmlCharacters)) { return "The network name contains a character that cannot be used in a Wi-Fi profile." }
     # These would change what netsh is asked to do.
     if ($ssid.Contains('"')) { return "ShellCLI cannot connect to a network whose name contains a double quote." }
-    if ($ssid.EndsWith("\")) { return "ShellCLI cannot connect to a network whose name ends with a backslash." }
+    # PowerShell 5.1 puts quotes around an argument that has a space in it, and a backslash just
+    # before the closing quote then swallows it and runs the arguments together.
+    if ($ssid.EndsWith("\", [System.StringComparison]::Ordinal) -and $ssid -match '\s') { return "ShellCLI cannot connect to a network whose name has a space in it and ends with a backslash." }
+    # netsh treats * as "every profile" in a profile name.
+    if ($ssid.Contains("*") -or $ssid.Contains("?")) { return "ShellCLI cannot connect to a network whose name contains * or ?." }
 
     return $null
 }
@@ -524,13 +658,13 @@ function testWifiPassword {
         [string]$password
     )
 
-    if ($password -match '[\x00-\x1F\x7F]') { return "The password contains a control character." }
+    # A raw key is exactly 64 hexadecimal digits. (-cmatch: a case-insensitive match lets
+    # characters such as the Kelvin sign through as if they were plain letters.)
+    if ($password -cmatch '^[0-9a-fA-F]{64}$') { return $null }
 
-    # A passphrase is 8 to 63 characters; a raw key is exactly 64 hexadecimal digits.
-    $bytes = [System.Text.Encoding]::UTF8.GetByteCount($password)
-    if (($bytes -lt 8 -or $bytes -gt 63) -and $password -notmatch '^[0-9a-fA-F]{64}$') {
-        return "A Wi-Fi password is 8 to 63 characters (or exactly 64 hexadecimal digits)."
-    }
+    # A passphrase is 8 to 63 plain keyboard characters.
+    if ($password -cmatch '[^\x20-\x7E]') { return "A Wi-Fi password can only use plain keyboard characters (letters, digits, symbols and spaces). Accented and other non-English characters are not accepted." }
+    if ($password.Length -lt 8 -or $password.Length -gt 63) { return "A Wi-Fi password is 8 to 63 characters (or exactly 64 hexadecimal digits)." }
 
     return $null
 }
@@ -559,7 +693,7 @@ function newWifiProfileXml {
         $security = "<authEncryption><authentication>open</authentication><encryption>none</encryption><useOneX>false</useOneX></authEncryption>"
     } else {
         $keyType = "passPhrase"
-        if ($password -match '^[0-9a-fA-F]{64}$') { $keyType = "networkKey" }
+        if ($password -cmatch '^[0-9a-fA-F]{64}$') { $keyType = "networkKey" }
         $key = [System.Security.SecurityElement]::Escape($password)
         $security = "<authEncryption><authentication>$authentication</authentication><encryption>AES</encryption><useOneX>false</useOneX></authEncryption>" +
         "<sharedKey><keyType>$keyType</keyType><protected>false</protected><keyMaterial>$key</keyMaterial></sharedKey>"
@@ -574,7 +708,12 @@ function newWifiProfileXml {
     "</WLANProfile>"
 }
 function waitForWifiConnection {
-    <# True once the adapter is up and connected to exactly this network. #>
+    <#
+        $true once the adapter is up and on exactly this network. $false only on a definite no:
+        netsh could be read at the end and the adapter is not on this network, or the adapter
+        is not joined to anything. $null when it cannot be told: all Windows has is a network
+        name, and a name that does not match proves nothing (see getWifiConnection).
+    #>
     param (
         [Parameter(Mandatory = $true)]
         $adapter,
@@ -584,20 +723,28 @@ function waitForWifiConnection {
         [int]$seconds = 15
     )
 
+    $connection = $null
+
     for ($i = 0; $i -lt $seconds; $i++) {
         Start-Sleep -Seconds 1
 
-        $current = getWifiInterfaceSsid -adapter $adapter
-        if ($null -ne $current -and $current -ceq $ssid) {
-            $status = "$((Get-NetAdapter -Name $adapter.Name -ErrorAction SilentlyContinue).Status)"
-            if ($status -eq "Up") { return $true }
+        $connection = getWifiConnection -adapter $adapter
+
+        if (testWifiConnectionIs -connection $connection -ssid $ssid) {
+            $status = "$((Get-NetAdapter -InterfaceIndex $adapter.InterfaceIndex -ErrorAction SilentlyContinue).Status)"
+            if ($status -match '^Up') { return $true }
         }
     }
 
-    return $false
+    if ($null -ne $connection -and $connection.Known -and ($connection.Source -eq "netsh" -or $null -eq $connection.Ssid)) { return $false }
+
+    return $null
 }
 function waitForWifiAddress {
-    <# The adapter's IPv4 address once DHCP has given one, or $null. #>
+    <#
+        The adapter's IPv4 address once it has one. On a network that only gives IPv6, the
+        global IPv6 address after the whole wait. $null if there is neither.
+    #>
     param (
         [Parameter(Mandatory = $true)]
         $adapter,
@@ -605,15 +752,23 @@ function waitForWifiAddress {
         [int]$seconds = 10
     )
 
+    $v6 = $null
+
     for ($i = 0; $i -lt $seconds; $i++) {
-        $address = Get-NetIPAddress -InterfaceIndex $adapter.InterfaceIndex -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+        $v4 = Get-NetIPAddress -InterfaceIndex $adapter.InterfaceIndex -AddressFamily IPv4 -ErrorAction SilentlyContinue |
             Where-Object { $_.IPAddress -notlike "169.254.*" } | Select-Object -First 1
-        if ($address) { return $address.IPAddress }
+        if ($v4) { return $v4.IPAddress }
+
+        if (-not $v6) {
+            $found = Get-NetIPAddress -InterfaceIndex $adapter.InterfaceIndex -AddressFamily IPv6 -ErrorAction SilentlyContinue |
+                Where-Object { $_.IPAddress -notlike "fe80*" -and $_.IPAddress -ne "::1" } | Select-Object -First 1
+            if ($found) { $v6 = $found.IPAddress }
+        }
 
         Start-Sleep -Seconds 1
     }
 
-    return $null
+    return $v6
 }
 function hideWifiPassword {
     <# Text that is about to be shown, with the password blanked out if netsh echoed it. #>
@@ -629,11 +784,16 @@ function hideWifiPassword {
     return $text.Replace($password, "********")
 }
 function removeWifiProfileFile {
-    <# The profile file holds the password in clear text: overwrite it, then delete it. #>
+    <#
+        The profile file holds the password in clear text: overwrite it, then delete it.
+        Returns $true if the file is gone.
+    #>
     param (
         [Parameter(Mandatory = $true)]
         [string]$path
     )
+
+    if (-not (Test-Path -LiteralPath $path)) { return $true }
 
     try {
         $length = (Get-Item -LiteralPath $path -ErrorAction Stop).Length
@@ -641,12 +801,129 @@ function removeWifiProfileFile {
     } catch { }
 
     Remove-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue
+
+    return (-not (Test-Path -LiteralPath $path))
+}
+function newPrivateWifiFolder {
+    <#
+        A new, empty folder that only SYSTEM and Administrators can use, for the profile file
+        that holds the password. It is created with that access list already on it (not made
+        and locked down afterwards, which leaves a gap), and it does not depend on where it is:
+        the ShellCLI folders are only protected when ShellCLI was started in the usual way.
+        Throws if it cannot be made that way.
+    #>
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$parent,
+        [Parameter(Mandatory = $false)]
+        [string[]]$allowedSids = @("S-1-5-18", "S-1-5-32-544")
+    )
+
+    $folder = Join-Path $parent "wifi-$([guid]::NewGuid().ToString('N'))"
+
+    try {
+        $security = New-Object System.Security.AccessControl.DirectorySecurity
+        $security.SetAccessRuleProtection($true, $false)
+
+        foreach ($sid in $allowedSids) {
+            $account = New-Object System.Security.Principal.SecurityIdentifier($sid)
+            $security.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule($account, "FullControl", "ContainerInherit, ObjectInherit", "None", "Allow")))
+        }
+
+        [void][System.IO.Directory]::CreateDirectory($folder, $security)
+    } catch {
+        Remove-Item -LiteralPath $folder -Recurse -Force -ErrorAction SilentlyContinue
+        throw "Could not make a private folder for the Wi-Fi profile ($($_.Exception.Message)), so nothing was written."
+    }
+
+    return $folder
+}
+function clearStaleWifiFolders {
+    <#
+        A run that was killed (window closed, power lost) can leave its private folder behind,
+        and the profile file with the password in it. Wipe any that earlier runs left. Only
+        the folder's own files are touched, and a link that has taken the place of a folder
+        is removed as a link, never followed.
+    #>
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$parent,
+        [Parameter(Mandatory = $false)]
+        [int]$minutes = 10
+    )
+
+    $limit = (Get-Date).AddMinutes(-$minutes)
+
+    foreach ($stale in @(Get-ChildItem -LiteralPath $parent -Directory -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -match '^wifi-[0-9a-f]{32}$' -and $_.LastWriteTime -lt $limit })) {
+        $isLink = (($stale.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0)
+
+        if (-not $isLink) {
+            foreach ($file in @(Get-ChildItem -LiteralPath $stale.FullName -File -Force -ErrorAction SilentlyContinue)) {
+                if (($file.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -eq 0) { [void](removeWifiProfileFile -path $file.FullName) }
+            }
+        }
+
+        try { [System.IO.Directory]::Delete($stale.FullName, (-not $isLink)) } catch { }
+    }
+}
+function testLocalFolder {
+    <# True if the folder is on a disk in this computer: not a network share or a mapped network drive. #>
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$path
+    )
+
+    if ($path.StartsWith("\\")) { return $false }
+
+    try {
+        $root = [System.IO.Path]::GetPathRoot([System.IO.Path]::GetFullPath($path))
+        if ($root -and (New-Object System.IO.DriveInfo($root)).DriveType -eq [System.IO.DriveType]::Network) { return $false }
+    } catch { }
+
+    return $true
+}
+function restoreWifiConnection {
+    <#
+        After a failed switch, go back to the network the computer was on, if its saved profile
+        is still there. $true / $false / $null as for waitForWifiConnection.
+    #>
+    param (
+        [Parameter(Mandatory = $true)]
+        $adapter,
+        [Parameter(Mandatory = $true)]
+        [string]$ssid
+    )
+
+    $saved = invokeNetshWlan -arguments @("show", "profile", "name=$ssid", "interface=$($adapter.Name)")
+    if ($saved.ExitCode -ne 0) { return $false }
+
+    $request = invokeNetshWlan -arguments @("connect", "name=$ssid", "ssid=$ssid", "interface=$($adapter.Name)")
+    if ($request.ExitCode -ne 0) { return $false }
+
+    return (waitForWifiConnection -adapter $adapter -ssid $ssid -seconds 10)
 }
 function connectWifi {
     $password = $null
     $secure = $null
+    $folder = $null
+    $adapter = $null
+    $ssid = $null
+    $existing = $null
+    $previous = $null
+    $createdProfile = $false
+    $profileWritten = $false
+    $connectRequested = $false
+    $connected = $false
+    $unconfirmed = $false
+    $afterNotes = @()
+
+    $hiddenHint = "Windows would not report Wi-Fi details to ShellCLI (on Windows 11 that usually means Location services are off: Settings > Privacy & security > Location)."
 
     try {
+        # An earlier run that was killed may have left a profile file with a password in it.
+        $tempRoot = getConfigPath -name temp
+        clearStaleWifiFolders -parent $tempRoot
+
         # --- The adapter ---
 
         $adapters = @(getWifiAdapters)
@@ -677,12 +954,16 @@ function connectWifi {
             if (-not $adapter) { return }
         }
 
-        if ("$($adapter.Status)" -eq "Disabled") {
+        if ("$($adapter.Status)" -match '^Disabled') {
             writeText -type "error" -text "The Wi-Fi adapter ($($adapter.Name)) is disabled. Enable it with 'edit network' first."
             return
         }
 
-        $currentSsid = getWifiInterfaceSsid -adapter $adapter
+        # The profile file holds the password in clear text: never over the network.
+        if (-not (testLocalFolder -path $tempRoot)) {
+            writeText -type "error" -text "ShellCLI's temp folder ($tempRoot) is on a network location, and the Wi-Fi password would be written over the network. Point tempDirectory in config.json at a local folder."
+            return
+        }
 
         # --- What to connect to ---
 
@@ -697,9 +978,26 @@ function connectWifi {
             return
         }
 
-        if ($null -ne $currentSsid -and $currentSsid -ceq $ssid) {
-            writeText -type "notice" -text "This computer is already connected to '$ssid' on $($adapter.Name)."
-            return
+        # A saved network that cannot be replaced is refused before the password is asked for.
+        $existing = getWifiProfileSecurity -name $ssid -interfaceName $adapter.Name
+        if ($null -ne $existing) {
+            $kind = $existing.Authentication
+            $blocked = $true
+
+            if ($kind -eq "Unknown") {
+                writeText -type "error" -text "A saved profile named '$ssid' exists, but ShellCLI could not read how it signs in, so it will not replace it."
+            } elseif ($existing.UseOneX -or @("WPA", "WPA2", "WPA3ENT", "WPA3ENT192") -contains $kind) {
+                writeText -type "error" -text "A saved profile named '$ssid' signs in with a work or school account or a certificate (802.1X), not with a password. ShellCLI will not replace it."
+            } elseif (@("open", "WPAPSK", "WPA2PSK", "WPA3SAE") -notcontains $kind) {
+                writeText -type "error" -text "A saved profile named '$ssid' uses '$kind' security, which ShellCLI does not set up, so it will not replace it."
+            } else {
+                $blocked = $false
+            }
+
+            if ($blocked) {
+                writeText -type "plain" -text "Forget it first (Settings > Network & internet > Wi-Fi > Manage known networks), then run this again."
+                return
+            }
         }
 
         $secure = readInput -prompt "Password (leave blank for an open network):" -isSecure -allowBlank
@@ -717,21 +1015,38 @@ function connectWifi {
             }
         }
 
+        # --- What the computer is doing now (looked at after the typing, which takes a while) ---
+
+        $connection = getWifiConnection -adapter $adapter
+
+        if (testWifiConnectionIs -connection $connection -ssid $ssid -exactOnly) {
+            writeText -type "notice" -text "This computer is already connected to '$ssid' on $($adapter.Name)."
+            return
+        }
+
+        # Is the network in range? A typo in the name shows up here. A network that is not
+        # broadcasting its name needs the profile to say so, and a profile that says so also
+        # works for one that is visible, so when the scan cannot say, assume hidden.
+        $scan = getVisibleWifiNetworks -interfaceName $adapter.Name
+        $listed = @($scan.Names | Where-Object { $_ })
+        $scanKnown = ($scan.Readable -and $listed.Count -gt 0)
+        $hidden = $true
+        if ($scanKnown) { $hidden = ($listed -cnotcontains $ssid) }
+
         # --- Things the user should agree to ---
 
         $warnings = @()
 
-        $existing = getWifiProfileSecurity -name $ssid
-        if ($null -ne $existing) {
-            if ($existing.UseOneX -or @("open", "WPAPSK", "WPA2PSK", "WPA3SAE") -notcontains $existing.Authentication) {
-                writeText -type "error" -text "A saved profile named '$ssid' signs in with $($existing.Authentication), not with a password. ShellCLI will not replace it."
-                writeText -type "plain" -text "Remove it yourself first if you really want to: netsh wlan delete profile name=""$ssid"""
-                return
-            }
-            $warnings += "The saved profile for '$ssid' will be replaced."
+        if ($scanKnown -and $hidden) {
+            $warnings += "'$ssid' was not found in range. Check the name; it will be tried as a hidden network."
         }
-        if ($null -ne $currentSsid -and $currentSsid -ne "") {
-            $warnings += "This computer is connected to '$currentSsid' on $($adapter.Name). Connecting to '$ssid' disconnects it."
+        if ($null -ne $existing) {
+            $warnings += "The saved profile for '$ssid' will be replaced. If the connection fails, the old settings are not restored."
+        }
+        if (-not $connection.Known) {
+            $warnings += "ShellCLI cannot tell which network this computer is on, so it cannot say whether connecting disconnects it. $hiddenHint"
+        } elseif ($connection.Ssid) {
+            $warnings += "This computer is connected to '$(showWifiName $connection.Ssid)' on $($adapter.Name). Connecting to '$ssid' disconnects it."
         }
         if ($open) {
             $warnings += "No password was entered, so '$ssid' is joined as an open network: anyone nearby can read what is sent over it."
@@ -745,19 +1060,27 @@ function connectWifi {
                     "Continue" = "Connect to '$ssid'."
                 }) -prompt "Do you want to continue?" -returnKey
             if ($answer -ne "Continue") { return }
+
+            # The answer can take a while too.
+            $connection = getWifiConnection -adapter $adapter
+            if (testWifiConnectionIs -connection $connection -ssid $ssid -exactOnly) {
+                writeText -type "notice" -text "This computer is already connected to '$ssid' on $($adapter.Name)."
+                return
+            }
         }
+
+        if (-not $scan.Readable) {
+            writeText -type "plain" -text "Windows would not list the networks in range, so '$ssid' is tried as a hidden network."
+        }
+
+        # What the computer is on right now: where to go back to if this fails.
+        $previous = $connection
 
         # --- Connect: WPA2 first, then WPA3 ---
 
-        $visible = @(getVisibleWifiNetworks -interfaceName $adapter.Name)
-        $hidden = ($visible -cnotcontains $ssid)
-        if ($hidden) {
-            writeText -type "plain" -text "'$ssid' was not found in range, so it is tried as a hidden network."
-        }
-
         if ($open) {
             $attempts = @("open")
-        } elseif ($password -match '^[0-9a-fA-F]{64}$') {
+        } elseif ($password -cmatch '^[0-9a-fA-F]{64}$') {
             $attempts = @("WPA2PSK")
         } else {
             $attempts = @("WPA2PSK", "WPA3SAE")
@@ -766,14 +1089,12 @@ function connectWifi {
 
         log -msg "Connecting to Wi-Fi network '$ssid' on $($adapter.Name)."
 
-        $connected = $false
         $usedAuthentication = $null
-        $failure = $null
+        $failures = @()
 
-        # The profile file holds the password in clear text, so it lives only in this
-        # administrator-only folder, only for as long as netsh needs it.
-        $folder = Join-Path (getConfigPath -name temp) "wifi-$([guid]::NewGuid().ToString('N'))"
-        [void][System.IO.Directory]::CreateDirectory($folder)
+        # The profile file holds the password in clear text, so it lives only in this private
+        # folder, only for as long as netsh needs it.
+        $folder = newPrivateWifiFolder -parent $tempRoot
 
         try {
             foreach ($authentication in $attempts) {
@@ -787,28 +1108,87 @@ function connectWifi {
                 try {
                     $add = invokeNetshWlan -arguments @("add", "profile", "filename=$file", "interface=$($adapter.Name)")
                 } finally {
-                    removeWifiProfileFile -path $file
+                    if (-not (removeWifiProfileFile -path $file)) {
+                        writeText -type "error" -text "Could not delete the temporary profile file $file. It may contain the password: delete it yourself."
+                    }
                 }
 
                 if ($add.ExitCode -ne 0) {
-                    $failure = "Windows would not accept the profile: $(hideWifiPassword -text $add.Output -password $password)"
-                    break
+                    $failures += "$($labels[$authentication]): Windows would not accept the profile: $(hideWifiPassword -text $add.Output -password $password)"
+                    continue
                 }
 
+                $profileWritten = $true
+                if ($null -eq $existing) { $createdProfile = $true }
+
+                $connectRequested = $true
                 $request = invokeNetshWlan -arguments @("connect", "name=$ssid", "ssid=$ssid", "interface=$($adapter.Name)")
                 if ($request.ExitCode -ne 0) {
-                    $failure = "The connection request failed: $(hideWifiPassword -text $request.Output -password $password)"
-                    break
+                    $failures += "$($labels[$authentication]): the connection request failed: $(hideWifiPassword -text $request.Output -password $password)"
+                    continue
                 }
 
-                if (waitForWifiConnection -adapter $adapter -ssid $ssid) {
+                $state = waitForWifiConnection -adapter $adapter -ssid $ssid
+
+                # Slow to join is not the same as failed: while the adapter is still up, give it a
+                # little longer before a second profile is put on top of this one.
+                if ($state -eq $false -and "$((Get-NetAdapter -InterfaceIndex $adapter.InterfaceIndex -ErrorAction SilentlyContinue).Status)" -match '^Up') {
+                    $state = waitForWifiConnection -adapter $adapter -ssid $ssid -seconds 5
+                }
+
+                if ($state -eq $true) {
                     $connected = $true
                     $usedAuthentication = $authentication
                     break
                 }
+                if ($null -eq $state) {
+                    # Nothing definite can be read, so do not try again with a different profile
+                    # on top of a connection that may be coming up.
+                    $unconfirmed = $true
+                    $usedAuthentication = $authentication
+                    break
+                }
+
+                $failures += "$($labels[$authentication]): did not connect"
             }
         } finally {
             Remove-Item -LiteralPath $folder -Recurse -Force -ErrorAction SilentlyContinue
+            if (Test-Path -LiteralPath $folder) {
+                $afterNotes += @{ Type = "error"; Text = "Could not remove the temporary folder $folder. Check that it is empty, and delete it." }
+            }
+
+            # Do not leave behind a profile that does not work (also if this is interrupted),
+            # unless it replaced one that was already there.
+            if ($createdProfile -and -not $connected -and -not $unconfirmed) {
+                $deleted = invokeNetshWlan -arguments @("delete", "profile", "name=$ssid", "interface=$($adapter.Name)")
+                if ($deleted.ExitCode -ne 0) {
+                    $afterNotes += @{ Type = "error"; Text = "The profile for '$ssid' that was just created could not be removed. Forget it in Settings > Network & internet > Wi-Fi > Manage known networks." }
+                }
+            }
+
+            # If the computer was moved off its network and this did not work, put it back (also
+            # if this is interrupted), so a remote session survives.
+            if ($connectRequested -and -not $connected -and -not $unconfirmed -and $previous -and $previous.Known -and $previous.Ssid) {
+                try {
+                    $now = getWifiConnection -adapter $adapter
+                    if (-not (testWifiConnectionIs -connection $now -ssid $previous.Ssid -exactOnly)) {
+                        if (testWifiSsid -ssid $previous.Ssid) {
+                            $afterNotes += @{ Type = "notice"; Text = "This computer was on '$(showWifiName $previous.Ssid)' and has to be put back on it by hand." }
+                        } else {
+                            $back = restoreWifiConnection -adapter $adapter -ssid $previous.Ssid
+                            if ($back -eq $true) {
+                                $afterNotes += @{ Type = "plain"; Text = "Reconnected to '$(showWifiName $previous.Ssid)'." }
+                            } elseif ($null -eq $back) {
+                                $afterNotes += @{ Type = "notice"; Text = "Asked to go back to '$(showWifiName $previous.Ssid)', but ShellCLI cannot confirm it did. Check with 'network'." }
+                            } else {
+                                $afterNotes += @{ Type = "notice"; Text = "This computer was on '$(showWifiName $previous.Ssid)' and could not be put back on it automatically." }
+                            }
+                        }
+                    }
+                } catch {
+                    $afterNotes += @{ Type = "notice"; Text = "This computer was on '$(showWifiName $previous.Ssid)'. Check that it is still connected." }
+                }
+            }
         }
 
         # --- The result ---
@@ -817,29 +1197,34 @@ function connectWifi {
             $address = waitForWifiAddress -adapter $adapter
 
             if ($address) {
-                writeText -type "success" -text "Connected to '$ssid' ($($labels[$usedAuthentication])) on $($adapter.Name). IP address: $address"
+                writeText -type "success" -text "Connected to '$ssid' ($($labels[$usedAuthentication])) on $($adapter.Name). Address: $address"
             } else {
-                writeText -type "notice" -text "Connected to '$ssid' ($($labels[$usedAuthentication])) on $($adapter.Name), but no IP address has been given yet. Check again in a moment with 'network'."
+                writeText -type "notice" -text "Connected to '$ssid' ($($labels[$usedAuthentication])) on $($adapter.Name), but no address has been given yet. Check again in a moment with 'network'."
             }
+            writeText -type "plain" -text "The network is saved and will connect automatically when it is in range."
+            if ($hidden -and -not $scanKnown) {
+                writeText -type "plain" -text "Because the networks in range could not be listed, the saved profile is marked as a hidden network. It connects normally either way."
+            }
+            return
+        }
+
+        if ($unconfirmed) {
+            writeText -type "notice" -text "The connection request for '$ssid' ($($labels[$usedAuthentication])) was accepted, but ShellCLI cannot confirm it connected. $hiddenHint Check with 'network'. If it did not connect, forget the network in Settings > Network & internet > Wi-Fi > Manage known networks."
             writeText -type "plain" -text "The network is saved and will connect automatically when it is in range."
             return
         }
 
-        if ($failure) {
-            writeText -type "error" -text $failure
-        } else {
-            writeText -type "error" -text "Could not connect to '$ssid'. The most likely causes are a wrong password, the network being out of range, or the network using a security type ShellCLI does not set up (for example an enterprise sign-in)."
-        }
+        writeText -type "error" -text "Could not connect to '$ssid'. The most likely causes are a wrong password, the network being out of range, or a security type ShellCLI does not set up (for example an enterprise sign-in)."
+        foreach ($failure in $failures) { writeText -type "plain" -text "  $failure" }
 
-        # Do not leave a profile that does not work behind, unless it was one that was already there.
-        if ($null -eq $existing) {
-            [void](invokeNetshWlan -arguments @("delete", "profile", "name=$ssid", "interface=$($adapter.Name)"))
-        } else {
+        if (-not $createdProfile -and $profileWritten) {
             writeText -type "plain" -text "The saved profile for '$ssid' now has the settings you just entered."
         }
     } catch {
         writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     } finally {
+        foreach ($note in $afterNotes) { writeText -type $note.Type -text $note.Text }
+
         $password = $null
         $secure = $null
     }

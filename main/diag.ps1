@@ -36,11 +36,78 @@ function repairSystem {
             3 {
                 clearTempFiles
             }
-            4 { & Get-AppXPackage -AllUsers | Foreach { Add-AppxPackage -DisableDevelopmentMode -Register "$($_.InstallLocation)\AppXManifest.xml" } }
+            4 { reregisterWindowsApps }
             5 { & "C:\Windows\System32\cmd.exe" /c mdsched.exe }
         }
 
         repairWindows
+    } catch {
+        writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
+    }
+}
+function reregisterWindowsApps {
+    <#
+        Registers every installed Windows app again from its own manifest. Get-AppxPackage
+        also lists packages whose files are gone (the old Microsoft Edge, apps removed from
+        disk): they have no manifest to register, and asking for one is an error that would
+        otherwise end the whole run. Those are skipped, and one app that cannot be registered
+        (an app that is running, for instance) does not stop the others.
+    #>
+    try {
+        writeText -type "plain" -text "Reading the installed Windows apps..."
+
+        $packages = @(Get-AppxPackage -AllUsers -ErrorAction Stop | Sort-Object -Property PackageFullName -Unique)
+
+        $registered = 0
+        $skipped = @()
+        $failed = @()
+
+        writeText -type "plain" -text "Registering $($packages.Count) apps again. This can take a few minutes..."
+
+        # Add-AppxPackage draws its own progress bar for every app.
+        $previousProgress = $ProgressPreference
+        $ProgressPreference = "SilentlyContinue"
+
+        try {
+            foreach ($package in $packages) {
+                $manifest = $null
+                if ($package.InstallLocation) { $manifest = Join-Path $package.InstallLocation "AppXManifest.xml" }
+
+                if (-not $manifest -or -not (Test-Path -LiteralPath $manifest)) {
+                    $skipped += $package.Name
+                    continue
+                }
+
+                try {
+                    Add-AppxPackage -DisableDevelopmentMode -Register $manifest -ErrorAction Stop
+                    $registered++
+                } catch {
+                    $reason = (($_.Exception.Message -split "\r?\n") | Where-Object { $_.Trim() } | Select-Object -First 1)
+                    $failed += [pscustomobject]@{ Name = $package.Name; Reason = "$reason".Trim() }
+                    log -msg "reregisterWindowsApps:$($package.Name):$($_.Exception.Message)" -lvl "WARNING"
+                }
+            }
+        } finally {
+            $ProgressPreference = $previousProgress
+        }
+
+        if ($skipped.Count -gt 0) {
+            log -msg "reregisterWindowsApps: skipped, files not on disk: $($skipped -join ', ')" -lvl "INFO"
+            writeText -type "plain" -text "Skipped $($skipped.Count) apps whose files are no longer on this computer (such as the old Microsoft Edge): $((($skipped | Select-Object -First 10) -join ', '))$(if ($skipped.Count -gt 10) { ', ...' })"
+        }
+
+        if ($failed.Count -gt 0) {
+            writeText -type "notice" -text "Registered $registered apps again. $($failed.Count) could not be registered:"
+            foreach ($item in ($failed | Select-Object -First 15)) {
+                writeText -type "plain" -text "  $($item.Name): $($item.Reason)"
+            }
+            if ($failed.Count -gt 15) { writeText -type "plain" -text "  ... and $($failed.Count - 15) more (see the log)." }
+            writeText -type "plain" -text "An app that is running cannot be registered again; a restart and another run tries those once more."
+        } else {
+            writeText -type "success" -text "Registered $registered apps again."
+        }
+
+        writeText -type "plain" -text "A restart may be needed."
     } catch {
         writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"
     }

@@ -94,7 +94,9 @@ View WiFi SSID and passwords for the currently enabled NIC's.\
 
 Connect the target computer to a Wi-Fi network. It asks for the network name (SSID) and the password, saves the network and connects. It tries WPA2 and
 then WPA3. Leave the password blank for an open network. It asks before it replaces a saved network or disconnects you from the current one, and it
-will not replace a saved network that signs in with a work account (802.1X).\
+will not replace a saved network that signs in with a work account (802.1X) or uses a security type it does not set up. On Windows 11 24H2 and later, Windows hides Wi-Fi details from commands unless
+Location services are on (Settings > Privacy & security > Location). Without them it can still connect, but it may not be able to scan or to confirm the
+connection, and says so.\
 `connect wifi`
 
 ### REPAIR WINDOWS
