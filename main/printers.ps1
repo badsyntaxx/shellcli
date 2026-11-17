@@ -47,57 +47,34 @@ function describePrinter {
 
     return ($parts | Where-Object { $_ }) -join " | "
 }
-function selectPrinters {
+function selectPrinter {
     <#
-        Lets the user pick any number of the printers. Returns Cancelled (they backed out, or the
-        menu failed) and Printers (the ones picked). Nothing is removed here.
+        Lets the user pick one printer from the list. Returns it, or $null if they backed out
+        (or the menu failed). Nothing is removed here.
     #>
     param (
         [Parameter(Mandatory = $true)]
         $printers
     )
 
-    # Numbered, so that no printer's name can be mistaken for one of the menu's own entries.
+    # Numbered, so that no printer's name can be mistaken for the menu's own Cancel entry.
     $labels = [ordered]@{}
+    $options = [ordered]@{}
     $number = 0
     foreach ($printer in $printers) {
         $number++
-        $labels["$number. $($printer.Name)"] = $printer
+        $label = "$number. $($printer.Name)"
+        $labels[$label] = $printer
+        $options[$label] = describePrinter -printer $printer
     }
+    $options["Cancel"] = "Remove nothing and exit this function."
 
-    $selected = @()
+    $choice = readOption -options $options -prompt "Select the printer to remove:" -returnKey
 
-    while ($true) {
-        $available = [ordered]@{}
+    # Cancel, or a menu that returned nothing, picks nothing.
+    if (-not $choice -or -not $labels.Contains($choice)) { return $null }
 
-        if ($selected.Count -gt 0) {
-            $available["Done"] = "Review the $($selected.Count) printer(s) chosen."
-        } else {
-            $available["All printers"] = "Choose every printer in the list."
-        }
-        foreach ($label in $labels.Keys) {
-            if ($selected -notcontains $label) { $available[$label] = describePrinter -printer $labels[$label] }
-        }
-        $available["Cancel"] = "Remove nothing and exit this function."
-
-        if ($selected.Count -eq 0) { $prompt = "Select a printer to remove:" } else { $prompt = "Select another printer or 'Done':" }
-
-        $choice = readOption -options $available -prompt $prompt -returnKey
-
-        # A menu that returned nothing counts as a cancel, so the loop always ends.
-        if (-not $choice -or $choice -eq "Cancel") {
-            return [pscustomobject]@{ Cancelled = $true; Printers = @() }
-        }
-        if ($choice -eq "Done") { break }
-        if ($choice -eq "All printers") {
-            $selected = @($labels.Keys)
-            break
-        }
-
-        $selected += $choice
-    }
-
-    return [pscustomobject]@{ Cancelled = $false; Printers = @($selected | ForEach-Object { $labels[$_] }) }
+    return $labels[$choice]
 }
 function removePrinters {
     try {
@@ -118,93 +95,62 @@ function removePrinters {
         }
 
         writeText -type "plain" -text "Printers on this computer: $($printers.Count)"
-        $table = [ordered]@{}
-        foreach ($printer in $printers) { $table[$printer.Name] = describePrinter -printer $printer }
-        writeText -type "list" -List $table -lineAfter
+        $list = [ordered]@{}
+        foreach ($item in $printers) { $list[$item.Name] = describePrinter -printer $item }
+        writeText -type "list" -List $list -lineAfter
 
-        # --- Choose ---
+        # --- Choose one ---
 
-        $selection = selectPrinters -printers $printers
-        if ($selection.Cancelled) { return }
-
-        $chosen = @($selection.Printers)
+        $printer = selectPrinter -printers $printers
+        if ($null -eq $printer) { return }
 
         # --- Say exactly what will happen ---
 
-        writeText -type "notice" -text "This removes $($chosen.Count) printer(s) from this computer:"
-        foreach ($printer in $chosen) {
-            writeText -type "plain" -text "  $($printer.Name)"
-            if ($printer.Default) { writeText -type "plain" -text "    - It is the default printer; Windows will pick another." }
-            if ($printer.Shared) { writeText -type "plain" -text "    - It is shared$(if ($printer.ShareName) { " as '$($printer.ShareName)'" }): other computers lose access to it." }
-            if ($printer.Jobs -gt 0) { writeText -type "plain" -text "    - It has $($printer.Jobs) print job(s) waiting; they are cancelled." }
-            if ($printer.RemoteDesktop) { writeText -type "plain" -text "    - It is a Remote Desktop session printer; Windows makes it again at the next Remote Desktop sign-in." }
-        }
+        writeText -type "notice" -text "This removes the printer '$($printer.Name)' from this computer."
+        if ($printer.Default) { writeText -type "plain" -text "  - It is the default printer; Windows will pick another." }
+        if ($printer.Shared) { writeText -type "plain" -text "  - It is shared$(if ($printer.ShareName) { " as '$($printer.ShareName)'" }): other computers lose access to it." }
+        if ($printer.Jobs -gt 0) { writeText -type "plain" -text "  - It has $($printer.Jobs) print job(s) waiting; they are cancelled." }
+        if ($printer.RemoteDesktop) { writeText -type "plain" -text "  - It is a Remote Desktop session printer; Windows makes it again at the next Remote Desktop sign-in." }
 
         $answer = readOption -options $([ordered]@{
                 "Cancel" = "Remove nothing."
-                "Remove" = "Remove the $($chosen.Count) printer(s) listed above."
+                "Remove" = "Remove '$($printer.Name)'."
             }) -prompt "Do you want to continue?" -returnKey
         if ($answer -ne "Remove") { return }
 
         # --- Remove ---
 
-        $removed = @()
-        $gone = @()
-        $failed = @()
-
-        foreach ($item in $chosen) {
-            try {
-                # Look the printer up again by its exact name (Remove-Printer -Name takes wildcards):
-                # it may have gone, or changed, since the list was made.
-                $current = @(Get-Printer -ErrorAction Stop | Where-Object { "$($_.Name)" -ceq $item.Name }) | Select-Object -First 1
-                if (-not $current) {
-                    $gone += $item.Name
-                    continue
-                }
-
-                Remove-Printer -InputObject $current -ErrorAction Stop
-                log -msg "Removed printer $($item.Name) (driver: $($item.Driver), port: $($item.Port))."
-                $removed += $item.Name
-            } catch {
-                $reason = (($_.Exception.Message -split "\r?\n") | Where-Object { $_.Trim() } | Select-Object -First 1)
-                $failed += [pscustomobject]@{ Name = $item.Name; Reason = "$reason".Trim() }
-                log -msg "Could not remove printer $($item.Name): $($_.Exception.Message)" -lvl "WARNING"
+        try {
+            # Look the printer up again by its exact name (Remove-Printer -Name takes wildcards):
+            # it may have gone, or changed, since the list was made.
+            $current = @(Get-Printer -ErrorAction Stop | Where-Object { "$($_.Name)" -ceq $printer.Name }) | Select-Object -First 1
+            if (-not $current) {
+                writeText -type "plain" -text "'$($printer.Name)' is already gone."
+                return
             }
+
+            Remove-Printer -InputObject $current -ErrorAction Stop
+        } catch {
+            $reason = (($_.Exception.Message -split "\r?\n") | Where-Object { $_.Trim() } | Select-Object -First 1)
+            log -msg "Could not remove printer $($printer.Name): $($_.Exception.Message)" -lvl "WARNING"
+            writeText -type "error" -text "Could not remove '$($printer.Name)': $("$reason".Trim())"
+            return
         }
+
+        log -msg "Removed printer $($printer.Name) (driver: $($printer.Driver), port: $($printer.Port))."
 
         # --- Check, instead of trusting that no error means it is gone ---
 
-        if ($removed.Count -gt 0) {
-            $remaining = @()
-            try { $remaining = @(Get-Printer -ErrorAction Stop | ForEach-Object { "$($_.Name)" }) } catch { }
+        $stillThere = $null
+        try { $stillThere = (@(Get-Printer -ErrorAction Stop | Where-Object { "$($_.Name)" -ceq $printer.Name }).Count -gt 0) } catch { }
 
-            foreach ($name in @($removed)) {
-                if ($remaining -ccontains $name) {
-                    $removed = @($removed | Where-Object { $_ -cne $name })
-                    $failed += [pscustomobject]@{ Name = $name; Reason = "it is still installed after being removed" }
-                }
-            }
-        }
-
-        # --- The result ---
-
-        if ($removed.Count -gt 0 -and $failed.Count -eq 0) {
-            writeText -type "success" -text "Removed $($removed.Count) printer(s): $($removed -join ', ')"
-        } elseif ($removed.Count -gt 0) {
-            writeText -type "notice" -text "Removed $($removed.Count) printer(s): $($removed -join ', ')"
-        }
-
-        if ($gone.Count -gt 0) {
-            writeText -type "plain" -text "Already gone by the time they were reached: $($gone -join ', ')"
-        }
-
-        if ($failed.Count -gt 0) {
-            writeText -type "error" -text "$($failed.Count) printer(s) could not be removed:"
-            foreach ($item in $failed) { writeText -type "plain" -text "  $($item.Name): $($item.Reason)" }
-        }
-
-        if ($removed.Count -gt 0) {
-            writeText -type "plain" -text "The printers' ports and drivers are left in place, so a printer can be added again quickly."
+        if ($null -eq $stillThere) {
+            writeText -type "notice" -text "Windows reported no error removing '$($printer.Name)', but ShellCLI could not check that it is gone."
+        } elseif ($stillThere) {
+            writeText -type "error" -text "'$($printer.Name)' is still installed after it was removed."
+        } else {
+            writeText -type "success" -text "Removed the printer '$($printer.Name)'."
+            writeText -type "plain" -text "Its port and driver are left in place, so the printer can be added again quickly."
         }
     } catch {
         writeText -type "error" -text "$($_.Exception.Message) ($($MyInvocation.MyCommand.Name)-$($_.InvocationInfo.ScriptLineNumber))"

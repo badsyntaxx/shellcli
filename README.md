@@ -107,8 +107,9 @@ with jobs waiting. Printers that other people have connected under their own acc
 
 ### REMOVE PRINTERS
 
-List the printers, then pick one, several or all of them to remove. It shows what will be removed (and what that affects, such as a shared printer or
-waiting jobs) and asks before it removes anything, then checks that each printer is really gone. The ports and drivers are left in place.\
+List the printers, then pick one of them to remove. It removes one printer at a time: run it again for the next. It shows what will be removed (and what
+that affects, such as a shared printer or waiting jobs) and asks before it removes anything, then checks that the printer is really gone. The port and
+driver are left in place.\
 `remove printer`
 
 ### REPAIR WINDOWS
