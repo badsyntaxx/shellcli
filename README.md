@@ -99,6 +99,18 @@ Location services are on (Settings > Privacy & security > Location). Without the
 connection, and says so.\
 `connect wifi`
 
+### LIST PRINTERS
+
+List every printer on the target computer with its driver, port and status, and mark the default, shared and Remote Desktop session printers and the ones
+with jobs waiting. Printers that other people have connected under their own accounts are not listed.\
+`printers`
+
+### REMOVE PRINTERS
+
+List the printers, then pick one, several or all of them to remove. It shows what will be removed (and what that affects, such as a shared printer or
+waiting jobs) and asks before it removes anything, then checks that each printer is really gone. The ports and drivers are left in place.\
+`remove printer`
+
 ### REPAIR WINDOWS
 
 Run common Windows repair commands like system file checks and cleanup & restore.\
