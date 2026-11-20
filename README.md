@@ -109,7 +109,17 @@ with jobs waiting. Printers that other people have connected under their own acc
 
 List the printers, then pick one of them to remove. It removes one printer at a time: run it again for the next. It shows what will be removed (and what
 that affects, such as a shared printer or waiting jobs) and asks before it removes anything, then checks that the printer is really gone. The port and
-driver are left in place.\
+driver are left in place.
+
+Windows can go on listing a removed printer in Settings, as "Driver is unavailable", because it keeps a device entry for every print queue (Device
+Manager > Print queues) and a saved connection for every shared printer. After a removal it checks for those and clears them, and it only says they are
+gone when a second look finds them gone. If an entry will not go it offers to restart the Print Spooler (it retries only the entries that were stuck,
+and touches nothing if the printer has come back), and if it still will not go it says what is left and how to remove it by hand. Removing a device
+entry needs Windows 10 version 2004 or later; on an older Windows it says so and points to Device Manager. A connection that is set up for every user
+of the computer (`printui /ga`, or Group Policy) is reported but never removed, because Windows adds it again at the next sign-in. Entries left over
+from earlier removals are shown as "leftover entries" in the list, one for each name, and can be picked and removed like a printer. Remote Desktop
+session printers are never offered as leftovers, in any language, and neither is any name that ends in a bracketed word and number, such as
+"(Copy 1)".\
 `remove printer`
 
 ### REPAIR WINDOWS

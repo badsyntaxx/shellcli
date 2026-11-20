@@ -46,7 +46,12 @@
         "wifi": { "directory": "main", "file": "network", "function": "getWifiCreds", "description": "Get WiFi credentials." },
         "connect wifi": { "directory": "main", "file": "network", "function": "connectWifi", "description": "Connect to a WiFi network." },
         "printers": { "directory": "main", "file": "printers", "function": "listPrinters", "description": "List the printers." },
-        "remove printer": { "directory": "main", "file": "printers", "function": "removePrinters", "description": "List the printers and remove the one you pick." },
+        "remove printer": {
+            "directory": "main",
+            "file": "printers",
+            "function": "removePrinters",
+            "description": "List the printers and remove the one you pick."
+        },
         "get apps": { "directory": "main", "file": "apps", "function": "getApps", "description": "Display a menu of available apps." },
         "get browser apps": { "directory": "main", "file": "apps", "function": "getBrowserApps", "description": "Display a menu of web browsers." },
         "get diagnostic apps": {
